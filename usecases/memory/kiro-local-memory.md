@@ -24,6 +24,7 @@ The core idea:
 
 ```text
 ~/.kiro/memories/
+├── conventions.md     -> symlink -> dotfiles-ai stable rules (rarely changed)
 ├── memory.md          # daily inbox / hot working memory, written during sessions
 ├── log.md             # operation timeline for archive/dream/review events
 ├── index.md           -> symlink -> dotfiles-ai wiki index
@@ -41,16 +42,29 @@ The core idea:
 
 | Layer | File | Nature | Versioning |
 | --- | --- | --- | --- |
+| Conventions | `conventions.md` | Stable rules (the "law"), rarely changed | Managed by `dotfiles-ai` |
 | Hot inbox | `memory.md` | Daily real-time notes written during sessions | Not versioned |
 | Timeline | `log.md` | Operation log; keeps recent archive/dream/review entries | Not versioned |
 | Cold index | `index.md` | Wiki-style knowledge index updated by AI distillation | Managed by `dotfiles-ai` |
 | Cold archive | `archive/` | Daily raw memory snapshots | Managed by `dotfiles-ai` |
 | Cold topics | `topics/` | Deep topic pages split out after enough accumulated material | Managed by `dotfiles-ai` |
 
+### Conventions vs Index separation
+
+The conventions layer was introduced to solve a growing problem: `index.md` was mixing permanent behavioral rules with one-time experiential knowledge. As the file grew, it became hard to maintain.
+
+The separation principle:
+
+- **conventions.md**: Things that are always true. Identity rules, security policies, workflow mandates, environment constraints. Changed only when a new rule is established.
+- **index.md**: Things that were learned. Debugging experiences, tool configurations, operational knowledge. Updated by autodream distillation.
+
+Autodream only touches `index.md`. It never modifies `conventions.md`.
+
 ## 5. Version-control strategy
 
 Structural memory files are symlinked into a `dotfiles-ai` repository:
 
+- `conventions.md`
 - `index.md`
 - `archive/`
 - `topics/`
@@ -130,12 +144,18 @@ Output:
 
 ## 8. Key design decisions
 
-### 8.1 Steering and memories are separate
+### 8.1 Steering, conventions, and memories are separate
 
-Steering stores stable rules:
+Steering stores static specifications:
 
 ```text
-WHAT / HOW
+WHAT / HOW (system-level directives)
+```
+
+Conventions store stable behavioral rules:
+
+```text
+WHAT IS ALWAYS TRUE (identity, security, workflow mandates)
 ```
 
 Memories store dynamic experience:
@@ -144,7 +164,7 @@ Memories store dynamic experience:
 WHAT HAPPENED / WHAT WAS LEARNED
 ```
 
-They should not be mixed.
+They should not be mixed. Autodream maintains memories but never touches steering or conventions.
 
 ### 8.2 Sub-agents mount memory selectively
 
@@ -187,7 +207,7 @@ A review should inspect:
 - index bloat
 - missing source dates
 - topic pages that should be split or merged
-- memories that should or should not be promoted to steering
+- memories that should or should not be promoted to conventions or steering
 
 ## 10. Essence
 

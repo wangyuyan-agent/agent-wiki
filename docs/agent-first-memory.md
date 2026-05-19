@@ -50,9 +50,9 @@ Agent memory has three layers and one lifecycle.
 ### Layers
 
 ```text
-Hot  = always loaded; controls behavior
-Warm = triggered on demand; provides task context
-Cold = searched or audited; preserves evidence
+Hot    = always loaded; controls behavior (steering + conventions)
+Warm   = triggered on demand; provides task context
+Cold   = searched or audited; preserves evidence
 ```
 
 ### Lifecycle
@@ -63,27 +63,43 @@ Archive preserves.
 Autodream distills.
 Index navigates.
 Topics retain knowledge.
+Conventions stabilize rules.
 Review corrects drift.
 ```
 
-## 5. Steering vs memory
+## 5. Steering vs conventions vs memory
 
-Separate instructions from memories.
+Separate instructions, rules, and memories.
 
 ```text
-Steering / Instructions = WHAT / HOW
-Memory / Knowledge      = WHAT HAPPENED / WHAT WE LEARNED
+Steering / Instructions = WHAT / HOW (system-level directives, identity, capabilities)
+Conventions / Rules     = WHAT IS ALWAYS TRUE (stable behavioral rules, workflow mandates)
+Memory / Knowledge      = WHAT HAPPENED / WHAT WE LEARNED (dynamic experience)
 ```
+
+The three layers have different change frequencies:
+
+| Layer | Changes when | Examples |
+| --- | --- | --- |
+| Steering | Agent identity or capabilities change | Persona definition, tool permissions, response style |
+| Conventions | A new stable rule is established | "NIT is mandatory", "always use wangyuyan-agent for commits", security policies |
+| Memory | Every session with new learnings | "k3s ConfigMap was read-only", "kiro-pool needs symlink fix" |
 
 Examples:
 
-| Belongs in steering | Belongs in memory |
-| --- | --- |
-| When the user says "remember", append a distilled note to `memory.md`. | On 2026-05-11, ConfigMap-mounted `AGENTS.md` was found to be read-only in k3s. |
-| Read `memory/index.md` before touching prior decisions. | The OpenAB + Codex deployment stores mutable memory on PVC. |
-| Do not store raw chat logs. | A previous rollout failed because `KUBECONFIG` was only set in a shell profile. |
+| Belongs in steering | Belongs in conventions | Belongs in memory |
+| --- | --- | --- |
+| When the user says "remember", append a note to `memory.md`. | Git identity defaults to `wangyuyan-agent`. | On 2026-05-11, ConfigMap-mounted `AGENTS.md` was found to be read-only in k3s. |
+| Read `memory/index.md` before touching prior decisions. | All agent-wiki commits must pass sensitive info scan. | The OpenAB + Codex deployment stores mutable memory on PVC. |
+| Do not store raw chat logs. | NIT findings require fixes before approve. | A previous rollout failed because `KUBECONFIG` was only set in a shell profile. |
 
-Do not turn one incident into a permanent rule unless it is confirmed. Put experience into memory first; promote to steering only after review.
+Promotion path:
+
+```text
+Memory (observed once) → Conventions (confirmed stable rule) → Steering (changes agent behavior)
+```
+
+Do not promote one incident into a convention. Put experience into memory first; promote to conventions only after repeated confirmation or explicit user decision. Promote to steering only if it changes the agent's fundamental behavior.
 
 ## 6. Hot / Warm / Cold decision tree
 
@@ -118,6 +134,7 @@ A full implementation can use this shape:
 ├── AGENTS.md / CLAUDE.md / GEMINI.md / steering/*
 └── memory/
     ├── README.md
+    ├── conventions.md
     ├── memory.md
     ├── log.md
     ├── index.md
@@ -140,6 +157,7 @@ Minimal implementation:
 <agent-home>/
 ├── AGENTS.md / CLAUDE.md / GEMINI.md
 └── memory/
+    ├── conventions.md
     ├── memory.md
     ├── index.md
     └── topics/
@@ -179,6 +197,26 @@ Retrieval order:
 2. Read relevant `memory/topics/*.md`.
 3. Read `memory/archive/*.md` only for audit or source tracing.
 ```
+
+### Conventions: `memory/conventions.md`
+
+`conventions.md` stores stable behavioral rules that rarely change.
+
+Use it for:
+
+- Identity and authentication rules (default git identity, credential sources).
+- Security policies (sensitive info scanning before public commits).
+- Workflow mandates (post-action checklists, PR review rules).
+- Environment constraints (sandbox HOME behavior, SSH port conventions).
+- Memory system rules (structure definitions, autodream constraints).
+
+Do not use it for:
+
+- One-time incidents or debugging experiences (those belong in memory/index).
+- System-level identity or capability definitions (those belong in steering).
+- Temporary preferences that may change.
+
+Change frequency: low. Only updated when a new stable rule is established or an existing rule is revised. Autodream should never modify this file.
 
 ### Inbox: `memory/memory.md`
 
@@ -491,30 +529,47 @@ A manual `review memory` workflow should:
 
 Review should produce a plan before destructive changes.
 
-## 17. Promotion to steering
+## 17. Promotion path
 
-Promote memory to steering only when a memory item becomes a stable behavior rule.
+Memory items can be promoted through layers as they prove stable:
 
-Promotion criteria:
+```text
+Memory → Conventions → Steering
+```
 
-- The behavior should apply across future sessions.
-- The rule changes what the agent must do.
-- The rule is not merely historical context.
-- The user confirmed it, or repeated experience strongly supports it.
-- There is a single source of truth for the promoted rule.
+### Memory → Conventions
 
-Do not promote:
+Promote when a memory item becomes a stable behavioral rule.
+
+Criteria:
+
+- The rule applies across future sessions.
+- It has been confirmed by repeated experience or explicit user decision.
+- It is not merely historical context.
+- It is a "what is always true" statement, not a "what happened once" statement.
+
+### Conventions → Steering
+
+Promote when a convention changes the agent's fundamental identity or capabilities.
+
+Criteria:
+
+- The rule changes what the agent must do on every task.
+- It defines identity, persona, or capability boundaries.
+- It belongs in the always-loaded hot entry.
+
+### Do not promote
 
 - One-off incidents.
 - Unverified guesses.
 - Temporary preferences.
 - Environment-specific facts that only matter in one project.
 
-Promotion process:
+### Process
 
 1. Identify the memory item and source date.
-2. Rewrite it as WHAT/HOW behavior.
-3. Add it to the appropriate steering file.
+2. Rewrite it as a stable rule (for conventions) or WHAT/HOW behavior (for steering).
+3. Add it to the appropriate file.
 4. Leave a pointer or note in memory if useful.
 5. Remove or mark duplicate wording to avoid contradiction.
 
@@ -586,6 +641,7 @@ Agent-first memory is not a file. It is a pipeline:
 
 ```text
 Hot controls behavior.
+Conventions stabilize rules.
 Inbox captures.
 Archive preserves.
 Autodream distills.
