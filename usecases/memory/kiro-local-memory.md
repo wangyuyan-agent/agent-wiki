@@ -40,25 +40,26 @@ The core idea:
 
 ## 4. Layering model
 
-| Layer | File | Nature | Versioning |
-| --- | --- | --- | --- |
-| Conventions | `conventions.md` | Stable rules (the "law"), rarely changed | Managed by `dotfiles-ai` |
-| Hot inbox | `memory.md` | Daily real-time notes written during sessions | Not versioned |
-| Timeline | `log.md` | Operation log; keeps recent archive/dream/review entries | Not versioned |
-| Cold index | `index.md` | Wiki-style knowledge index updated by AI distillation | Managed by `dotfiles-ai` |
-| Cold archive | `archive/` | Daily raw memory snapshots | Managed by `dotfiles-ai` |
-| Cold topics | `topics/` | Deep topic pages split out after enough accumulated material | Managed by `dotfiles-ai` |
+| Layer | File | Nature | Loading | Versioning |
+| --- | --- | --- | --- | --- |
+| Conventions | `conventions.md` | Stable rules (the "law"), rarely changed | **Hot**: agent resource, auto-loaded every session | Managed by `dotfiles-ai` |
+| Hot inbox | `memory.md` | Daily real-time notes written during sessions | **Hot**: agent resource, auto-loaded | Not versioned |
+| Cold index | `index.md` | Wiki-style knowledge index updated by AI distillation | **Hot**: agent resource, auto-loaded | Managed by `dotfiles-ai` |
+| Timeline | `log.md` | Operation log; keeps recent archive/dream/review entries | Cold | Not versioned |
+| Cold archive | `archive/` | Daily raw memory snapshots | Cold | Managed by `dotfiles-ai` |
+| Cold topics | `topics/` | Deep topic pages split out after enough accumulated material | **Warm**: loaded on demand | Managed by `dotfiles-ai` |
 
-### Conventions vs Index separation
+### Why conventions is Hot (not Warm)
 
-The conventions layer was introduced to solve a growing problem: `index.md` was mixing permanent behavioral rules with one-time experiential knowledge. As the file grew, it became hard to maintain.
+The decision tree from the architecture doc asks: "If this is not loaded, will the agent's next response or action likely be wrong?"
 
-The separation principle:
+For conventions, the answer is yes. Without loading conventions, the agent may:
+- Use the wrong git identity
+- Push with wrong HOME (sandbox vs real)
+- Skip mandatory security scans
+- Violate workflow mandates
 
-- **conventions.md**: Things that are always true. Identity rules, security policies, workflow mandates, environment constraints. Changed only when a new rule is established.
-- **index.md**: Things that were learned. Debugging experiences, tool configurations, operational knowledge. Updated by autodream distillation.
-
-Autodream only touches `index.md`. It never modifies `conventions.md`.
+Therefore conventions must be loaded via agent resource (same mechanism as steering), not via index.md reference. This ensures it is always present regardless of context pressure.
 
 ## 5. Version-control strategy
 

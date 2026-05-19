@@ -202,6 +202,8 @@ Retrieval order:
 
 `conventions.md` stores stable behavioral rules that rarely change.
 
+It should be loaded as a Hot resource (via agent config/resources), not merely referenced from `index.md`. This ensures rules are always enforced regardless of context pressure.
+
 Use it for:
 
 - Identity and authentication rules (default git identity, credential sources).
