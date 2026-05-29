@@ -74,7 +74,7 @@ There is **no** `walks/memory.md` inbox. Auto-Walk does not capture from session
 | Hypothesis pool (cold) | `walks/discharged/` `walks/rejected/` `walks/archived/` | Cold | Audit only |
 | Noteworthy bucket | `walks/noteworthy/` | Cold, human-only | Never read by skill or runner; human review only |
 | Walk log | `walks/log.md` | Cold | Audit only |
-| Surfacing skill | `skills/auto-walk/SKILL.md` | Warm | Triggered by `/walk` or by turn match |
+| Surfacing skill | `skills/auto-walk/SKILL.md` | Warm | Triggered by natural language only (kiro-cli reserves `/` prefix for built-ins; see §11.3) |
 | Surfacing rules | `conventions.md` (memory-side) | Hot | Rules about when surfacing is allowed |
 
 The hypothesis pool is **never Hot**. Even in A mode, a hypothesis only enters the agent's context after the §12 gating check (see [§8 below](#8-surfacing-wiring)) confirms it should surface for the current turn.
@@ -183,31 +183,29 @@ The full prompt body is intentionally not duplicated here — the canonical sour
 
 ## 7. Walk procedure (what the prompt enforces)
 
-The protocol's §11.4 multi-pass workflow MUST be honored. The runner enforces it by issuing three sub-prompts to `kiro-wrap chat`, each with a distinct role:
+The protocol's §11.4 phase separation MUST be honored. The single prompt to `kiro-wrap` (see §6.2) instructs Kiro to execute three labeled phases sequentially in one session, emitting each phase's output visibly so the trace can be audited after the fact. The intermediate outputs land in `walks/log.md` under the `walk-auto` entry's `candidates:` list (each candidate with its survived / rejected verdict).
+
+The phase roles, summarized — for the actual prompt text used by L1 manual walks see [`walk-emit-prompt.md`](file:///Users/icex/dotfiles-ai/kiro/skills/auto-walk/walk-emit-prompt.md); the L2 runner ([`auto-walk.sh`](file:///Users/icex/dotfiles-ai/kiro/scripts/auto-walk.sh)) issues a single prompt that wraps the same three roles:
 
 ```text
-INVENTORY prompt:
-  "你是 walk inventory agent. Read seed and items. Restate what each says.
-   Do not bridge. List facts only."
+INVENTORY phase:
+  Restate the seed and what each retrieved item says. Do not bridge.
+  This is the warm-up; protocol §11.4 explicitly requires it.
 
-ROAM prompt:
-  "你是 walk roam agent. Given the inventory, generate 5-10 candidate bridges.
-   Each bridge: a one-line claim + which items connect + one sentence of why.
-   Be liberal. Produce more than needed."
+ROAM phase:
+  Given the inventory, generate 5-10 candidate bridges.
+  Each bridge: a one-line claim + which items connect + one sentence of why.
+  Be liberal. Produce more than needed.
 
-CRITIQUE prompt:
-  "你是 walk critic agent. For each candidate, apply the critic gate:
-     - Has supporting_refs from inventory items? Reject if not.
-     - Has a falsifiable disconfirm_if clause? Reject if not.
-     - Has applies_when pointing to an identifiable situation? Reject if not.
-     - Infers psychological/medical/sensitive attribute? Reject.
-     - Generalizes from a single source item? Reject.
-     - Restates an existing memory item? Reject.
-     - Self-declares impact (add|rewrite) with justification? Reject if not.
-   Output surviving hypotheses as YAML records matching the schema."
+CRITIQUE phase:
+  Apply the §11.5 critic gate (missing refs, missing disconfirm,
+  vague applies_when, sensitive-attribute inference, single-source
+  generalization, restatement of existing memory, claim referencing
+  material absent from corpus, missing impact self-assessment,
+  unfalsifiable claim). Reject most; emit YAML for survivors per §9.
 ```
 
-The critic gate is the protocol's §11.5. Its strictness is the safeguard against the "wheelchair walk" failure mode.
+The critic gate is the protocol's §11.5. Its strictness — together with the visible per-candidate verdicts in `log.md` — is the safeguard against the "wheelchair walk" failure mode.
 
 ## 8. Surfacing wiring
 
@@ -215,14 +213,19 @@ Surfacing is the part of the system that connects the static hypothesis pool to 
 
 ### 8.1 C mode (explicit) — definite implementation
 
-A Kiro skill at `skills/auto-walk/SKILL.md` exposes a `/walk` invocation. When the user types `/walk` (or natural variants like "散步看看", "有什么想法"):
+A Kiro skill at `skills/auto-walk/SKILL.md` is invoked by **natural language only** — kiro-cli reserves `/` for built-in commands (`/tui`, `/feedback`, `/copy`), so `/walk` returns "Unknown command". The skill matches two classes of triggers (see SKILL.md `觸發場景` for the canonical list):
+
+- **Explicit**: "散步看看", "最近散步发现什么", "auto-walk", "walk note".
+- **C-meta** (user requests divergence without naming the system): "还有别的角度吗", "我是不是漏了什么", "换个思路", "有没有我没考虑到的".
+
+On a match:
 
 1. The skill reads all of `walks/active/*.yaml`.
-2. It filters those whose `applies_when` or `seed` overlaps the current conversation topic. **No** mode gating is applied — explicit invocation signals exploratory intent.
+2. It filters those whose `applies_when` or `seed` overlaps the current conversation topic. **No** mode gating is applied — explicit pull signals exploratory intent.
 3. It surfaces up to N (default 3) hypotheses as short side-notes, in confidence order.
 4. It records a `surface` event in `walks/log.md` for each surfaced hypothesis with `mode: C`.
 
-This is the safe, definite implementation. It works regardless of how Kiro handles turn-level hooks.
+This is the safe, definite implementation; it does not depend on Kiro having any turn-level hook.
 
 ### 8.2 A mode (automatic) — provisional implementation
 
@@ -236,9 +239,10 @@ If a turn-level hook exists:
   - The hook records a surface_event for outcome tracking.
 
 If no turn-level hook exists:
-  - A mode degrades. The user must invoke /walk explicitly (C mode).
-  - The protocol still works; only the automatic surfacing is unavailable.
-  - This is acceptable. The protocol's §12.1 already names C mode as a peer to A mode.
+  - A mode degrades. The user must invoke C mode explicitly via natural language
+    ("散步看看", or any C-meta phrase like "还有别的角度吗").
+  - The protocol still works; only fully automatic surfacing is unavailable.
+  - This is acceptable. The protocol's §12.1 names C (explicit + meta) as a peer to A.
 ```
 
 The first L3 testing milestone is to determine which branch applies for the current Kiro runtime (see §11 below).
@@ -275,7 +279,7 @@ When the user (explicitly or by behavioral evidence over time) confirms a hypoth
 4. It moves the hypothesis file from `walks/active/` to `walks/discharged/`, adding a `discharged_at` and `spawned_memory_ref` field pointing to the new memory item.
 5. It appends a `discharge` event to `walks/log.md`.
 
-The next auto-archive run (07:10) moves the new `memory.md` entry into the day's archive. The next auto-dream run (07:20) integrates it into `index.md` and `topics/`.
+The next auto-archive run (07:30) moves the new `memory.md` entry into the day's archive. The next auto-dream run (07:40) integrates it into `index.md` and `topics/`.
 
 **The new memory item is born through the existing capture protocol.** It is not a "promoted hypothesis." This is the protocol's §6.2 invariant made operational.
 
@@ -323,18 +327,19 @@ Steps:
 
 Pass criterion: at least one hypothesis with all required fields, surfaced cleanly. Achieved: 5 hypotheses + 1 noteworthy (R7 self-lock), critic gate rejected a deliberately-planted sensitive-attribute inference (R11).
 
-### 11.2 L2 — Scheduled walk (deployed 2026-05-29, first unattended run pending)
+### 11.2 L2 — Scheduled walk (deployed 2026-05-29; kickstart run observed; Friday calendar trigger pending)
 
 Goal: weekly auto-walk runs unattended, produces hypotheses without manual prompting.
 
-Steps (done unless noted):
+Steps:
 
-1. ✓ Wrote `scripts/auto-walk.sh` per §6.3 — one prompt, one `kiro-wrap chat` call, Kiro writes the files itself.
-2. ✓ Added `com.icex.kiro.auto-walk.plist` running **Friday 07:50** (`Weekday 5`).
-3. ✓ Loaded with `launchctl bootstrap "gui/$(id -u)" <plist>` — **not** `launchctl load`, and **not** under `sudo` (LaunchAgent owner must equal the loader; this is exactly the bug found in L3 stage 3). State confirmed `not running` (idle, waiting for trigger).
-4. ○ Pending: wait one Friday, inspect `walks/log.md` and `walks/active/`. Optionally trigger early with `launchctl kickstart -p "gui/$(id -u)/com.icex.kiro.auto-walk"` to validate without waiting.
+1. ✓ Wrote `scripts/auto-walk.sh` per §6.3 — single prompt to `kiro-wrap chat`, three labeled phases inside it, Kiro writes the files itself.
+2. ✓ Added `com.icex.kiro.auto-walk.plist` running **Friday 07:50** (`Weekday 5`); plist itself lives in `dotfiles-ai/kiro/launchd/` (in version control) and is symlinked into `~/Library/LaunchAgents/`.
+3. ✓ Loaded with `launchctl bootstrap "gui/$(id -u)" <plist>` — **not** `launchctl load`, and **not** under `sudo` (LaunchAgent owner must equal the loader).
+4. ✓ **kickstart run 2026-05-29 succeeded** (exit 0, ~5m48s, 4 hypotheses + 1 noteworthy, ~44% critic pass rate matching the L1 manual rate). First run exposed and fixed a real bug: launchd does not load `.zshrc`, so `kiro-wrap` had no proxy env and hit a non-Anthropic endpoint without the requested model. The fix (explicit Surge proxy export) was applied to `auto-walk.sh` and back-ported to `auto-dream.sh`. The runner also gained a 3× retry + `walk-error` log line so future failures are visible, not silent.
+5. ○ **Friday calendar trigger pending** — `StartCalendarInterval` itself has not yet fired naturally. Same mechanism is in production for auto-archive and auto-dream for months, so risk is low; pending only as a final no-touch validation.
 
-Pass criterion: at least one hypothesis emitted unattended, with the critic gate visibly rejecting weak candidates (log should show "REJECTED: <reason>" for filtered candidates).
+Pass criterion (mostly met): at least one hypothesis emitted unattended, with the critic gate visibly rejecting weak candidates. The `walk-auto` log entry shows candidate-by-candidate verdicts (`SURVIVED → hyp-id` or `REJECTED: <reason>`) — this *is* the visible intermediate output that satisfies §11.4 phase separation auditability.
 
 ### 11.3 L3 — surfacing mode (tested 2026-05-29)
 

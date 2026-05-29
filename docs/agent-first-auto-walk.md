@@ -248,7 +248,7 @@ Field notes:
 - `id`: stable identifier; date + ordinal is fine.
 - `seed`: the topic that started this walk pass.
 - `claim`: the candidate insight, one to three sentences.
-- `supporting_refs`: pointers into corpus items. Required. Hypotheses without refs are discarded.
+- `supporting_refs`: pointers into corpus items. Required. Hypotheses without refs are discarded. **Prefer the smallest addressable unit available** (file + heading / anchor / line range); fall back to file-only when the corpus lacks anchors. File-only refs are valid but make audit and discharge harder; runners should be prompted to cite at sub-file granularity when possible.
 - `confidence`: `low | medium | high`. Bias toward `low` and `medium`.
 - `impact`: `add | rewrite`. Determines surfacing eligibility (see §12).
 - `applies_when`: positive triggers. The conversation must look like one of these for the hypothesis to surface in A mode.
@@ -339,7 +339,7 @@ The wander policy is "scenery" in the sense of §5.2: it sets the stage but does
 
 ### 11.4 Multi-pass workflow
 
-The LLM-driven part of a walk runs in three sub-phases, each as a distinct prompt:
+The LLM-driven part of a walk runs three sequential phases. The invariant is **phase separation with visible intermediate output**, not the number of model invocations. An implementation MAY run three separate prompt calls, or one prompt with explicitly labeled phases that the model executes and emits in sequence. Either is acceptable provided the intermediate outputs of each phase are visible in conversation, log, or sidecar — so the warm-up and the critic pass can be audited after the fact.
 
 ```text
 Inventory:  Restate what the seed is, list what the retrieved items say.
@@ -353,7 +353,7 @@ Critique:   Apply the critic gate (§11.5) to each candidate.
             Reject most. Keep the few that survive with full hypothesis records.
 ```
 
-A walk runner that compresses these into one prompt loses the warm-up effect and tends to produce either generic summaries or unmoored speculation.
+What fails: skipping straight to Critique-shaped output without a visible Inventory and Roam (the "wheelchair walk" — see §15). The shape of the trace matters because audit relies on it; the number of shell calls does not.
 
 ### 11.5 Critic gate
 
@@ -365,6 +365,7 @@ Reject a candidate hypothesis if any of the following:
 - It infers a psychological, medical, gender, age, ethnicity, or other sensitive attribute.
 - It generalizes from a single source item.
 - It restates an existing memory item (this is a Dream-like consolidation, not a walk).
+- Its `claim` mentions specific facts (system names, behaviors, citations, prior conclusions) that are not represented in any `supporting_refs`. Walks may not introduce material the corpus does not contain — including the Auto-Walk protocol itself (§8). If a claim wants to reference an external fact, the runner must add that source to the corpus and re-walk, not slip it in via narration.
 - Its `impact` is unclear or refuses self-assessment.
 - Its claim is unfalsifiable in principle.
 

@@ -85,7 +85,7 @@ Two scheduled jobs run through macOS `launchd`.
 
 `launchd` is preferred over `cron` because `cron` does not wake a sleeping Mac, while `launchd` with `StartCalendarInterval` can run after wake.
 
-### Stage 1: auto-archive, daily 07:10
+### Stage 1: auto-archive, daily 07:30
 
 This stage is pure shell and does not use AI.
 
@@ -101,7 +101,7 @@ Rationale:
 
 > Archiving is mechanical. It should not depend on model judgment. Raw memory must be preserved before AI transforms it.
 
-### Stage 2: auto-dream, daily 07:20
+### Stage 2: auto-dream, daily 07:40
 
 This stage invokes AI to distill memory.
 
