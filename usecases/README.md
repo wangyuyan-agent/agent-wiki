@@ -14,3 +14,4 @@ Unlike `docs/`, this directory may use small topic folders when multiple use cas
 ## Current groups
 
 - [memory/](memory/README.md) — Real implementations of agent memory systems.
+- [auto-walk/](auto-walk/README.md) — Real implementations of Auto-Walk, the exploratory association mechanism that runs on top of consolidated memory or any structured corpus.

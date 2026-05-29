@@ -14,7 +14,9 @@ Use this directory for documents that answer:
 ## Current documents
 
 - [Agent-first Memory Architecture](agent-first-memory.md) — Portable memory mechanism and implementation protocol for LLM agents.
+- [Agent-first Auto-Walk Architecture](agent-first-auto-walk.md) — Portable exploratory association mechanism that runs over consolidated memory or any structured corpus, generating weak hypotheses without mutating stable memory.
 
 ## Related use cases
 
 - [Memory use cases](../usecases/memory/README.md) — Practical implementations of the memory architecture.
+- [Auto-Walk use cases](../usecases/auto-walk/README.md) — Practical implementations of Auto-Walk.

@@ -27,13 +27,20 @@ agent-wiki/
 ├── README.md
 ├── docs/
 │   ├── README.md
-│   └── agent-first-memory.md
+│   ├── agent-first-memory.md
+│   └── agent-first-auto-walk.md
 └── usecases/
     ├── README.md
-    └── memory/
+    ├── memory/
+    │   ├── README.md
+    │   ├── kiro-local-memory.md
+    │   └── openab-codex-k3s-memory.md
+    └── auto-walk/
         ├── README.md
-        ├── kiro-local-memory.md
-        └── openab-codex-k3s-memory.md
+        ├── kiro-local-walk.md
+        ├── obsidian-notes-walk.md
+        ├── reading-queue-walk.md
+        └── research-corpus-walk.md
 ```
 
 ## Content model
@@ -41,15 +48,18 @@ agent-wiki/
 - `docs/` — General mechanisms, principles, and design documents.
 - `usecases/` — Practical implementations, deployment stories, integration notes, and lessons learned from real environments.
 - `usecases/memory/` — Real memory-system implementations that correspond to [Agent-first Memory Architecture](docs/agent-first-memory.md).
+- `usecases/auto-walk/` — Real Auto-Walk implementations that correspond to [Agent-first Auto-Walk Architecture](docs/agent-first-auto-walk.md).
 
 `docs/` starts flat on purpose. Add subdirectories only when a topic grows enough to justify structure.
 
-`usecases/` may use small topic folders when multiple practical cases clearly belong together, such as `usecases/memory/`.
+`usecases/` may use small topic folders when multiple practical cases clearly belong together, such as `usecases/memory/` and `usecases/auto-walk/`.
 
 ## Current entry points
 
 - [Agent-first Memory Architecture](docs/agent-first-memory.md)
 - [Memory use cases](usecases/memory/README.md)
+- [Agent-first Auto-Walk Architecture](docs/agent-first-auto-walk.md)
+- [Auto-Walk use cases](usecases/auto-walk/README.md)
 
 ## Writing rules
 
