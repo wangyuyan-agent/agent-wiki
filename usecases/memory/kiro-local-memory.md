@@ -129,7 +129,7 @@ Steps:
 ## 7. Flow
 
 ```text
-Daytime usage                    07:10                07:20
+Daytime usage                    07:30                07:40
 ────────────────────────────────────────────────────────────
 sessions write memory.md   →   archive moves it   →   AI distills index/topics
                               (shell)                 (kiro-wrap)
