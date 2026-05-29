@@ -143,13 +143,15 @@ The three passes (INVENTORY / ROAM / CRITIQUE) are labeled phases **inside the s
 
 The deployed shape (canonical source: `dotfiles-ai/kiro/scripts/auto-walk.sh`):
 
+> Parameterized skeleton. The deployed file (`dotfiles-ai/kiro/scripts/auto-walk.sh`) uses literal absolute paths; replace `<USER_HOME>` / `<USER>` with your own when adapting.
+
 ```sh
 #!/bin/bash
-# auto-walk.sh — 每週五 07:50 散步聯想（排在 auto-dream 之後）
+# auto-walk.sh — Friday 07:50 weekly walk (runs after auto-dream)
 set -euo pipefail
-export PATH="/Users/icex/.local/bin:/Users/icex/.cargo/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+export PATH="<USER_HOME>/.local/bin:<USER_HOME>/.cargo/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
 
-REAL_HOME="/Users/icex"
+REAL_HOME="<USER_HOME>"
 MEM_DIR="$REAL_HOME/.kiro/memories"
 WALKS_DIR="$REAL_HOME/.kiro/walks"
 KIRO_WRAP="$REAL_HOME/.cargo/bin/kiro-wrap"
@@ -183,9 +185,9 @@ The full prompt body is intentionally not duplicated here — the canonical sour
 
 ## 7. Walk procedure (what the prompt enforces)
 
-The protocol's §11.4 phase separation MUST be honored. The single prompt to `kiro-wrap` (see §6.2) instructs Kiro to execute three labeled phases sequentially in one session, emitting each phase's output visibly so the trace can be audited after the fact. The intermediate outputs land in `walks/log.md` under the `walk-auto` entry's `candidates:` list (each candidate with its survived / rejected verdict).
+The protocol's §11.4 phase separation MUST be honored. The single prompt to `kiro-wrap` (see §6.2) instructs Kiro to execute three labeled phases sequentially in one session, emitting each phase's output visibly so the trace can be audited after the fact. The walk-auto log entry must contain three sections: an `inventory:` summary (1–2 lines of key facts per corpus item — proof INVENTORY ran and was not skipped), a `candidates:` list with per-candidate verdicts (proof ROAM + CRITIQUE ran), and any `noteworthy:` routing decisions. A pure final-answer dump with no inventory trace fails §11.4 / §18 item 5.
 
-The phase roles, summarized — for the actual prompt text used by L1 manual walks see [`walk-emit-prompt.md`](file:///Users/icex/dotfiles-ai/kiro/skills/auto-walk/walk-emit-prompt.md); the L2 runner ([`auto-walk.sh`](file:///Users/icex/dotfiles-ai/kiro/scripts/auto-walk.sh)) issues a single prompt that wraps the same three roles:
+The phase roles, summarized — the actual prompt text used by L1 manual walks lives in `dotfiles-ai/kiro/skills/auto-walk/walk-emit-prompt.md`; the L2 runner `dotfiles-ai/kiro/scripts/auto-walk.sh` issues a single prompt that wraps the same three roles:
 
 ```text
 INVENTORY phase:

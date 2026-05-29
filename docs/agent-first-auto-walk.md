@@ -305,7 +305,7 @@ A walk pass has five phases. They MUST be separated; a single-prompt "find assoc
 | Cadence | Trigger | Typical work |
 | --- | --- | --- |
 | Daily light | Scheduled (launchd / cron / CronJob) | 1 seed, 3-5 candidate hypotheses, critic gate, write 1-3 to `active/` |
-| Weekly deep | Scheduled, longer window | 3 seeds, broader retrieval, longer critic pass, rotate `active/` ordering |
+| Weekly deep | Scheduled, longer window | **3 independent one-seed passes** (per §11.2 single-seed rule, run sequentially) with broader retrieval and longer critic per pass; rotate `active/` ordering across all survivors |
 | Milestone | Project / task completion | 1 seed bound to the milestone, optional |
 
 A walk runner that fires only on user request violates §5.4.
@@ -369,7 +369,7 @@ Reject a candidate hypothesis if any of the following:
 - Its `impact` is unclear or refuses self-assessment.
 - Its claim is unfalsifiable in principle.
 
-The critic gate runs as its own prompt, separate from the roam prompt. The same LLM acting as critic, after being primed with a critic role, is sufficient.
+The critic gate is its own **phase** with a distinct critic role, separate from the roam phase. Whether that is implemented as a separate prompt invocation or as a labeled section within one prompt is an implementation choice (§11.4) — the invariant is the visible phase-level output, not the call count. The same LLM acting as critic, after being primed with a critic role, is sufficient.
 
 ### 11.6 Noteworthy rejections
 
@@ -648,14 +648,16 @@ After implementing Auto-Walk for an agent, verify:
 1. A walk pass produces at least one hypothesis with all required fields.
 2. A walk pass rejects candidates lacking `supporting_refs`.
 3. The critic gate rejects sensitive-attribute inferences (test with a deliberately bad seed).
-4. Surfacing stays silent during a clearly executive turn (test with a stack trace).
-5. Surfacing fires during a clearly exploratory turn (test with "聊聊 X 这个想法").
-6. A `rewrite`-impact hypothesis does not surface in A mode.
-7. C mode (explicit `/walk`) returns all eligible hypotheses including `rewrite`.
-8. An ignored hypothesis is muted after N surfacing attempts.
-9. A confirmed hypothesis discharges and spawns a new memory item, without mutating any topic file.
-10. The walk runner runs on a cadence, not in response to user requests for help.
-11. The `noteworthy/` folder exists, has its own schema, and is **not** read by the surfacing layer.
+4. The critic gate rejects a candidate whose `claim` mentions facts absent from `supporting_refs` (§11.5).
+5. Each phase (Inventory / Roam / Critique) leaves a visible trace in the log or a sidecar — a pure final-answer dump fails §11.4.
+6. Surfacing stays silent during a clearly executive turn (test with a stack trace).
+7. **(A-capable runtimes only)** Surfacing fires during a clearly exploratory turn (test with "聊聊 X 这个想法"). Semantic-trigger-only runtimes (e.g., Kiro per its use case §11.3) deliberately stay silent here; for those, validate C-mode triggering instead.
+8. A `rewrite`-impact hypothesis does not surface in A mode (where A mode exists).
+9. C mode returns all eligible hypotheses including `rewrite`. Trigger is natural language ("散步看看", "walk note", or C-meta divergence phrases); a slash command (`/walk`) works only if the runtime supports custom slash invocations.
+10. An ignored hypothesis is muted after N surfacing attempts (L4).
+11. A confirmed hypothesis discharges and spawns a new memory item, without mutating any topic file.
+12. The walk runner runs on a cadence, not in response to user requests for help.
+13. The `noteworthy/` folder exists, has its own schema, and is **not** read by the surfacing layer.
 
 ## 19. Practical use cases
 
