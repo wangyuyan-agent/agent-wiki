@@ -130,7 +130,7 @@ The runner mirrors `auto-dream.sh` exactly: **shell only assembles one prompt an
    - WRITE each surviving hypothesis directly to
      active/hyp-YYYY-MM-DD-NNN.yaml (schema §9), and each
      rejected-but-noteworthy candidate to noteworthy/ (schema §11.6).
-   - APPEND a walk-auto entry to log.md with per-candidate verdicts.
+   - APPEND a walk-auto entry to log.md containing all three required sections per §7 / protocol §18 item 5: `inventory:` (1-2 lines of key facts per corpus item, proving INVENTORY ran), `candidates:` (per-candidate `SURVIVED → hyp-id` or `REJECTED: reason`), and any `noteworthy:` routing.
 3. Call `kiro-wrap chat --no-interactive --trust-all-tools "$PROMPT"`
    once, with HOME pinned to REAL_HOME (kiro-local-memory §8.4).
 ```
@@ -338,10 +338,13 @@ Steps:
 1. ✓ Wrote `scripts/auto-walk.sh` per §6.3 — single prompt to `kiro-wrap chat`, three labeled phases inside it, Kiro writes the files itself.
 2. ✓ Added `com.icex.kiro.auto-walk.plist` running **Friday 07:50** (`Weekday 5`); plist itself lives in `dotfiles-ai/kiro/launchd/` (in version control) and is symlinked into `~/Library/LaunchAgents/`.
 3. ✓ Loaded with `launchctl bootstrap "gui/$(id -u)" <plist>` — **not** `launchctl load`, and **not** under `sudo` (LaunchAgent owner must equal the loader).
-4. ✓ **kickstart run 2026-05-29 succeeded** (exit 0, ~5m48s, 4 hypotheses + 1 noteworthy, ~44% critic pass rate matching the L1 manual rate). First run exposed and fixed a real bug: launchd does not load `.zshrc`, so `kiro-wrap` had no proxy env and hit a non-Anthropic endpoint without the requested model. The fix (explicit Surge proxy export) was applied to `auto-walk.sh` and back-ported to `auto-dream.sh`. The runner also gained a 3× retry + `walk-error` log line so future failures are visible, not silent.
-5. ○ **Friday calendar trigger pending** — `StartCalendarInterval` itself has not yet fired naturally. Same mechanism is in production for auto-archive and auto-dream for months, so risk is low; pending only as a final no-touch validation.
+4. ✓ **kickstart run 2026-05-29 succeeded under round-1 prompt** (exit 0, ~5m48s, 4 hypotheses + 1 noteworthy, ~44% critic pass rate matching the L1 manual rate). First run exposed and fixed a real bug: launchd does not load `.zshrc`, so `kiro-wrap` had no proxy env and hit a non-Anthropic endpoint without the requested model. The fix (explicit Surge proxy export) was applied to `auto-walk.sh` and back-ported to `auto-dream.sh`. The runner also gained a 3× retry + `walk-error` log line so future failures are visible, not silent.
+5. ○ **First run under round-2 prompt pending** — same day as the kickstart, the protocol and runner gained the `inventory:` log-section requirement (protocol §11.4 / §18 item 5 visible-trace rule). The 2026-05-29 log artifact (`~/.kiro/walks/log.md:46-70`) contains `corpus:`, `seed-note:`, `candidates:`, and `notes:` — sufficient under the round-1 prompt, but missing the `inventory:` section the round-2 prompt now mandates. The INVENTORY phase *did* execute (it's visible in the cron.log conversation stream that day), but it was not persisted to the log artifact. Pending: trigger one more kickstart (or wait for Friday calendar trigger) to validate the round-2 prompt produces the required `inventory:` section.
+6. ○ **Friday calendar trigger pending** — `StartCalendarInterval` itself has not yet fired naturally. Same mechanism is in production for auto-archive and auto-dream for months, so risk is low; pending only as a final no-touch validation.
 
-Pass criterion (mostly met): at least one hypothesis emitted unattended, with the critic gate visibly rejecting weak candidates. The `walk-auto` log entry shows candidate-by-candidate verdicts (`SURVIVED → hyp-id` or `REJECTED: <reason>`) — this *is* the visible intermediate output that satisfies §11.4 phase separation auditability.
+Pass criterion under round-1 prompt: met by the 2026-05-29 kickstart (hypothesis emitted unattended; critic gate visibly rejected weak candidates with `REJECTED: <reason>`).
+
+Pass criterion under round-2 prompt: pending. Requires a fresh run that emits `inventory:` lines for each corpus item alongside the existing `candidates:` verdicts, so that every phase (Inventory / Roam / Critique) leaves a visible artifact per §11.4 / §18 item 5.
 
 ### 11.3 L3 — surfacing mode (tested 2026-05-29)
 
