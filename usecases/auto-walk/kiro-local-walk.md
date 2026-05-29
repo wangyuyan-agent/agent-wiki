@@ -329,7 +329,7 @@ Steps:
 
 Pass criterion: at least one hypothesis with all required fields, surfaced cleanly. Achieved: 5 hypotheses + 1 noteworthy (R7 self-lock), critic gate rejected a deliberately-planted sensitive-attribute inference (R11).
 
-### 11.2 L2 — Scheduled walk (deployed 2026-05-29; kickstart run observed; Friday calendar trigger pending)
+### 11.2 L2 — Scheduled walk (deployed 2026-05-29; round-1 and round-2 prompts both validated by kickstart; Friday calendar trigger pending)
 
 Goal: weekly auto-walk runs unattended, produces hypotheses without manual prompting.
 
@@ -339,12 +339,17 @@ Steps:
 2. ✓ Added `com.icex.kiro.auto-walk.plist` running **Friday 07:50** (`Weekday 5`); plist itself lives in `dotfiles-ai/kiro/launchd/` (in version control) and is symlinked into `~/Library/LaunchAgents/`.
 3. ✓ Loaded with `launchctl bootstrap "gui/$(id -u)" <plist>` — **not** `launchctl load`, and **not** under `sudo` (LaunchAgent owner must equal the loader).
 4. ✓ **kickstart run 2026-05-29 succeeded under round-1 prompt** (exit 0, ~5m48s, 4 hypotheses + 1 noteworthy, ~44% critic pass rate matching the L1 manual rate). First run exposed and fixed a real bug: launchd does not load `.zshrc`, so `kiro-wrap` had no proxy env and hit a non-Anthropic endpoint without the requested model. The fix (explicit Surge proxy export) was applied to `auto-walk.sh` and back-ported to `auto-dream.sh`. The runner also gained a 3× retry + `walk-error` log line so future failures are visible, not silent.
-5. ○ **First run under round-2 prompt pending** — same day as the kickstart, the protocol and runner gained the `inventory:` log-section requirement (protocol §11.4 / §18 item 5 visible-trace rule). The 2026-05-29 log artifact (`~/.kiro/walks/log.md:46-70`) contains `corpus:`, `seed-note:`, `candidates:`, and `notes:` — sufficient under the round-1 prompt, but missing the `inventory:` section the round-2 prompt now mandates. The INVENTORY phase *did* execute (it's visible in the cron.log conversation stream that day), but it was not persisted to the log artifact. Pending: trigger one more kickstart (or wait for Friday calendar trigger) to validate the round-2 prompt produces the required `inventory:` section.
+5. ✓ **Second kickstart 2026-05-29 21:46 validated round-2 prompt** (exit 0, ~4m25s). All round-2 invariants verified by the produced artifact:
+   - `inventory:` section present, with 5 corpus items × 1-2 lines of key facts each — protocol §11.4 / §18 item 5 visible-trace rule satisfied at the artifact level (not only in the model's transient conversation stream).
+   - All four `hyp-2026-05-29-005..007` and `noteworthy-002` carry sub-file `supporting_refs` (e.g. `topics/memory-system-design.md#架構決策`, `topics/steering-design-guide.md#反模式`) — protocol §9 sub-file-granularity rule honored.
+   - hyp-005's claim cites only facts retrievable from the named refs (no leakage of protocol material) — §11.5 corpus-coverage rule honored.
+   - critic pass rate 3/8 ≈ 38%, in the same band as prior runs (45% / 44%) — gate neither over-loose nor self-locking.
+   - Runner's own `notes:` flagged a meta-observation: noteworthy-routed candidates have recurred across three walks under the same single-source-cross-domain pattern (28 R7, 29-early R5, 29-late R6) — useful for future protocol review, not actioned this run.
 6. ○ **Friday calendar trigger pending** — `StartCalendarInterval` itself has not yet fired naturally. Same mechanism is in production for auto-archive and auto-dream for months, so risk is low; pending only as a final no-touch validation.
 
-Pass criterion under round-1 prompt: met by the 2026-05-29 kickstart (hypothesis emitted unattended; critic gate visibly rejected weak candidates with `REJECTED: <reason>`).
+Pass criterion under round-1 prompt: met by the 2026-05-29 first kickstart.
 
-Pass criterion under round-2 prompt: pending. Requires a fresh run that emits `inventory:` lines for each corpus item alongside the existing `candidates:` verdicts, so that every phase (Inventory / Roam / Critique) leaves a visible artifact per §11.4 / §18 item 5.
+Pass criterion under round-2 prompt: met by the 2026-05-29 21:46 second kickstart — `inventory:` artifact present, sub-file refs used, claim stayed within corpus.
 
 ### 11.3 L3 — surfacing mode (tested 2026-05-29)
 
