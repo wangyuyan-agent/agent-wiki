@@ -387,7 +387,7 @@ The noteworthy escape valve resolves the tension without weakening the critic:
 Schema for a noteworthy entry differs from §9:
 
 ```yaml
-id: hyp-YYYY-MM-DD-NNN
+id: hyp-YYYY-MM-DD-noteworthy-NNN   # current convention
 created: YYYY-MM-DD
 seed: "..."
 status: rejected-but-noteworthy
@@ -402,6 +402,8 @@ human_review_outcome: ""   # filled by reviewer; values: rewrite | archive | lea
 ```
 
 The `confidence`, `impact`, `applies_when`, `never_applies_when`, `disconfirm_if`, and `expires_after_walks` fields from §9 are absent. Noteworthy entries never surface; their per-conversation context fields are meaningless.
+
+The `id` convention is `hyp-YYYY-MM-DD-noteworthy-NNN` to keep the noteworthy ID namespace disjoint from active hypothesis IDs (`hyp-YYYY-MM-DD-NNN`) — without the `-noteworthy-` segment, the two namespaces could collide on the same day. **Legacy artifacts** that predate this convention (e.g. `hyp-2026-05-28-006` in the kiro-local binding, written during the first manual L1 walk) are allowed to remain in place; runners producing new noteworthy entries MUST use the current convention. NNN within each namespace is assigned by scanning existing files for `max(NNN) + 1`; runners must not hard-code `001` for the current day.
 
 Use noteworthy sparingly. If most rejections are flagged noteworthy, the critic gate is too strict and should be tuned, not bypassed.
 

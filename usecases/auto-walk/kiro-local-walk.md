@@ -127,9 +127,16 @@ The runner mirrors `auto-dream.sh` exactly: **shell only assembles one prompt an
    - PICK one propositional seed (§11.2) — Kiro does the near/middle/far
      sampling itself; the shell does not pre-extract excerpts.
    - Run INVENTORY → ROAM → CRITIQUE as labeled phases in one session.
-   - WRITE each surviving hypothesis directly to
-     active/hyp-YYYY-MM-DD-NNN.yaml (schema §9), and each
-     rejected-but-noteworthy candidate to noteworthy/ (schema §11.6).
+   - WRITE each surviving hypothesis to
+     `active/hyp-YYYY-MM-DD-NNN.yaml` (schema §9), and each
+     rejected-but-noteworthy candidate to
+     `noteworthy/hyp-YYYY-MM-DD-noteworthy-NNN.yaml` (schema §11.6).
+     **NNN must be `max(existing NNN for $TODAY) + 1`** scanned from
+     the target directory, never hard-coded from 001. Same-day
+     kickstart + calendar trigger + retry can all coexist; hard-coding
+     001 would silently overwrite prior outputs. Kiro got this right
+     on 2026-05-29 round-2 only by luck (a seed-note hint); rule is
+     now mandatory in the runner prompt.
    - APPEND a walk-auto entry to log.md containing all three required sections per §7 / protocol §18 item 5: `inventory:` (1-2 lines of key facts per corpus item, proving INVENTORY ran), `candidates:` (per-candidate `SURVIVED → hyp-id` or `REJECTED: reason`), and any `noteworthy:` routing.
 3. Call `kiro-wrap chat --no-interactive --trust-all-tools "$PROMPT"`
    once, with HOME pinned to REAL_HOME (kiro-local-memory §8.4).
@@ -345,7 +352,7 @@ Steps:
    - hyp-005's claim cites facts retrievable from the named refs — §11.5 corpus-coverage rule honored after two rounds of review-caught cleanup. Round-3 fix added a missing AutoDream-section ref to cover "index 控 200 行內" and corrected a heading-space typo on a sibling ref. A subsequent round-4 review caught a cascading issue: the topic heading itself had been updated in the same change (adding "2026-05-29 排程修正" to the section title), which broke text-anchor matching for the just-added ref; that ref was then converted to a line-range form (`#L40-L43`) which is robust to heading edits. A sibling typo on hyp-007 (same missing space pattern as hyp-005's) was also fixed in the same pass. Lesson recorded: when refs use heading text as anchor, simultaneously editing the heading breaks the ref — prefer line ranges or copy the post-edit heading verbatim.
    - critic pass rate 3/8 ≈ 38%, in the same band as prior runs (45% / 44%) — gate neither over-loose nor self-locking.
    - Runner's own `notes:` flagged a meta-observation: noteworthy-routed candidates have recurred across three walks under the same single-source-cross-domain pattern (28 R7, 29-early R5, 29-late R6) — useful for future protocol review, not actioned this run.
-6. ○ **Friday calendar trigger pending** — `StartCalendarInterval` itself has not yet fired naturally. Same mechanism is in production for auto-archive and auto-dream for months, so risk is low; pending only as a final no-touch validation.
+6. ○ **Friday calendar trigger pending** — `StartCalendarInterval` itself has not yet fired naturally. Same mechanism is in production for auto-archive and auto-dream for months, so risk is low; pending only as a final no-touch validation. Note: `launchctl print` currently shows `runs = 0 / last exit code = (never exited)` — this is a counter reset from a `bootout / bootstrap` cycle during the plist migration into `dotfiles-ai/kiro/launchd/`, **not** evidence that the round-1/round-2 kickstart runs did not happen (they did, see `walks/log.md` and `scripts/cron.log` entries for 2026-05-29 19:30 and 21:46). The plist still points at the canonical dotfiles location, schedule and exec path are intact.
 
 Pass criterion under round-1 prompt: met by the 2026-05-29 first kickstart.
 
