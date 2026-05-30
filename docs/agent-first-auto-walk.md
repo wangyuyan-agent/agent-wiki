@@ -277,7 +277,7 @@ A portable layout, placed as a peer of `memory/` rather than under it:
     ├── archived/
     │   └── hyp-2026-05-01-002.yaml
     ├── noteworthy/
-    │   └── hyp-2026-05-28-006.yaml
+    │   └── hyp-2026-05-28-noteworthy-001.yaml   # current convention; see §11.6
     └── scripts/
         └── walk-run.sh
 ```
