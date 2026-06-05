@@ -148,6 +148,25 @@ When a hypothesis is confirmed (by user statement, by repeated behavioral eviden
 
 This preserves a hard invariant: every memory item has its own provenance and source date. No memory item is "an old hypothesis."
 
+#### 6.2.1 Lineage separation in the new memory item
+
+The discharge step generates one row, but it carries two distinct provenance fields with different epistemic weight:
+
+- **`Source` (primary, evidential).** Names the corpus items that genuinely support the new fact — the same set as the hypothesis's `supporting_refs`. This is the field that justifies the new row to a future auditor.
+- **`inspired_by` (secondary, lineage).** Names the discharged hypothesis id (e.g. `hyp-2026-05-28-001`). This records *how* the agent came to surface the question, not *why* the answer is true.
+
+These MUST be separate fields. Folding the hypothesis id into `Source` would let the lateral artifact (a guess that survived) impersonate evidence. The §6.1 invariant — "memory says what is, hypothesis says what may be related" — only holds if the lineage trace cannot dress itself up as proof.
+
+#### 6.2.2 User-confirmation discharge: name the real source
+
+A common confirmation path is the user saying "yes, that's right" in conversation. In that case, the *truth-making* event is the user's statement, not the corpus refs the hypothesis happened to cite. The new memory item MUST reflect this honestly:
+
+- `Source: user statement on YYYY-MM-DD`  (the actual event that turned the hypothesis into memory).
+- `corroborating_refs:` MAY enumerate the original `supporting_refs` as further support, but only as corroboration, not as the basis.
+- `inspired_by:` still records the hypothesis id.
+
+Without this discipline, a "user confirmed" memory item can quietly read as if the corpus proved it — which is how the agent's own past speculation, plus a user nod, gets laundered into "the docs say so." The retrieval-side trust calibration (§15.2 of the memory protocol) cannot detect this dressing-up after the fact; only honest authorship at discharge time prevents it.
+
 ### 6.3 Read-only consumption
 
 Auto-Walk reads from:
@@ -248,7 +267,7 @@ Field notes:
 - `id`: stable identifier; date + ordinal is fine.
 - `seed`: the topic that started this walk pass.
 - `claim`: the candidate insight, one to three sentences.
-- `supporting_refs`: pointers into corpus items. Required. Hypotheses without refs are discarded. **Prefer the smallest addressable unit available** (file + heading / anchor / line range); fall back to file-only when the corpus lacks anchors. File-only refs are valid but make audit and discharge harder; runners should be prompted to cite at sub-file granularity when possible.
+- `supporting_refs`: pointers into corpus items. Required. Hypotheses without refs are discarded. **Prefer the smallest addressable unit available** (file + heading / anchor / line range); fall back to file-only when the corpus lacks anchors. **Where the corpus exposes an append-only layer (e.g. `memory/archive/YYYY-MM-DD.md`), prefer anchoring there over mutable layers** (`topics/*.md` get rewritten by future autodream passes, eroding both heading and line anchors over time; archive entries do not move). File-only refs are valid but make audit and discharge harder; runners should be prompted to cite at sub-file granularity *into the most stable available layer* whenever possible.
 - `confidence`: `low | medium | high`. Bias toward `low` and `medium`.
 - `impact`: `add | rewrite`. Determines surfacing eligibility (see §12).
 - `applies_when`: positive triggers. The conversation must look like one of these for the hypothesis to surface in A mode.

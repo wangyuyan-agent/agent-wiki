@@ -18,6 +18,22 @@ In operational terms:
 Collect during work → preserve raw snapshots → distill with AI → maintain a wiki index → retrieve on demand → audit explicitly
 ```
 
+### The deeper purpose: trust calibration
+
+Storing text is the easy part. An LLM agent's storage is already near-perfect and permanent; what it lacks is doubt. The agent has no built-in epistemic gradient telling it which of its own records still deserve belief.
+
+So the real adversary of an agent memory system is not forgetting, and not even staleness — it is the agent's **uncritical trust in its own past records**. A stale fact is dangerous only because the agent believes it without question.
+
+This reframes the whole design. The product of a memory system is not the stored text; it is the **trust-calibration metadata** around each item — its source, its date, its epistemic kind, its status. Those fields are load-bearing structure, not decoration. Every rule below ultimately serves one goal: keep each memory item's believability honestly calibrated. `additive-only` (§4, §14) earns its place only as a carrier of that calibration signal — never as "more is better."
+
+### The deeper purpose: trust calibration
+
+Storing text is the easy part. An LLM agent's storage is already near-perfect and permanent; what it lacks is doubt. The agent has no built-in epistemic gradient telling it which of its own records still deserve belief.
+
+So the real adversary of an agent memory system is not forgetting, and not even staleness — it is the agent's **uncritical trust in its own past records**. A stale fact is dangerous only because the agent believes it without question.
+
+This reframes the whole design. The product of a memory system is not the stored text; it is the **trust-calibration metadata** around each item — its source, its date, its epistemic kind, its status. Those fields are load-bearing structure, not decoration. Every rule below ultimately serves one goal: keep each memory item's believability honestly calibrated. `additive-only` (§4, §14) earns its place only as a carrier of that calibration signal — never as "more is better."
+
 ## 2. Design goals
 
 A good agent memory system should:
@@ -38,14 +54,14 @@ This architecture is not:
 - A replacement for source control, logs, issue trackers, or project docs.
 - A place to store secrets or credentials.
 - A guarantee that all memories are true forever.
-- A system where AI can freely delete or rewrite long-term knowledge without review.
+- A system where AI can freely delete or rewrite long-term `knowledge` without review. (`state` facts are non-destructively superseded — see §4 and §14 — which is *not* deletion: the prior value is retained as history and recoverable from archive.)
 - A single fixed directory layout that every platform must copy exactly.
 
 The protocol matters more than the exact filenames.
 
 ## 4. Core model
 
-Agent memory has three layers and one lifecycle.
+Agent memory has three layers, one lifecycle, and two epistemic kinds.
 
 ### Layers
 
@@ -66,6 +82,31 @@ Topics retain knowledge.
 Conventions stabilize rules.
 Review corrects drift.
 ```
+
+### Epistemic kinds
+
+Every memory item is one of two epistemic kinds. The kind governs how the item may be updated, and it is the single most load-bearing field in the system.
+
+```text
+state     = a current-value fact about the world that can change.
+            (an IP address, a port, a schedule time, a service status, a version)
+            There is one correct current value; old values are superseded, not piled up.
+
+knowledge = a durable lesson, root cause, decision, rationale, or pattern.
+            (why a deployment failed, a debugging heuristic, why a preference was chosen)
+            There is no single "current" value; understanding accumulates.
+```
+
+This is the same line data engineering draws between a current-state table (SCD type-1: overwrite in place) and an event log (SCD type-2: append forever). OpenAI's late-2026 ChatGPT memory rewrite ("going to Singapore" → "went to Singapore" once the date passes) is exactly a `state` supersede done right.
+
+It follows that **`additive-only` is not a universal creed — it is the correct policy for `knowledge`.** For `state`, blind accumulation is the disease, not the cure: ten stale IP addresses buried under `[待清理]` markers are worse than one superseded value with a clean history. Treating every item as append-only over-protects `state` and lets staleness quietly rot the index.
+
+So the two kinds diverge through the rest of the lifecycle:
+
+- `knowledge` → additive; may **cool / demote** over time (lose retrieval weight, get merged) but is never silently deleted (§14, §16).
+- `state` → **non-destructively superseded** when a newer value arrives, under the four constraints in §14.
+
+One hard caution governs the boundary: **when in doubt, treat an item as `knowledge`.** Misclassifying `knowledge` as `state` is an irreversible loss — a hard-won lesson gets overwritten. Misclassifying `state` as `knowledge` only costs some index bloat — a recoverable nuisance. The classifier must be high-precision on `state` and tolerate false negatives. This asymmetry is the same shape as the Auto-Walk surfacing gate (§12.2 there): when unsure, fail safe.
 
 ## 5. Steering vs conventions vs memory
 
@@ -125,9 +166,34 @@ Rules of thumb:
 - If it is mostly history, raw evidence, or rationale, keep it Cold.
 - If no trigger points to it, a Warm topic effectively becomes Cold.
 
-## 7. Portable directory structure
+## 7. Storage interface
 
-A full implementation can use this shape:
+The lifecycle (§4) and the memory-item schema (§9) are the protocol's invariants. The exact directory shape is *not*. Different agent runtimes — local filesystems, PVC-mounted containers, KV stores, embedded databases, hybrid setups — should be able to host this protocol without rewriting it.
+
+To keep the protocol portable, every binding MUST expose a small abstract interface. This mirrors the Auto-Walk corpus interface (§8 of the walk protocol), which is what made walks runnable over notes vaults, reading queues, and research corpora without rewriting the walk lifecycle.
+
+### 7.1 Required capabilities of a storage binding
+
+Any binding that claims to implement this protocol MUST provide the five operations below. The names are notional; what matters is that each operation exists and behaves as described.
+
+1. **Inbox append.** Append a captured item to the hot inbox, in the §9 schema. (Backed by a `memory.md` file, a row in a SQLite table, an append-only log, etc.)
+2. **Archive (durable, append-only).** Move or copy the inbox's accumulated content into a durable, append-only layer keyed by a date or other monotonically advancing identifier. The archive layer MUST NOT be mutated after writing, because §13, §14.2 (state supersede recovery floor), and §9 (preferred `Source` anchor) all depend on its immutability.
+3. **Item store with metadata.** Read and write distilled items keyed by a stable id, carrying the §9 fields (`kind`, `subject`, `Status`, `superseded_by`, `Source`, `Confidence`, source date). Updates to `Status` and `superseded_by` MUST be atomic with respect to autodream's supersede operation (§14.2).
+4. **Index / navigation surface.** Expose a navigable summary (the §10 index role) that returns ordered candidates for a given trigger or topic. May be a Markdown file, a tag table, an embedding-backed nearest-neighbour query — anything that satisfies the trigger semantics in §10.
+5. **Operation log.** Record lifecycle events (`archive`, `autodream`, `supersede`, `cool`, `merge`, `pending-cleanup`, `review`) with timestamps, sufficient for post-hoc audit. The log itself need not be Markdown; it must be replayable.
+
+A binding MAY add capabilities (search, embeddings, encryption, sync), but MUST NOT remove any of the five.
+
+### 7.2 Required guarantees
+
+- **Append-only archive.** Without this, recovery from autodream misjudgments (§14.2) is not possible, and `Source` anchors corrode.
+- **Atomic supersede.** A `state` supersede that updates the prior row's `Status` and adds a new row MUST not leave the store in a state where both rows are simultaneously `active`. (For a filesystem binding, this is achieved by running the operation within a single autodream pass and committing the file atomically.)
+- **Stable item identity.** An item id, once assigned, MUST persist across autodream passes. `superseded_by` and walk discharge back-pointers (§13.1 of the walk protocol) rely on this.
+- **Single writer per binding.** This protocol does not specify a multi-writer model. A binding that crosses runtimes (e.g., a PVC shared between two pods) MUST elect a single writer per autodream pass, or define its own concurrency contract on top.
+
+### 7.3 Reference filesystem layout
+
+A common, fully-conforming filesystem binding looks like this:
 
 ```text
 <agent-home>/
@@ -135,12 +201,12 @@ A full implementation can use this shape:
 └── memory/
     ├── README.md
     ├── conventions.md
-    ├── memory.md
-    ├── log.md
-    ├── index.md
-    ├── archive/
+    ├── memory.md          # capability 1 (inbox append)
+    ├── log.md             # capability 5 (operation log)
+    ├── index.md           # capability 4 (index/navigation)
+    ├── archive/           # capability 2 (durable, append-only)
     │   └── YYYY-MM-DD.md
-    ├── topics/
+    ├── topics/            # capability 3 (item store with metadata)
     │   ├── user-preferences.md
     │   ├── environment.md
     │   ├── workflows.md
@@ -151,7 +217,7 @@ A full implementation can use this shape:
         └── archive-memory.sh
 ```
 
-Minimal implementation:
+Minimal filesystem layout:
 
 ```text
 <agent-home>/
@@ -162,6 +228,8 @@ Minimal implementation:
     ├── index.md
     └── topics/
 ```
+
+Other valid bindings: a PVC-backed setup that swaps `topics/` for a SQLite items table; a hosted runtime that backs the inbox by an event queue and the archive by an object-store bucket. The §4 lifecycle and the §9 schema do not change.
 
 ## 8. File responsibilities
 
@@ -287,32 +355,55 @@ They should not be loaded by default.
 
 ## 9. Memory item format
 
-A memory item should be concise, source-aware, and reusable.
+A memory item must be concise, source-aware, and reusable. Two fields are mandatory on every item — `kind` and `Source` — because they carry the trust-calibration signal (§1).
 
-Recommended minimum format:
+Required minimum format:
 
 ```md
-- [YYYY-MM-DD] <distilled reusable fact or preference>. Source: <session/archive/topic if useful>.
+- [YYYY-MM-DD] (kind) <distilled reusable fact or preference>. Source: <archive/topic/anchor>.
 ```
+
+`kind` is `state` or `knowledge` (§4). `Source` is required, not optional — an item whose provenance cannot be named cannot be audited later, and uncalibrated provenance is exactly the blind-trust failure §1 warns against. This also corrects an inversion: the Auto-Walk protocol already *requires* `supporting_refs` on every hypothesis, yet memory items historically left `Source` optional — the lower-trust artifact was held to a stricter standard than the durable one.
 
 Extended format for higher-risk items:
 
 ```md
 - [YYYY-MM-DD] <fact>
+  - kind: <state | knowledge>                  # required
+  - subject: <stable key>                      # required for state; the thing whose value this is
   - Scope: <global | project | environment | workflow | user preference>
-  - Status: <active | pending-confirmation | stale | 待清理>
-  - Source: <archive/YYYY-MM-DD.md or conversation context>
+  - Status: <active | superseded | stale | pending-cleanup>
+  - superseded_by: <item id/date>              # set when Status = superseded
+  - Source: <archive/YYYY-MM-DD.md#anchor or conversation context>   # required
   - Confidence: <confirmed | observed-once | inferred>
 ```
+
+Field notes:
+
+- `kind` (required): drives the update policy. `state` may be superseded; `knowledge` is additive (§14).
+- `subject` (required for `state`): a stable key naming *what* this is the current value of (e.g. `host:public-ip`, `nightly-job:schedule`). Supersede matches on `subject`, deterministically — never on fuzzy text similarity, which would be unsafe.
+- `Status`: a closed token enum, not free prose. A `[待清理]`-style marker written as prose cannot be processed reliably by a machine; a `pending-cleanup` token can. `superseded` means a newer value exists and this row is retained as history.
+- `Source` (required): prefer the **smallest stable addressable unit**, and **prefer anchoring into an append-only layer** (e.g. `archive/YYYY-MM-DD.md`) over a mutable one (`topics/X.md#heading`). Mutable files get rewritten by later distillation, so any anchor into them — heading *or* line range — corrodes over time. The archive does not move. (This is why a rigid `#L<start>-<end>` requirement is *not* mandated: line numbers drift at least as often as headings; the durable fix is anchoring the immutable layer, not picking an addressing scheme.)
 
 Examples:
 
 ```md
-- [2026-05-11] In OpenAB + Codex on k3s, mutable `AGENTS.md` should live on PVC rather than a read-only ConfigMap. Source: archive/2026-05-11.md.
+- [2026-05-11] (knowledge) In OpenAB + Codex on k3s, mutable `AGENTS.md` should live on PVC rather than a read-only ConfigMap. Source: archive/2026-05-11.md.
 ```
 
 ```md
-- [2026-05-11] User prefers English responses, but may discuss architecture in Chinese.
+- [2026-05-21] (state) Local default model is `<model-id-A>`.
+  - kind: state
+  - subject: local:default-model
+  - Scope: environment
+  - Status: superseded
+  - superseded_by: [2026-06-01]
+  - Source: archive/2026-05-21.md
+```
+
+```md
+- [2026-05-11] (knowledge) User prefers English responses, but may discuss architecture in Chinese.
+  - kind: knowledge
   - Scope: user preference
   - Status: active
   - Source: explicit user preference
@@ -328,7 +419,7 @@ Recommended `memory/index.md` structure:
 
 ## Recent Activity
 
-- [YYYY-MM-DD] Short summary → topics/example.md
+- [YYYY-MM-DD] (kind) Short summary → topics/example.md
 
 ## Topic Map
 
@@ -341,7 +432,8 @@ Recommended `memory/index.md` structure:
 
 ## Pending Cleanup
 
-- [待清理] ...
+Items whose `Status` is `pending-cleanup` (a closed token, not free-form prose). Each entry carries the same metadata as a §9 item, including `kind` and `Source`. A `pending-cleanup` `state` item with a known successor SHOULD additionally carry `superseded_by` so that automated maintenance can resolve it without human review (§14).
+
 ```
 
 Index rules:
@@ -350,7 +442,8 @@ Index rules:
 - Include topic paths and trigger descriptions.
 - Keep recent activity short, for example the latest 10 items.
 - Do not paste archive content back into the index.
-- Mark stale items as `[待清理]` instead of deleting automatically.
+- Use the closed `Status` enum from §9 (`active | superseded | stale | pending-cleanup`) — never invent free-form markers like `[待清理]` in prose form, which a machine cannot reliably parse and which is the empirical root cause of cleanup-marker bloat.
+- Stale `state` items are non-destructively superseded (§14), not piled into Pending Cleanup. Pending Cleanup is reserved for `knowledge` items awaiting human review (§16) and for `state` items whose successor is not yet known.
 
 ## 11. Topic page format
 
@@ -382,11 +475,11 @@ One or two paragraphs that tell the agent when this topic matters.
 
 ## Facts and lessons
 
-- [YYYY-MM-DD] Distilled reusable fact with source date.
+- [YYYY-MM-DD] (kind) Distilled reusable fact. Source: archive/YYYY-MM-DD.md.
 
 ## Pending cleanup
 
-- [待清理] Item that may be stale.
+Entries whose `Status` is `pending-cleanup` per §9 (no free-form `[待清理]` prose). Use `superseded_by` to chain a `state` row to its successor.
 ```
 
 ## 12. Capture protocol
@@ -408,11 +501,12 @@ Capture rules:
 
 1. Compress the content into a reusable conclusion.
 2. Append it to `memory/memory.md` first.
-3. Include date and source when useful.
-4. Do not copy full chat logs.
-5. Do not treat one-time emotion as long-term knowledge.
-6. Do not overwrite old knowledge directly.
-7. Prefer add-first, cleanup-later.
+3. Tag every captured item with its `kind` (`state` or `knowledge`, §4). When in doubt, tag it as `knowledge` — misclassification of knowledge as state is irreversible (§4); the reverse is only nuisance.
+4. Include date and `Source` (required, §9).
+5. Do not copy full chat logs.
+6. Do not treat one-time emotion as long-term knowledge.
+7. Do not overwrite `knowledge` directly. `state` is updated by the autodream supersede protocol (§14), not by raw inbox overwrites.
+8. Prefer add-first; cleanup of `state` is owned by autodream (§14); cleanup of `knowledge` is reviewed by humans (§16).
 
 ## 13. Archive protocol
 
@@ -437,11 +531,14 @@ Possible schedulers:
 | GitHub | scheduled workflow |
 | Manual | agent command or skill |
 
-The reason to archive before AI distillation is simple: raw memory should be preserved even if the agent fails, hallucinates, or produces a bad summary.
+The reason to archive before AI distillation is twofold:
+
+1. Raw memory must be preserved even if the agent fails, hallucinates, or produces a bad summary.
+2. The archive layer is **append-only**, which makes it the durable substrate for two later guarantees: it is the recovery floor for autodream's `state` supersede operations (§14), and it is the preferred anchor target for `Source` references (§9). Mutating the archive after the fact breaks both.
 
 ## 14. Autodream protocol
 
-Autodream is the AI distillation stage.
+Autodream is the AI distillation stage. It operates on the two epistemic kinds (§4) under different rules — and that asymmetry is the heart of this protocol. Treating both kinds with one universal `additive-only` rule is what causes `Pending Cleanup` to grow without bound; treating both with one universal `synthesize-and-rewrite` rule is what causes hard-won lessons to disappear silently. Autodream takes the middle path: **selective supersede** for `state`, **additive plus cooling** for `knowledge`.
 
 Inputs:
 
@@ -454,42 +551,73 @@ Outputs:
 
 - Updated `index.md`
 - Updated `topics/*.md`
-- `log.md` entry
+- `log.md` entry, with explicit records of any `supersede` and `cool` operations
 
-Rules:
+### 14.1 General rules
 
-- Incremental only.
-- Do not delete automatically.
-- Mark obsolete items as `[待清理]`.
-- Preserve source dates.
-- Do not invent unsupported facts.
-- Do not promote one-off incidents into universal rules.
-- Keep the index concise.
-- Split or update topics when useful.
+- Preserve `Source` and source dates on every item touched.
+- Do not invent facts not present in the archive.
+- Do not promote a one-off incident into a universal rule unless explicitly confirmed.
+- Keep `index.md` concise.
+- Split or merge topics when useful.
+- Never write to `conventions.md` or to `memory/memory.md`. Autodream reads `memory.md`'s already-archived form, never the live inbox.
 
-Prompt template:
+### 14.2 `state` items: non-destructive supersede
+
+When today's archive contains a new value for an existing `state` `subject` (§9), autodream MAY supersede the prior value — under all four of the following constraints. Missing any one collapses this back to "blind rewrite," which is exactly what §4 warns against.
+
+1. **Non-destructive.** The prior row is not deleted. Its `Status` is updated to `superseded`, and a `superseded_by` pointer is added. The newer row appears as a fresh entry with its own date and `Source`. Recovery from a misjudgment is always possible — the archive (an immutable layer, §13) holds the original, and the prior row is still in `index.md`/`topics/*.md` as history. This is the SCD type-2 shape, not type-1.
+2. **When in doubt, do not supersede (疑則從加).** Misclassifying a `knowledge` lesson as a `state` value is irreversible in *interpretation*; the text survives, but the lesson loses its weight. Therefore the supersede classifier must be high-precision and tolerate false negatives — when ambiguous, leave both rows as additive entries. This is the same asymmetric-threshold pattern as Auto-Walk §12.2: a missed cleanup is recoverable; a wrong supersede is not.
+3. **Match on the formal `kind` field, not on text similarity.** Both rows must carry `kind: state`; supersede is forbidden between rows of unmatched kinds, and forbidden when `kind` is absent. Inferring `state`-ness from prose is the failure mode that turns this into "AI silently rewriting knowledge."
+4. **Match on `subject` deterministically.** Two `state` rows are subject to supersede iff their `subject` keys are equal as strings. No fuzzy matching, no embedding similarity, no LLM judgment. If the runner cannot find a `subject` key, it cannot supersede.
+
+Each supersede MUST be logged in `log.md` with the prior `subject`, the prior date/value, and the new date/value, so the operation is auditable post-hoc.
+
+### 14.3 `knowledge` items: additive, with cooling
+
+`knowledge` items are not superseded. Understanding accumulates; new lessons add to old ones, sometimes contradicting them, and that contradiction is itself information (Reconcile, §15.2).
+
+Two non-deletion mechanisms govern `knowledge` over time:
+
+- **Cooling (demotion):** an item that has not been engaged for a long span MAY have its retrieval weight reduced — for example, demoted from `index.md` summary to a deeper position in a topic page, or from a topic's "Facts and lessons" section to a "Historical lessons" appendix. The item is not removed; it is moved further from the hot path.
+- **Merging:** several near-duplicate lessons MAY be folded into one consolidated entry whose `Source` enumerates all original archive references. The consolidated entry's date is the most recent member's date.
+
+Neither cooling nor merging is deletion. Both are reversible by reading the archive. Both must log a `cool` or `merge` entry to `log.md`.
+
+`knowledge` items whose veracity is itself in doubt — not stale, but possibly wrong — get `Status: pending-cleanup` and wait for human review (§16). Autodream does not attempt to refute `knowledge` on its own.
+
+### 14.4 Prompt template
 
 ```md
-You are maintaining an agent memory system.
+You are maintaining an agent memory system whose central rule is asymmetric:
+- `state` items may be superseded under the four constraints in §14.2.
+- `knowledge` items are additive; you MAY cool or merge them but never delete.
+- When in doubt about the kind, treat the item as `knowledge`.
 
 Read:
-- `memory/archive/{{date}}.md`
+- `memory/archive/{{date}}.md`   (today's raw input — your only source of new facts)
 - `memory/index.md`
 - relevant `memory/topics/*.md`
 
 Tasks:
-1. Extract only long-term reusable knowledge.
-2. Update `memory/index.md` as a navigation index, not a full summary.
-3. Update or create topic pages when needed.
-4. Preserve source dates.
-5. Do not delete existing knowledge. Mark stale items as `[待清理]`.
-6. Do not invent facts not supported by archive.
-7. Do not turn one-time incidents into permanent rules unless explicitly confirmed.
-8. Keep `index.md` concise.
-9. Append an autodream entry to `memory/log.md`.
+1. Extract long-term reusable items from the archive. Tag every new item's `kind` and `Source` (required, §9). Use `subject` for `state` items.
+2. For each new `state` item:
+   a. Look for an existing item with the same `subject` AND `kind: state`.
+   b. If found, mark the existing row `Status: superseded`, set `superseded_by` to the new row, and add the new row dated today.
+   c. Log the supersede (subject, prior date/value, new date/value) in `memory/log.md`.
+   d. Never delete the prior row. Never supersede across kinds. Never supersede on text similarity.
+3. For each new `knowledge` item: append it. Do not overwrite. If it appears to refute an existing `knowledge` item, set the existing item's `Status: pending-cleanup` and append the new one — do not delete.
+4. Cooling pass (optional, low-risk): identify `knowledge` items unused for a long span and demote their position. Do not delete; log each demotion.
+5. Resolve any `pending-cleanup` `state` items whose `superseded_by` is now known.
+6. Update `index.md` as a navigation index, not a content dump. Keep it concise.
+7. Append an autodream entry to `memory/log.md` summarizing supersedes, cools, merges, and additions.
 ```
 
 ## 15. Retrieval protocol
+
+Retrieval has two halves: *when* to read (§15.1, traditional retrieval-trigger logic), and *how skeptically* to read once a memory item is in context (§15.2, the trust-calibration discipline). The second half is where most retrieval protocols silently fail. An agent's blind trust in its own past records (§1) lives precisely in the gap between "I retrieved this row" and "I am about to act on what it says."
+
+### 15.1 When to retrieve
 
 Retrieval order:
 
@@ -505,7 +633,7 @@ Agents should not read all memory by default.
 Read memory when:
 
 - The task references previous work.
-- The user says “as before” or asks about prior decisions.
+- The user says "as before" or asks about prior decisions.
 - The task touches known environment or workflow areas.
 - The agent needs user preferences.
 - The task is a memory review, migration, or debugging task.
@@ -516,20 +644,56 @@ Do not read memory when:
 - Memory is unlikely to change the answer.
 - The only available memory is raw archive and there is no audit need.
 
+### 15.2 How skeptically to read (Hot rule, mandatory)
+
+Read every retrieved item *as testimony, not fact*. The text is what was once captured; it is not automatically what is true now. The agent MUST apply the following discipline whenever it retrieves a memory item:
+
+1. **Read the metadata first.** `kind`, `Source`, `Status`, source date, and `Confidence` (§9) are what calibrate the item. An item without these — or with very old date and no recent corroboration — is not "false," but it is not load-bearing either. Down-weight it.
+2. **Down-weight stale and superseded.** A row whose `Status` is `superseded`, `stale`, or `pending-cleanup` MUST not be used as a current factual basis. It MAY be cited as historical context if explicitly framed as such. For a `superseded` `state` row, follow the `superseded_by` pointer to the live row.
+3. **Prefer the most recent `state` row by `subject`.** When two `state` rows share a `subject` and have not been reconciled by autodream, treat the older one as `superseded` and surface the discrepancy to the user (Reconcile, §15.2.4).
+4. **Reconcile before acting.** If two retrieved items appear to contradict each other on the same subject — whether by `subject` collision in `state`, or by direct contradiction in `knowledge` — the agent MUST surface the conflict in its response, not silently pick one. Suppressing a conflict is the dominant blind-trust failure mode. Conflict resolution is a first-class step, not a fallback.
+5. **Honour the asymmetry between memory and walk.** Auto-Walk hypotheses are already read with explicit suspicion (zero-trust gating, §12 of the walk protocol). This protocol now applies the *same* suspicion to memory itself. The previous gap — walks doubt themselves, memory does not — is the exact unguarded seam in which blind-trust failures live.
+
+This is a Hot rule. It belongs in steering or conventions and SHOULD be loaded on every session, not derived per task.
+
+#### 15.2.1 Reconcile output shape
+
+When the agent surfaces a conflict, it does so explicitly, with all rows visible and dated:
+
+```md
+Conflict on `subject: <key>`:
+  - [date-A] (kind) value-A. Source: ...   ← `Status: superseded`
+  - [date-B] (kind) value-B. Source: ...   ← currently `active`
+
+Acting on [date-B]'s value. The earlier row is retained as history.
+If the earlier row should be the current truth, ask me to reconcile.
+```
+
+For `knowledge` contradictions, both items remain `active` until human review (§16), and the agent's response cites both rather than picking. The user's choice to act on one is what discharges the conflict, not the agent's silent inference.
+
 ## 16. Review protocol
+
+Manual review is a **safety net**, not the primary garbage collector. Routine staleness — `state` superseding, `knowledge` cooling, `pending-cleanup` resolution for `state` — is owned by autodream (§14). Review exists for the cases autodream cannot or must not handle on its own:
+
+- `knowledge` items in `pending-cleanup` (autodream marks; only humans clear).
+- Items that autodream's classifier was unsure about and left as additive.
+- Cross-topic conflicts and duplicates that need editorial judgment.
+- Steering/conventions/memory boundary violations.
+- Schema drift (items missing `kind` or `Source`; legacy `[待清理]` prose markers that predate §9).
 
 A manual `review memory` workflow should:
 
 1. Check whether `index.md` is too long.
-2. Inspect `[待清理]` and `[待确认]` items.
-3. Find duplicate or conflicting topic entries.
+2. Inspect items whose `Status` is `pending-cleanup` (per §9 token enum), and any legacy free-form `[待清理]`/`[待确认]` markers awaiting migration.
+3. Find duplicate or conflicting topic entries; treat conflicts per §15.2 (Reconcile).
 4. Check steering/memory boundary violations.
 5. Check whether archive files were not distilled.
-6. Verify source dates.
-7. Identify missing triggers for important topics.
-8. Propose cleanup before deleting anything.
+6. Verify `Source` and source dates are present (both required by §9).
+7. Verify each item carries a `kind`; classify any legacy items missing it.
+8. Identify missing triggers for important topics.
+9. Propose cleanup before any destructive change.
 
-Review should produce a plan before destructive changes.
+Review should produce a plan before destructive changes. The default action on any ambiguous item is to retain it and lower its retrieval weight (cooling, §14.3), not to delete it.
 
 ## 17. Promotion path
 
@@ -583,11 +747,15 @@ Criteria:
 | Raw chat archive | Memory becomes unreadable | Capture distilled conclusions only |
 | Index becomes content dump | Agent cannot find triggers | Keep index as navigation |
 | Topic without trigger | Topic is never read | Add trigger in index |
-| AI deletes useful knowledge | Lost memory | Additive autodream; mark stale before deletion |
+| AI deletes useful knowledge | Lost memory | Non-destructive supersede for `state` (§14.2); additive + cooling for `knowledge` (§14.3); archive as recovery floor |
+| **Blind trust in self-records** | Agent acts on stale or contradictory memory as if current | §15.2 retrieval discipline: read metadata first, down-weight `superseded`/`stale`, surface conflicts via Reconcile |
+| **Cleanup-marker bloat** (`[待清理]` accumulating without ever being cleared) | Index fills with unresolved markers; signal-to-noise drops | Closed `Status` token enum (§9); `state` cleared by autodream supersede (§14.2); `knowledge pending-cleanup` resolved by review (§16) |
+| **`knowledge` misclassified as `state`** | Hard-won lesson silently overwritten by a later "value" | High-precision classifier with false-negative tolerance (§4); supersede gated on formal `kind` field and exact `subject` match, never text similarity (§14.2) |
 | One incident becomes permanent rule | Overgeneralized behavior | Promote to steering only after review |
 | Archive not distilled | Knowledge stays hidden | Log archive/autodream status |
-| Duplicate rules | Contradictions | Single source of truth |
+| Duplicate rules | Contradictions | Single source of truth; surface via Reconcile (§15.2) |
 | Secrets in memory | Security leak | Never store credentials or tokens |
+| Mutable-anchor `Source` corrosion | `Source` references break as mutable files get rewritten by later distillation | Prefer anchoring `Source` into the append-only archive layer (§9, §13) |
 
 ## 19. Agent-specific mapping
 
@@ -639,15 +807,18 @@ Concrete implementations of this architecture:
 
 ## 23. Final rule
 
-Agent-first memory is not a file. It is a pipeline:
+Agent-first memory is not a file. It is a pipeline whose product is calibrated trust:
 
 ```text
 Hot controls behavior.
 Conventions stabilize rules.
-Inbox captures.
-Archive preserves.
-Autodream distills.
-Index navigates.
+Inbox captures, with kind.
+Archive preserves, append-only.
+Autodream distills — supersedes `state`, accumulates `knowledge`.
+Index navigates with trust signals visible.
 Topics retain knowledge.
-Review corrects drift.
+Retrieval reads skeptically, surfaces conflicts.
+Review corrects drift; humans hold the deletion key.
 ```
+
+The adversary is not forgetting. It is the agent's blind trust in its own past records. Every field on every item — `kind`, `Source`, `Status`, source date — exists to keep that trust honestly calibrated. Lose the calibration and `additive-only` is no longer a memory system; it is a hoard.
