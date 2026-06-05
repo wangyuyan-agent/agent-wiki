@@ -528,10 +528,12 @@ A hypothesis leaves `active/` through one of four paths.
 
 When a hypothesis is confirmed by explicit user statement or by repeated behavioral evidence:
 
-1. Generate a new atomic memory item that states the fact independently. The memory item cites the corpus items that support it, not the hypothesis.
+1. Generate a new atomic memory item that states the fact independently. The item carries `inspired_by: <this hypothesis id>` (lineage, secondary). The `Source` (primary, evidential) is chosen by which confirmation path applied:
+   - **User-statement confirmation** → `Source: user statement on YYYY-MM-DD`. The corpus refs that the hypothesis happened to cite MAY appear as `corroborating_refs`, but MUST NOT be promoted into `Source`. Doing so would silently dress the agent's prior speculation as "the corpus said so" — the laundering pattern §6.2.2 forbids.
+   - **Behavioral-evidence confirmation** → `Source` cites the corpus items that support the fact. The hypothesis is named only via `inspired_by`, never as `Source` (§6.2 invariant).
 2. Append the new memory item through the ordinary capture protocol (`memory/memory.md`).
 3. Move the hypothesis file to `walks/discharged/`.
-4. Log a `discharge` event in `walks/log.md` with a back-pointer from the discharged hypothesis to the new memory item.
+4. Log a `discharge` event in `walks/log.md` with a back-pointer from the discharged hypothesis to the new memory item's id.
 
 This preserves the hard invariant: memory items have first-class provenance and are not "promoted hypotheses."
 
