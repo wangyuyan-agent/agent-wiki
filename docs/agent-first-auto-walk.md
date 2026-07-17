@@ -320,7 +320,7 @@ Folder semantics:
 
 `log.md` records walk events: `walk-start`, `walk-emit`, `surface`, `surface-ignored`, `surface-engaged`, `discharge`, `reject`, `archive`, `noteworthy`.
 
-`log.md` is Markdown by design — readable as a narrative trace during L1/L2. When L4 (automated decay and feedback) becomes active, a structured sidecar (e.g., `walks/runs/<date>-record.yaml`) MAY be emitted alongside `log.md` for machine parsing. The narrative log and the structured sidecar are not mutually exclusive.
+`log.md` is Markdown by design — readable as a narrative trace during `auto-walk:L1`/`auto-walk:L2`. When `auto-walk:L4` (automated decay and feedback) becomes active, a structured sidecar (e.g., `walks/runs/<date>-record.yaml`) MAY be emitted alongside `log.md` for machine parsing. The narrative log and the structured sidecar are not mutually exclusive.
 
 Placing `walks/` as a peer of `memory/` (not as `memory/walks/`) reinforces the §6.1 invariant: a hypothesis is a lateral artifact, not a sub-product of memory.
 
@@ -431,7 +431,7 @@ human_review_outcome: ""   # filled by reviewer; values: rewrite | archive | lea
 
 The `confidence`, `impact`, `applies_when`, `never_applies_when`, `disconfirm_if`, and `expires_after_walks` fields from §9 are absent. Noteworthy entries never surface; their per-conversation context fields are meaningless.
 
-The `id` convention is `hyp-YYYY-MM-DD-noteworthy-NNN` to keep the noteworthy ID namespace disjoint from active hypothesis IDs (`hyp-YYYY-MM-DD-NNN`) — without the `-noteworthy-` segment, the two namespaces could collide on the same day. **Legacy artifacts** that predate this convention (e.g. `hyp-2026-05-28-006` in the kiro-local binding, written during the first manual L1 walk) are allowed to remain in place; runners producing new noteworthy entries MUST use the current convention. NNN within each namespace is assigned by scanning existing files for `max(NNN) + 1`; runners must not hard-code `001` for the current day.
+The `id` convention is `hyp-YYYY-MM-DD-noteworthy-NNN` to keep the noteworthy ID namespace disjoint from active hypothesis IDs (`hyp-YYYY-MM-DD-NNN`) — without the `-noteworthy-` segment, the two namespaces could collide on the same day. **Legacy artifacts** that predate this convention (e.g. `hyp-2026-05-28-006` in the kiro-local binding, written during the first manual `auto-walk:L1` walk) are allowed to remain in place; runners producing new noteworthy entries MUST use the current convention. NNN within each namespace is assigned by scanning existing files for `max(NNN) + 1`; runners must not hard-code `001` for the current day.
 
 Use noteworthy sparingly. If most rejections are flagged noteworthy, the critic gate is too strict and should be tuned, not bypassed.
 
@@ -675,7 +675,7 @@ The protocol is identical. Only the runner, pool path, and surfacing wiring vary
 | `auto-walk:L3` | Surfacing | A surfacing target is wired: gated A mode where hooks exist, or user-pulled C/report fallback where they do not. |
 | `auto-walk:L4` | Feedback loop | Negative feedback decay, discharge protocol, muting, and expiration all automated. |
 
-Start at `auto-walk:L0`. Individual capabilities may be tested in isolation, but conformance claims are cumulative: an observed L3-style surface does not establish `auto-walk:L3` while required L2 cadence remains unverified.
+Start at `auto-walk:L0`. Individual capabilities may be tested in isolation, but conformance claims are cumulative: an observed `auto-walk:L3`-style surface does not establish `auto-walk:L3` while required `auto-walk:L2` cadence remains unverified.
 
 ## 18. Validation checklist
 

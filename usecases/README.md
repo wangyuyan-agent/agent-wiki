@@ -43,9 +43,12 @@ Each use case header MUST include:
 - `Conformance`
 - `Validation scope`
 - `Reproducibility`
+- `Level namespace`
 - `Last reviewed`
 
-Every use case SHOULD state **What this proves** and **What this does not prove**, or equivalent headings. Proposed behavior must not be written as observed behavior.
+`Level namespace` identifies the protocol-local capability ladder used by the binding for routing and validation. It does not redefine that ladder or make bare level tokens portable; prose and conformance claims MUST still use qualified tokens such as `auto-walk:L3`.
+
+Every use case SHOULD state **What this evidence supports** and **What it does not establish**, or evidence-calibrated equivalent headings. A heading MUST NOT claim more than the declared evidence label: design examples describe proposed contributions, source-inspected cases describe inspected structure, and run-reported cases attribute observations to the cited report. Proposed behavior must not be written as observed behavior.
 
 ## Conformance labels
 

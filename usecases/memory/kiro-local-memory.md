@@ -6,6 +6,7 @@
 - Conformance: `mapped` — lifecycle evidence maps through `memory:L4`; the current item schema was not revalidated
 - Validation scope: deployed local archive/autodream workflow and review path; not re-executed during the 2026-07-17 metadata review
 - Reproducibility: `partial` — architecture and procedures are documented; exact local scripts are not included here
+- Level namespace: `memory`
 - Last reviewed: 2026-07-17
 
 ## 1. Context

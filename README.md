@@ -119,7 +119,8 @@ Advanced composition:
 - Give every protocol a stable id, version, maturity, evidence scope, level namespace, and review date.
 - Use qualified levels in cross-document references, such as `memory:L5` rather than bare `L5`.
 - Give every use case a structured evidence label and explicit validation scope.
-- State what a use case proves and what it does not prove.
+- State what the declared evidence supports and what it does not establish.
+- Treat closed vocabulary tokens and their normative meanings in `protocols.yaml` as canonical. Reader-facing summaries MAY repeat them for local comprehension, but MUST preserve the same tokens and MUST be updated in the same change as the manifest.
 - Include context, source dates, and provenance when useful.
 - Do not commit secrets, credentials, or raw chat logs.
 - Avoid placeholder files.

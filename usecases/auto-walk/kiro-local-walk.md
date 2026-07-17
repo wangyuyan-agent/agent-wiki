@@ -129,7 +129,7 @@ A weekly script that mirrors the `auto-dream.sh` pattern.
 
 ### 6.2 Steps
 
-The runner mirrors `auto-dream.sh` exactly: **shell only assembles one prompt and makes one `kiro-wrap chat` call. Kiro itself reads the corpus, runs the three passes, and writes the output files** — the same way auto-dream lets the model write `index.md` rather than having the shell parse anything. L1/L3 testing proved Kiro reads and writes `walks/` files reliably, so there is no reason for the shell to touch YAML.
+The runner mirrors `auto-dream.sh` exactly: **shell only assembles one prompt and makes one `kiro-wrap chat` call. Kiro itself reads the corpus, runs the three passes, and writes the output files** — the same way auto-dream lets the model write `index.md` rather than having the shell parse anything. The observed `auto-walk:L1` and `auto-walk:L3` tests showed that Kiro read and wrote `walks/` files reliably in those bounded runs, so there is no reason for the shell to touch YAML.
 
 ```text
 1. Skip if `topics/` has fewer than 3 files (logs a skip event).
@@ -155,7 +155,7 @@ The runner mirrors `auto-dream.sh` exactly: **shell only assembles one prompt an
    once, with HOME pinned to REAL_HOME (kiro-local-memory §8.4).
 ```
 
-Decay / expiration / discharge are **not** in the L2 script — that is L4. The runner only *generates*. While the corpus is small, monotonic growth of `active/` is harmless; a human `review walks` (§12) handles pruning until L4 automates it.
+Decay / expiration / discharge are **not** in the `auto-walk:L2` script — that is `auto-walk:L4`. The runner only *generates*. While the corpus is small, monotonic growth of `active/` is harmless; a human `review walks` (§12) handles pruning until `auto-walk:L4` automates it.
 
 The three passes (INVENTORY / ROAM / CRITIQUE) are labeled phases **inside the single prompt**, executed by Kiro in one session — not three shell calls. The single-pass-shortcut failure (§11.4 / §15 of protocol) is skipping straight to conclusions without the INVENTORY warm-up and CRITIQUE gate; it has nothing to do with how many times the shell invokes the wrapper.
 
@@ -267,7 +267,7 @@ If no turn-level hook exists:
   - This is acceptable. The protocol's §12.1 names C (explicit + meta) as a peer to A.
 ```
 
-The first L3 testing milestone is to determine which branch applies for the current Kiro runtime (see §11 below).
+The first `auto-walk:L3` testing milestone is to determine which branch applies for the current Kiro runtime (see §11 below).
 
 ### 8.3 Surface side-note format
 
@@ -358,7 +358,7 @@ Steps:
 1. ✓ Wrote `scripts/auto-walk.sh` per §6.3 — single prompt to `kiro-wrap chat`, three labeled phases inside it, Kiro writes the files itself.
 2. ✓ Added a de-identified launchd job running **Friday 07:50** (`Weekday 5`); its plist lives in the private automation repository and is symlinked into `~/Library/LaunchAgents/`.
 3. ✓ Loaded with `launchctl bootstrap "gui/$(id -u)" <plist>` — **not** `launchctl load`, and **not** under `sudo` (LaunchAgent owner must equal the loader).
-4. ✓ **kickstart run 2026-05-29 succeeded under round-1 prompt** (exit 0, ~5m48s, 4 hypotheses + 1 noteworthy, ~44% critic pass rate matching the L1 manual rate). First run exposed and fixed a real bug: launchd does not load `.zshrc`, so `kiro-wrap` lacked the required proxy environment and reached the wrong upstream endpoint. The fix (explicit proxy environment in the scheduled script) was applied to `auto-walk.sh` and back-ported to `auto-dream.sh`. The runner also gained a 3× retry + `walk-error` log line so future failures are visible, not silent.
+4. ✓ **kickstart run 2026-05-29 succeeded under round-1 prompt** (exit 0, ~5m48s, 4 hypotheses + 1 noteworthy, ~44% critic pass rate matching the `auto-walk:L1` manual rate). First run exposed and fixed a real bug: launchd does not load `.zshrc`, so `kiro-wrap` lacked the required proxy environment and reached the wrong upstream endpoint. The fix (explicit proxy environment in the scheduled script) was applied to `auto-walk.sh` and back-ported to `auto-dream.sh`. The runner also gained a 3× retry + `walk-error` log line so future failures are visible, not silent.
 5. ✓ **Second kickstart 2026-05-29 21:46 validated round-2 prompt** (exit 0, ~4m25s). All round-2 invariants verified by the produced artifact:
    - `inventory:` section present, with 5 corpus items × 1-2 lines of key facts each — protocol §11.4 / §18 item 5 visible-trace rule satisfied at the artifact level (not only in the model's transient conversation stream).
    - All four `hyp-2026-05-29-005..007` and `noteworthy-002` carry sub-file `supporting_refs` (e.g. `topics/memory-system-design.md#架構決策`, `topics/steering-design-guide.md#反模式`) — protocol §9 sub-file-granularity rule honored.
@@ -390,7 +390,7 @@ Goal: determine which surfacing mode Kiro can actually support, and verify execu
 2. Kiro's semantic triggering is precise: discussing the auto-walk *concept* (stage 2) does not trigger a *surface*. The two are cleanly separated.
 3. A2's zero-false-trigger property (stage 3) is exactly the §5.1 / §12 "default silent, prefer false negatives" safety. It is a feature, not a limitation.
 
-**Adopted strategy: C mode with C-meta extension** (protocol §12.1). The SKILL.md trigger set was extended from explicit walk requests to also include divergence-request language ("还有别的角度吗", "我是不是漏了什么", "换个思路"). Stage 3 proves executive turns do not contain such language, so C-meta inherits the zero-false-trigger safety. Stage 4 verified the extension live: appending "有没有什么我没考虑到的角度?" to the same prompt that stayed silent in stage 2 now surfaces — and the agent placed the walk notes as a labeled "旁支" *after* a complete main answer, honoring §5.5 ADD-not-REWRITE without being told. True A mode (Hot rule forcing per-turn `active/` checks) was explicitly rejected: it would sacrifice the stage-3 zero-false-trigger property for marginal automation.
+**Adopted strategy: C mode with C-meta extension** (protocol §12.1). The SKILL.md trigger set was extended from explicit walk requests to also include divergence-request language ("还有别的角度吗", "我是不是漏了什么", "换个思路"). Stage 3 showed that the tested executive turn contained no such language; in that bounded test, C-meta preserved the zero-false-trigger behavior. Stage 4 verified the extension live: appending "有没有什么我没考虑到的角度?" to the same prompt that stayed silent in stage 2 now surfaces — and the agent placed the walk notes as a labeled "旁支" *after* a complete main answer, honoring §5.5 ADD-not-REWRITE without being told. True A mode (Hot rule forcing per-turn `active/` checks) was explicitly rejected: it would sacrifice the stage-3 zero-false-trigger property for marginal automation.
 
 ### 11.4 `auto-walk:L4` — Feedback loop (deferred)
 
@@ -416,14 +416,14 @@ Review produces a plan before any destructive change. Files are moved between su
 
 ## 13. Pitfalls
 
-Rows marked **[observed]** were confirmed during the 2026-05-28 L1 and 2026-05-29 L3 tests. Unmarked rows are still predicted from the protocol; update them as later cycles run.
+Rows marked **[observed]** were confirmed during the 2026-05-28 `auto-walk:L1` and 2026-05-29 `auto-walk:L3` tests. Unmarked rows are still predicted from the protocol; update them as later cycles run.
 
 | Pitfall | Cause | Mitigation |
 | --- | --- | --- |
 | **[observed]** `/walk` returns "Unknown command" | kiro-cli reserves `/` prefix for built-in commands; custom skills cannot use slash triggers | Trigger by natural language only ("散步看看" / divergence-request phrases); SKILL.md must not advertise `/walk` |
 | Hypotheses restate existing topics | Walk slipped into Dream mode | Strengthen critic-gate prompt: explicitly reject "restatement" |
 | Hypotheses too generic | ROAM prompt too loose; topical (not propositional) seed | Tighten ROAM: require each bridge to span ≥2 distinct topics; use propositional seeds (protocol §11.2) |
-| Side-notes during debugging | Surfacing misjudged the turn | **[observed not to occur]** under C-meta — executive turns lack divergence-request language (L3 stage 3). If true A mode is ever added, this risk returns |
+| Side-notes during debugging | Surfacing misjudged the turn | **[observed not to occur]** under C-meta in the tested executive turn (`auto-walk:L3` stage 3), which lacked divergence-request language. If true A mode is ever added, this risk returns |
 | Hypothesis count grows monotonically | Expiration not running | Verify maintenance pass in §6.2 step 7 actually executes |
 | Discharged but no new memory item | Discharge step skipped or failed | Inspect `discharge` log entry against `memory.md` diff |
 | `kiro-wrap chat` hangs | HOME or PATH wrong | Mirror the §8.3/§8.4 fixes from `kiro-local-memory.md` |

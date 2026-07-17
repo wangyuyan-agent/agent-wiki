@@ -659,8 +659,8 @@ Walk hypotheses may inspire candidates but remain labeled weak evidence. Council
 
 ## 23. Practical use cases
 
-- [Multi-Agent Roundtable](../usecases/council/multi-agent-roundtable.md) — a four-round, same-runtime sub-agent binding with role diversity, blind review, one high-impact follow-up, and an actionable decision package.
-- [Local LLM Council](../usecases/council/llm-council-local.md) — an early heterogeneous-model service binding using independent answers, anonymous peer ranking, Chair synthesis, and optional Elo history.
+- [Multi-Agent Roundtable](../usecases/council/multi-agent-roundtable.md) — `Evidence: run-reported`; `Conformance: mapped`. A four-round, same-runtime sub-agent binding with role diversity, blind review, one high-impact follow-up, and an actionable decision package.
+- [Local LLM Council](../usecases/council/llm-council-local.md) — `Evidence: source-inspected`; `Conformance: mapped`. An early heterogeneous-model service binding using independent answers, anonymous peer ranking, Chair synthesis, and optional Elo history.
 
 ## 24. Final rule
 

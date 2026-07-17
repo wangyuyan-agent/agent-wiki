@@ -6,6 +6,7 @@
 - Conformance: `mapped` — lifecycle evidence maps through `memory:L4`; the current item schema was not revalidated
 - Validation scope: deployment-derived architecture, scheduling checks, and operational pitfalls; live cluster was not rechecked during the 2026-07-17 metadata review
 - Reproducibility: `partial` — the binding is environment-specific and requires an equivalent cluster/runtime
+- Level namespace: `memory`
 - Last reviewed: 2026-07-17
 
 ## 1. Context

@@ -192,9 +192,9 @@ The observed binding defines explicit degradation:
 
 For high-risk decisions, the protocol's quorum and human-escalation rules should be stricter than this general-purpose binding.
 
-## 9. What this use case proves
+## 9. What the source report supports
 
-Observed or directly demonstrated by the source run:
+Reported by the cited source run; this repository did not independently reproduce these outcomes:
 
 1. Same-runtime sub-agents can execute distinct Council roles.
 2. Phase separation creates artifacts more useful than a single "debate with yourself" prompt.
@@ -204,7 +204,7 @@ Observed or directly demonstrated by the source run:
 6. A decision package can preserve disagreement while remaining actionable.
 7. Explicit degraded modes prevent partial failure from masquerading as consensus.
 
-## 10. What it does not prove
+## 10. What it does not establish
 
 - That role prompts eliminate the shared blind spots of one model family.
 - That anonymous ranking identifies truth.
