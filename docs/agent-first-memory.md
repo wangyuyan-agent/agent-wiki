@@ -1,5 +1,12 @@
 # Agent-first LLM Memory Architecture
 
+- Protocol ID: `memory`
+- Version: `0.1.0`
+- Maturity: `practiced`
+- Evidence scope: real-environment evidence informs the lifecycle through `memory:L4`; the `memory@0.1.0` item schema and `memory:L5` are not end-to-end revalidated
+- Level namespace: `memory:L0`–`memory:L5`
+- Last updated: 2026-07-17
+
 ## 1. Purpose
 
 This document defines a portable memory mechanism for LLM agents.
@@ -20,7 +27,7 @@ Collect during work → preserve raw snapshots → distill with AI → maintain 
 
 ### The deeper purpose: trust calibration
 
-Storing text is the easy part. An LLM agent's storage is already near-perfect and permanent; what it lacks is doubt. The agent has no built-in epistemic gradient telling it which of its own records still deserve belief.
+Storing exact text is the easy part once a binding has durable storage. The harder problems are continuity, retrieval, decay, contradiction, and doubt. An agent has no reliable built-in epistemic gradient telling it which of its own records still deserve belief.
 
 So the real adversary of an agent memory system is not forgetting, and not even staleness — it is the agent's **uncritical trust in its own past records**. A stale fact is dangerous only because the agent believes it without question.
 
@@ -89,7 +96,7 @@ knowledge = a durable lesson, root cause, decision, rationale, or pattern.
             There is no single "current" value; understanding accumulates.
 ```
 
-This is the same line data engineering draws between a current-state table (SCD type-1: overwrite in place) and an event log (SCD type-2: append forever). OpenAI's late-2026 ChatGPT memory rewrite ("going to Singapore" → "went to Singapore" once the date passes) is exactly a `state` supersede done right.
+This resembles the data-engineering distinction between a current-state view and a history-preserving change log. The protocol's actual update shape is closest to a type-2 slowly changing dimension: a new `state` row becomes current while the prior row remains addressable as superseded history. It is not a type-1 overwrite, because the old value is not destroyed.
 
 It follows that **`additive-only` is not a universal creed — it is the correct policy for `knowledge`.** For `state`, blind accumulation is the disease, not the cure: ten stale IP addresses buried under `[待清理]` markers are worse than one superseded value with a clean history. Treating every item as append-only over-protects `state` and lets staleness quietly rot the index.
 
@@ -115,14 +122,14 @@ The three layers have different change frequencies:
 | Layer | Changes when | Examples |
 | --- | --- | --- |
 | Steering | Agent identity or capabilities change | Persona definition, tool permissions, response style |
-| Conventions | A new stable rule is established | "NIT is mandatory", "always use wangyuyan-agent for commits", security policies |
+| Conventions | A new stable rule is established | "NIT is mandatory", "always use the approved maintainer identity for commits", security policies |
 | Memory | Every session with new learnings | "k3s ConfigMap was read-only", "kiro-pool needs symlink fix" |
 
 Examples:
 
 | Belongs in steering | Belongs in conventions | Belongs in memory |
 | --- | --- | --- |
-| When the user says "remember", append a note to `memory.md`. | Git identity defaults to `wangyuyan-agent`. | On 2026-05-11, ConfigMap-mounted `AGENTS.md` was found to be read-only in k3s. |
+| When the user says "remember", append a note to `memory.md`. | Git identity defaults to the approved maintainer identity. | On 2026-05-11, a configuration-mounted `AGENTS.md` was found to be read-only in a container deployment. |
 | Read `memory/index.md` before touching prior decisions. | All agent-wiki commits must pass sensitive info scan. | The OpenAB + Codex deployment stores mutable memory on PVC. |
 | Do not store raw chat logs. | NIT findings require fixes before approve. | A previous rollout failed because `KUBECONFIG` was only set in a shell profile. |
 
@@ -162,21 +169,21 @@ Rules of thumb:
 
 The lifecycle (§4) and the memory-item schema (§9) are the protocol's invariants. The exact directory shape is *not*. Different agent runtimes — local filesystems, PVC-mounted containers, KV stores, embedded databases, hybrid setups — should be able to host this protocol without rewriting it.
 
-To keep the protocol portable, every binding MUST expose a small abstract interface. This mirrors the Auto-Walk corpus interface (§8 of the walk protocol), which is what made walks runnable over notes vaults, reading queues, and research corpora without rewriting the walk lifecycle.
+To keep the protocol portable, structured bindings expose a small abstract interface. `memory:L0` is the deliberate exception: it requires only manual capture using the minimum §9 record. A `memory:L1` or higher binding MUST expose all five capabilities below. Scheduling begins at `memory:L2`; AI distillation begins at `memory:L3`.
 
 ### 7.1 Required capabilities of a storage binding
 
-Any binding that claims to implement this protocol MUST provide the five operations below. The names are notional; what matters is that each operation exists and behaves as described.
+Any binding that claims `memory:L1` or higher MUST provide the five operations below. The names are notional; what matters is that each operation exists and behaves as described.
 
 1. **Inbox append.** Append a captured item to the hot inbox, in the §9 schema. (Backed by a `memory.md` file, a row in a SQLite table, an append-only log, etc.)
 2. **Archive (durable, append-only).** Move or copy the inbox's accumulated content into a durable, append-only layer keyed by a date or other monotonically advancing identifier. The archive layer MUST NOT be mutated after writing, because §13, §14.2 (state supersede recovery floor), and §9 (preferred `Source` anchor) all depend on its immutability.
-3. **Item store with metadata.** Read and write distilled items keyed by a stable id, carrying the §9 fields (`kind`, `subject`, `Status`, `superseded_by`, `Source`, `Confidence`, source date). Updates to `Status` and `superseded_by` MUST be atomic with respect to autodream's supersede operation (§14.2).
+3. **Item store with metadata.** Read and write distilled items keyed by a stable id, carrying the §9 fields (date, `kind`, `Status`, `Source`, `subject` for `state`, and `superseded_by` when superseded). `Confidence` is optional, but its scheme is mandatory when present. Updates to `Status` and `superseded_by` MUST be atomic with respect to autodream's supersede operation (§14.2).
 4. **Index / navigation surface.** Expose a navigable summary (the §10 index role) that returns ordered candidates for a given trigger or topic. May be a Markdown file, a tag table, an embedding-backed nearest-neighbour query — anything that satisfies the trigger semantics in §10.
 5. **Operation log.** Record lifecycle events (`archive`, `autodream`, `supersede`, `cool`, `merge`, `pending-cleanup`, `review`) with timestamps, sufficient for post-hoc audit. The log itself need not be Markdown; it must be replayable.
 
 A binding MAY add capabilities (search, embeddings, encryption, sync), but MUST NOT remove any of the five.
 
-### 7.2 Required guarantees
+### 7.2 Required guarantees for `memory:L1+`
 
 - **Append-only archive.** Without this, recovery from autodream misjudgments (§14.2) is not possible, and `Source` anchors corrode.
 - **Atomic supersede.** A `state` supersede that updates the prior row's `Status` and adds a new row MUST not leave the store in a state where both rows are simultaneously `active`. (For a filesystem binding, this is achieved by running the operation within a single autodream pass and committing the file atomically.)
@@ -209,17 +216,16 @@ A common, fully-conforming filesystem binding looks like this:
         └── archive-memory.sh
 ```
 
-Minimal filesystem layout:
+Valid `memory:L0` starter layout:
 
 ```text
 <agent-home>/
 ├── AGENTS.md / CLAUDE.md / GEMINI.md
 └── memory/
-    ├── conventions.md
-    ├── memory.md
-    ├── index.md
-    └── topics/
+    └── memory.md
 ```
+
+This starter does not yet claim the structured archive, item-store, index, or operation-log guarantees of `memory:L1`.
 
 Other valid bindings: a PVC-backed setup that swaps `topics/` for a SQLite items table; a hosted runtime that backs the inbox by an event queue and the archive by an object-store bucket. The §4 lifecycle and the §9 schema do not change.
 
@@ -347,37 +353,41 @@ They should not be loaded by default.
 
 ## 9. Memory item format
 
-A memory item must be concise, source-aware, and reusable. Two fields are mandatory on every item — `kind` and `Source` — because they carry the trust-calibration signal (§1).
+A memory item must be concise, source-aware, and reusable. Date, stable `id`, `kind`, and `Source` are mandatory on every captured item. A `state` item also requires `subject`. These fields carry the minimum trust-calibration and lifecycle signal (§1).
 
-Required minimum format:
+Required minimum inbox format:
 
 ```md
-- [YYYY-MM-DD] (kind) <distilled reusable fact or preference>. Source: <archive/topic/anchor>.
+- [YYYY-MM-DD] [mem-YYYY-MM-DD-NNN] (kind) <distilled reusable fact or preference>. Source: <archive/topic/anchor or current source event>.
 ```
+
+For `state`, add `Subject: <stable-key>` to the same record or use the structured form below. `Status` defaults to `active` while the item is in the inbox and MUST be materialized when it enters a `memory:L1+` item store.
 
 `kind` is `state` or `knowledge` (§4). `Source` is required, not optional — an item whose provenance cannot be named cannot be audited later, and uncalibrated provenance is exactly the blind-trust failure §1 warns against. This also corrects an inversion: the Auto-Walk protocol already *requires* `supporting_refs` on every hypothesis, yet memory items historically left `Source` optional — the lower-trust artifact was held to a stricter standard than the durable one.
 
-Extended format for higher-risk items:
+Canonical structured format for distilled items (`memory:L1+`):
 
 ```md
 - [YYYY-MM-DD] <fact>
   - id: <stable identifier>                    # required; see field notes
   - kind: <state | knowledge>                  # required
   - subject: <stable key>                      # required for state; the thing whose value this is
-  - Scope: <global | project | environment | workflow | user preference>
-  - Status: <active | superseded | stale | pending-cleanup>
+  - Scope: <global | project | environment | workflow | user preference>  # optional
+  - Status: <active | superseded | stale | pending-cleanup>                # required in item store
   - superseded_by: <item id>                   # set when Status = superseded; references another item's id
   - inspired_by: <hypothesis id>               # optional; set when this item was discharged from a walk hypothesis (auto-walk §6.2.1)
   - corroborating_refs:                        # optional; secondary corpus refs that corroborate but do not constitute the Source
     - <archive/YYYY-MM-DD.md#anchor>
   - Source: <archive/YYYY-MM-DD.md#anchor or conversation context>   # required
-  - Confidence: <confirmed | observed-once | inferred>
+  - Confidence-Scheme: epistemic-status-v1                                # required when Confidence is present
+  - Confidence: <confirmed | observed-once | inferred | unknown>          # optional
 ```
 
 Field notes:
 
 - `id` (required): a stable identifier that persists across autodream passes. Convention: `mem-YYYY-MM-DD-NNN` where NNN is a per-day ordinal assigned by scanning existing items for `max(NNN) + 1` (parallel to the walk hypothesis id convention). The id is what `superseded_by` points at, what walk discharge back-pointers reference (auto-walk §13.1), and what §7's "stable item identity" guarantee promises. A binding that uses a database-backed item store MAY use the database's primary key in lieu of the date-ordinal scheme, provided the id is stable across autodream passes.
 - `kind` (required): drives the update policy. `state` may be superseded; `knowledge` is additive (§14).
+- `Confidence-Scheme`, when `Confidence` is present, is `epistemic-status-v1`. `confirmed` means authoritative, repeated, or independently corroborated for the stated scope; `observed-once` means one direct bounded observation; `inferred` means derived rather than directly observed; `unknown` means available evidence cannot support a stronger classification. `confirmed` does not mean permanent.
 - `subject` (required for `state`): a stable key naming *what* this is the current value of (e.g. `host:public-ip`, `nightly-job:schedule`). Supersede matches on `subject`, deterministically — never on fuzzy text similarity, which would be unsafe.
 - `Status`: a closed token enum, not free prose. A `[待清理]`-style marker written as prose cannot be processed reliably by a machine; a `pending-cleanup` token can. Token semantics:
   - `active` — current; default for any newly captured item.
@@ -391,25 +401,30 @@ Field notes:
 Examples:
 
 ```md
-- [2026-05-11] (knowledge) In OpenAB + Codex on k3s, mutable `AGENTS.md` should live on PVC rather than a read-only ConfigMap. Source: archive/2026-05-11.md.
+- [2026-05-11] [mem-2026-05-11-001] (knowledge) In a containerized agent deployment, mutable instruction state should live on writable persistent storage rather than a read-only configuration mount. Source: archive/2026-05-11.md#instruction-mount-test.
 ```
 
 ```md
 - [2026-05-21] (state) Local default model is `<model-id-A>`.
+  - id: mem-2026-05-21-001
   - kind: state
   - subject: local:default-model
   - Scope: environment
   - Status: superseded
-  - superseded_by: [2026-06-01]
+  - superseded_by: mem-2026-06-01-001
   - Source: archive/2026-05-21.md
+  - Confidence-Scheme: epistemic-status-v1
+  - Confidence: observed-once
 ```
 
 ```md
 - [2026-05-11] (knowledge) User prefers English responses, but may discuss architecture in Chinese.
+  - id: mem-2026-05-11-002
   - kind: knowledge
   - Scope: user preference
   - Status: active
   - Source: explicit user preference
+  - Confidence-Scheme: epistemic-status-v1
   - Confidence: confirmed
 ```
 
@@ -506,7 +521,7 @@ Capture rules:
 2. Append it to `memory/memory.md` first.
 3. Tag every captured item with its `kind` (`state` or `knowledge`, §4). When in doubt, tag it as `knowledge` — misclassification of knowledge as state is irreversible (§4); the reverse is only nuisance.
 4. **For every `state` item, supply a `subject` key at capture time.** Without a `subject`, autodream cannot supersede the item (§14.2 constraint 4), and the item becomes a permanently-accumulating "current value" — exactly the staleness rot §4 warns against. If a `subject` cannot honestly be named, the item is not actually a `state` fact and MUST be re-tagged as `knowledge`. This is the single highest-frequency inlet for the schema; failing the requirement here silently breaks `state`'s entire lifecycle.
-5. Include date and `Source` (required, §9). Assign an `id` per the §9 convention.
+5. Include date, stable `id`, and `Source` (required, §9).
 6. Do not copy full chat logs.
 7. Do not treat one-time emotion as long-term knowledge.
 8. Do not overwrite `knowledge` directly. `state` is updated by the autodream supersede protocol (§14), not by raw inbox overwrites.
@@ -652,7 +667,7 @@ Do not read memory when:
 
 Read every retrieved item *as testimony, not fact*. The text is what was once captured; it is not automatically what is true now. The agent MUST apply the following discipline whenever it retrieves a memory item:
 
-1. **Read the metadata first.** `kind`, `Source`, `Status`, source date, and `Confidence` (§9) are what calibrate the item. An item without these — or with very old date and no recent corroboration — is not "false," but it is not load-bearing either. Down-weight it.
+1. **Read the metadata first.** `kind`, `Source`, `Status`, source date, and `Confidence` when present (§9) calibrate the item. An item missing required metadata — or with a very old date and no recent corroboration — is not automatically false, but it is not load-bearing. Down-weight it and queue schema repair.
 2. **Down-weight stale and superseded.** A row whose `Status` is `superseded`, `stale`, or `pending-cleanup` MUST not be used as a current factual basis. It MAY be cited as historical context if explicitly framed as such. For a `superseded` `state` row, follow the `superseded_by` pointer to the live row.
 3. **Prefer the most recent `state` row by `subject`.** When two `state` rows share a `subject` and have not been reconciled by autodream, treat the older one as `superseded` and surface the discrepancy to the user (Reconcile, §15.2.1).
 4. **Reconcile before acting.** If two retrieved items appear to contradict each other on the same subject — whether by `subject` collision in `state`, or by direct contradiction in `knowledge` — the agent MUST surface the conflict in its response, not silently pick one. Suppressing a conflict is the dominant blind-trust failure mode. Conflict resolution is a first-class step, not a fallback.
@@ -673,7 +688,7 @@ Acting on [date-B]'s value. The earlier row is retained as history.
 If the earlier row should be the current truth, ask me to reconcile.
 ```
 
-For `knowledge` contradictions, both items remain `active` until human review (§16), and the agent's response cites both rather than picking. The user's choice to act on one is what discharges the conflict, not the agent's silent inference.
+For `knowledge` contradictions, both items remain visible until review (§16), and the agent's response cites both rather than picking. Resolution requires evidence appropriate to the claim or a decision by the authorized owner when the conflict is about values/policy. A user's action choice does not by itself prove an external factual claim.
 
 ## 16. Review protocol
 
@@ -763,12 +778,14 @@ Criteria:
 
 ## 19. Agent-specific mapping
 
-| Agent | Hot entry | Warm workflow | Memory root / notes |
+The table below shows common binding choices, not guaranteed current product features. Product-native entry files and hook behavior change; a binding MUST verify its runtime before claiming support. Except where a product explicitly provides storage, the `memory/` paths are created by the binding.
+
+| Agent | Typical hot entry | Possible warm workflow | Binding-owned memory root / notes |
 | --- | --- | --- | --- |
 | Kiro | `.kiro/steering/*` | scripts / launchd / wrappers | `~/.kiro/memories/` |
 | Codex | `AGENTS.md` | `.codex/skills/*` | `memory/` |
-| Claude Code | `CLAUDE.md` / `MEMORY.md` index | commands/hooks | `memory/` or topic files |
-| Gemini | `GEMINI.md` / `MEMORY.md` index | scripts | `memory/` |
+| Claude Code | `CLAUDE.md` | commands/hooks when available | custom `memory/` or topic files |
+| Gemini | `GEMINI.md` | scripts/extensions when available | custom `memory/` |
 | Copilot | `.github/copilot-instructions.md` | path-specific instructions | repo docs/memory |
 | OpenCode | `AGENTS.md` | custom commands/hooks | `memory/` |
 | OpenAB-hosted agent | `AGENTS.md` or agent-specific entry | usercron / skills / CLI | persistent volume or mounted workspace |
@@ -779,13 +796,14 @@ The mapping can vary. The invariant is the protocol: Hot entry, inbox capture, r
 
 | Level | Name | Capability |
 | --- | --- | --- |
-| L0 | Manual memory | Agent writes `memory.md` when asked. |
-| L1 | Structured memory | Adds `index.md`, `topics/`, `archive/`. |
-| L2 | Scheduled archive | Raw inbox is archived automatically. |
-| L3 | Autodream | AI distills archive into index/topics. |
-| L4 | Review + validation | Explicit audit, cleanup, and fresh-session tests. |
+| `memory:L0` | Manual memory | Agent writes minimum-schema, source-aware items to `memory.md` when asked. |
+| `memory:L1` | Structured memory | Adds stable item ids, `index.md`, `topics/`, append-only `archive/`, and operation log. |
+| `memory:L2` | Scheduled archive | Raw inbox is archived automatically. |
+| `memory:L3` | Autodream | AI distills archive into index/topics. |
+| `memory:L4` | Review + validation | Explicit audit, cleanup, and fresh-session tests. |
+| `memory:L5` | Metamemory feedback | Retrieval and decision outcomes calibrate review priority and produce governed memory-policy proposals. |
 
-A system can start at L0 and evolve. Do not block adoption on full automation.
+A system can start at `memory:L0` and evolve. Do not block adoption on full automation.
 
 ## 21. Validation checklist
 
@@ -801,6 +819,11 @@ After implementing memory for an agent, verify:
 8. Raw archive is not loaded by default.
 9. `review memory` produces a cleanup plan before deletion.
 10. A known high-risk rule still works in a fresh session.
+11. Every captured item has date, stable `id`, `kind`, and `Source`; every `state` item also has `subject`.
+12. (`memory:L5`) A retrieved item's later outcome can be recorded without rewriting the original source.
+13. (`memory:L5`) A single helpful or misleading outcome cannot automatically change the memory constitution.
+14. (`memory:L5`) Policy changes are emitted as reviewable proposals with supporting event references.
+15. (`memory:L5`) Transient traces from other protocols, when present, are not persisted wholesale as Memory.
 
 ## 22. Practical use cases
 
@@ -809,7 +832,192 @@ Concrete implementations of this architecture:
 - [Kiro Local Memory](../usecases/memory/kiro-local-memory.md)
 - [OpenAB + Codex + k3s Memory](../usecases/memory/openab-codex-k3s-memory.md)
 
-## 23. Final rule
+## 23. Memory evolution and metamemory feedback
+
+Dependency boundary:
+
+- `memory:L0`–`memory:L4` are fully standalone and do not require Active Workspace, Inner Speech, Council, Steward, or Auto-Walk.
+- `memory:L5` can operate from Memory's own retrieval and outcome events. The cross-protocol connections in §23.7 are optional producers/consumers, not conformance dependencies.
+- When another protocol is absent, its ids and traces are simply omitted; a binding MUST NOT fabricate them.
+
+Memory maintenance and memory development are not the same thing.
+
+The protocol already supports two kinds of evolution:
+
+| Evolution | Existing mechanism | What changes |
+| --- | --- | --- |
+| Content evolution | capture, `state` supersede, additive `knowledge` | What the agent retains about the world and experience |
+| Structural evolution | archive → topics, merge, cooling, Memory → Conventions → Steering | How experience is organized and how stable lessons gain behavioral influence |
+
+A third kind is optional at `memory:L5`:
+
+| Evolution | Mechanism | What changes |
+| --- | --- | --- |
+| Policy evolution | metamemory outcome feedback + governed proposal | How the system decides what to capture, retrieve, verify, cool, and review |
+
+This third layer is **metamemory**: memory about how memory performed.
+
+### 23.1 Developmental analogy and limit
+
+Humans have memory abilities before language, but autobiographical memory develops together with language, narrative, self-understanding, time, and social remembering. Inner speech later helps maintain task goals and regulate action.
+
+An LLM agent begins from a different condition:
+
+> It may be linguistically mature at first run while autobiographically new.
+
+It can explain and reason before it has durable experience with this user, project, environment, or its own recurring failures. The useful developmental path is therefore not to replay childhood language acquisition. It is to add continuity and calibration:
+
+```text
+pretrained language/world knowledge
+  → captured experience
+  → source-aware episodic record
+  → consolidated lessons and current state
+  → retrieval into Active Workspace
+  → Inner Speech / Council / action
+  → observed outcome
+  → metamemory feedback
+  → reviewed content or policy adjustment
+```
+
+The analogy motivates staged learning. It does not justify copying human reconstructive forgetting, confabulation, or identity narratives into the agent.
+
+### 23.2 Feedback event
+
+A binding MAY record how a retrieved memory item participated in a later action:
+
+```yaml
+event_id: memfb-2026-07-15-001
+task_id: task-001
+memory_item_ids:
+  - mem-2026-06-01-003
+workspace_id: ws-2026-07-15-001
+use_role: action-premise
+action_or_decision: "Used the recorded deployment path"
+outcome: "Path matched the live host and the diagnostic completed"
+verdict_scheme: intervention-outcome-v1
+verdict: helpful
+attribution_confidence_scheme: ordinal-confidence-v1
+attribution_confidence: medium
+evidence_refs:
+  - runtime:host-check-2026-07-15
+observed_at: 2026-07-15T12:00:00+08:00
+```
+
+Allowed `use_role` values SHOULD be a closed set such as:
+
+- `background`
+- `action-premise`
+- `constraint`
+- `analogy`
+- `conflict-source`
+- `verification-target`
+
+Allowed verdicts:
+
+- `helpful` — materially supported a successful or better-calibrated action.
+- `misleading` — materially pushed the action in a wrong direction.
+- `neutral` — was used but did not affect the outcome.
+- `unknown` — outcome or causal contribution cannot yet be judged.
+
+The event references the original item. It does not rewrite history or replace `Source`.
+
+### 23.3 Evidence discipline
+
+Outcome feedback is itself testimony and must be treated skeptically.
+
+1. **Use is not usefulness.** Frequent retrieval may indicate a broad trigger, not high value.
+2. **Success is not causation.** A successful task does not prove every retrieved item helped.
+3. **Failure is not item falsity.** Execution may fail for unrelated reasons.
+4. **Self-rating is weak evidence.** An agent saying that its memory helped is `inferred` until supported by an observable outcome or human confirmation.
+5. **One event is not a policy.** Individual feedback changes review priority at most; repeated patterns support proposals.
+
+### 23.4 Allowed content effects
+
+Metamemory feedback MAY:
+
+- raise review priority for a repeatedly misleading item;
+- add `corroborating_refs` from a genuine external confirmation;
+- propose a confidence change with cited evidence;
+- suggest cooling an item that repeatedly activates but never affects action;
+- suggest widening or narrowing an index trigger;
+- create a conflict requiring Reconcile;
+- propose a new capture or verification rule.
+
+It MUST NOT:
+
+- silently delete `knowledge`;
+- supersede `state` without the §14.2 exact-kind/exact-subject rules;
+- convert peer agreement into factual confirmation;
+- treat retrieval frequency as truth;
+- persist a full Active Workspace or Inner Speech stream as Memory;
+- change Conventions, Steering, or the Memory protocol automatically.
+
+### 23.5 Policy proposal
+
+Repeated feedback may emit a governed proposal:
+
+```yaml
+proposal_id: mempolicy-2026-07-15-001
+target: retrieval-trigger:environment-state
+proposed_change: "Require live verification when source age exceeds 30 days"
+supporting_events:
+  - memfb-2026-06-02-004
+  - memfb-2026-06-19-002
+  - memfb-2026-07-15-001
+expected_benefit: "Reduce actions based on stale host state"
+risk: "Adds verification latency to stable environments"
+status: pending-review
+```
+
+Policy proposals follow the same promotion discipline as §17:
+
+```text
+feedback events
+  → candidate policy in Memory/review queue
+  → repeated evidence or explicit human decision
+  → Convention when stable
+  → Steering only if it must change every relevant action
+```
+
+The memory system may learn about its own performance. It may not amend its own constitution without governed review.
+
+### 23.6 Optional binding capabilities
+
+A `memory:L5` binding SHOULD expose:
+
+```text
+record_retrieval(task_id, memory_item_ids, use_role)
+record_outcome(task_id, outcome, evidence_refs)
+attribute_feedback(task_id, memory_item_ids, verdict, attribution_confidence)
+list_feedback(memory_item_id)
+propose_policy_change(target, supporting_events, expected_benefit, risk)
+```
+
+These operations are optional below `memory:L5`. A conforming `memory:L0`–`memory:L4` binding remains valid without them.
+
+`attribution_confidence` uses `ordinal-confidence-v1` (`low | medium | high`) and measures confidence that the cited memory item materially contributed to the outcome. It does not change the original item's `epistemic-status-v1` value.
+
+### 23.7 Connections to other protocols
+
+- [Active Workspace](agent-first-active-workspace.md) records which memory items became action premises and emits task outcomes.
+- [Inner Speech](agent-first-inner-speech.md) may challenge a stale or misleading activation; only the later observable result becomes feedback.
+- [Council](agent-first-council.md) may compare conflicting memory claims, but its vote is not confirmation. A verified DecisionRecord/outcome enters through capture.
+- [Auto-Walk](agent-first-auto-walk.md) remains lateral. Its hypothesis lifecycle and feedback cannot be used as a shortcut to improve memory confidence.
+
+### 23.8 Final metamemory boundary
+
+```text
+Memory may evolve its contents.
+Memory may evolve its organization.
+Memory may evaluate how retrieval performed.
+Memory may propose changes to its own policy.
+
+Memory may not silently redefine what counts as truth,
+what may be deleted,
+or what controls the agent.
+```
+
+## 24. Final rule
 
 Agent-first memory is not a file. It is a pipeline whose product is calibrated trust:
 

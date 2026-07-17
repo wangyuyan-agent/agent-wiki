@@ -1,0 +1,227 @@
+manifest_version: 1
+updated: "2026-07-17"
+purpose: "Machine-readable routing index for agent-wiki protocols and guides."
+level_policy: "Ranges are protocol-local cumulative conformance ladders; isolated higher-level capability tests do not establish that level without lower requirements."
+
+license:
+  spdx_id: CC-BY-4.0
+  document: LICENSE
+  canonical_url: "https://creativecommons.org/licenses/by/4.0/"
+  scope: "Original repository content except where otherwise noted; cited third-party material remains under its source terms."
+
+maturity_vocabulary:
+  design-only: "Coherent protocol proposal with no documented binding evidence yet."
+  practiced: "At least one concrete binding or run informed the protocol; not every level is validated."
+  field-tested: "The declared core protocol has repeated real-environment evidence and operational feedback."
+
+evidence_vocabulary:
+  design-example: "Concrete binding design; no completed run claimed."
+  source-inspected: "Implementation source inspected; runtime not validated."
+  run-reported: "Specific run documented by a cited source; not independently reproduced here."
+  reproduced: "Documented path executed successfully in a bounded validation."
+  field-tested: "Binding operated in a real environment and either supported repeated work or exposed concrete operational lessons."
+
+conformance_vocabulary:
+  proposed: "A design is mapped to a protocol but has not been executed."
+  mapped: "Observed or inspected behavior has been mapped to the protocol; conformance was not independently validated."
+  partially-verified: "Named protocol requirements were executed or inspected, while declared gaps remain."
+  verified: "The claimed level's required checks were executed against the named protocol version."
+
+confidence_schemes:
+  epistemic-status-v1:
+    values: [confirmed, observed-once, inferred, unknown]
+    use: "Source/evidence status for factual or state-like claims."
+    definitions:
+      confirmed: "Supported for its stated scope by an authoritative source, repeated observation, or independent corroboration; not a claim of permanence."
+      observed-once: "Directly observed in one bounded event or check and not independently corroborated."
+      inferred: "Derived from other observations rather than directly observed."
+      unknown: "Retained because relevant, but available evidence does not support a stronger classification."
+  ordinal-confidence-v1:
+    values: [low, medium, high]
+    use: "Confidence in hypotheses, cues, predictions, or recommendations."
+
+verdict_schemes:
+  intervention-outcome-v1:
+    values: [helpful, misleading, neutral, unknown]
+    use: "Outcome attribution for Memory activation and Inner Speech intervention feedback."
+
+protocols:
+  - id: memory
+    name: "Agent-first Memory"
+    version: "0.1.0"
+    maturity: practiced
+    evidence_scope: "Real-environment evidence informs the lifecycle through memory:L4; the memory@0.1.0 item schema and memory:L5 are not end-to-end revalidated."
+    document: docs/agent-first-memory.md
+    level_namespace: memory
+    level_range: ["memory:L0", "memory:L5"]
+    minimal_level: "memory:L0"
+    standalone: true
+    required_dependencies: []
+    optional_dependencies: [active-workspace, inner-speech, council, auto-walk, steward]
+    confidence_schemes: [epistemic-status-v1, ordinal-confidence-v1]
+    primary_artifacts:
+      - memory_item
+      - archive_snapshot
+      - topic_page
+      - retrieval_record
+      - metamemory_feedback
+      - policy_proposal
+    usecases:
+      - id: memory.kiro-local
+        evidence: field-tested
+        conformance: mapped
+        conformance_scope: "Lifecycle mapping through memory:L4; current item schema not revalidated."
+        document: usecases/memory/kiro-local-memory.md
+      - id: memory.openab-codex-k3s
+        evidence: field-tested
+        conformance: mapped
+        conformance_scope: "Lifecycle mapping through memory:L4; current item schema not revalidated."
+        document: usecases/memory/openab-codex-k3s-memory.md
+
+  - id: auto-walk
+    name: "Agent-first Auto-Walk"
+    version: "0.1.0"
+    maturity: practiced
+    evidence_scope: "Real-environment runs cover manual generation, runner execution, and semantic-trigger surfacing through parts of auto-walk:L3; natural calendar firing and auto-walk:L4 are unverified."
+    document: docs/agent-first-auto-walk.md
+    level_namespace: auto-walk
+    level_range: ["auto-walk:L0", "auto-walk:L4"]
+    minimal_level: "auto-walk:L0"
+    standalone: true
+    required_dependencies: []
+    optional_dependencies: [memory, active-workspace, inner-speech]
+    confidence_schemes: [ordinal-confidence-v1]
+    primary_artifacts:
+      - hypothesis
+      - surface_event
+      - discharge_event
+      - walk_run_record
+    usecases:
+      - id: auto-walk.kiro-local
+        evidence: field-tested
+        conformance: partially-verified
+        conformance_scope: "Observed generation and semantic-trigger surfacing through parts of auto-walk:L3; current hypothesis status/discharge fields, natural scheduled firing, and L4 are unverified."
+        document: usecases/auto-walk/kiro-local-walk.md
+      - id: auto-walk.obsidian-notes
+        evidence: design-example
+        conformance: proposed
+        document: usecases/auto-walk/obsidian-notes-walk.md
+      - id: auto-walk.reading-queue
+        evidence: design-example
+        conformance: proposed
+        document: usecases/auto-walk/reading-queue-walk.md
+      - id: auto-walk.research-corpus
+        evidence: design-example
+        conformance: proposed
+        document: usecases/auto-walk/research-corpus-walk.md
+
+  - id: active-workspace
+    name: "Agent-first Active Workspace"
+    version: "0.1.0"
+    maturity: design-only
+    evidence_scope: "No documented binding yet."
+    document: docs/agent-first-active-workspace.md
+    level_namespace: active-workspace
+    level_range: ["active-workspace:L0", "active-workspace:L4"]
+    minimal_level: "active-workspace:L0"
+    standalone: true
+    required_dependencies: []
+    optional_dependencies: [memory, auto-walk, inner-speech, council, steward]
+    confidence_schemes: [epistemic-status-v1, ordinal-confidence-v1]
+    primary_artifacts:
+      - workspace_snapshot
+      - workspace_item
+      - workspace_patch
+      - interrupt
+    usecases: []
+
+  - id: inner-speech
+    name: "Agent-first Inner Speech"
+    version: "0.1.0"
+    maturity: design-only
+    evidence_scope: "No documented binding yet."
+    document: docs/agent-first-inner-speech.md
+    level_namespace: inner-speech
+    level_range: ["inner-speech:L0", "inner-speech:L4"]
+    minimal_level: "inner-speech:L0"
+    standalone: true
+    required_dependencies: []
+    optional_dependencies: [active-workspace, memory, council, auto-walk]
+    confidence_schemes: [ordinal-confidence-v1]
+    primary_artifacts:
+      - control_cue
+      - frame_challenge
+      - cue_feedback
+      - policy_proposal
+    usecases: []
+
+  - id: council
+    name: "Agent-first Council"
+    version: "0.1.0"
+    maturity: practiced
+    evidence_scope: "One run-reported binding demonstrates council:L1-style blind review and selected council:L2 revision pressure without full L2 lineage/checkpoint validation; one implementation is source-inspected."
+    document: docs/agent-first-council.md
+    level_namespace: council
+    level_range: ["council:L0", "council:L5"]
+    minimal_level: "council:L0"
+    standalone: true
+    required_dependencies: []
+    optional_dependencies: [active-workspace, inner-speech, memory, auto-walk, steward]
+    confidence_schemes: [ordinal-confidence-v1]
+    primary_artifacts:
+      - goal_contract
+      - candidate_artifact
+      - review_artifact
+      - conflict_map
+      - decision_record
+      - run_record
+    usecases:
+      - id: council.multi-agent-roundtable
+        evidence: run-reported
+        conformance: mapped
+        conformance_scope: "Source report maps to council:L1 and parts of council:L2; version lineage and best-checkpoint behavior are not demonstrated or independently reproduced."
+        document: usecases/council/multi-agent-roundtable.md
+      - id: council.llm-council-local
+        evidence: source-inspected
+        conformance: mapped
+        conformance_scope: "Source structure mapped to the protocol; runtime conformance not assessed."
+        document: usecases/council/llm-council-local.md
+
+  - id: steward
+    name: "Agent-first Steward"
+    version: "0.1.0"
+    maturity: design-only
+    evidence_scope: "No documented binding yet."
+    document: docs/agent-first-steward.md
+    level_namespace: steward
+    level_range: ["steward:S0", "steward:S5"]
+    minimal_level: "steward:S1"
+    standalone: true
+    required_dependencies: []
+    optional_dependencies: [memory, active-workspace, inner-speech, council, auto-walk]
+    confidence_schemes: []
+    primary_artifacts:
+      - steward_relationship
+      - intent_record
+      - work_order
+      - authority_grant
+      - progress_event
+      - result_envelope
+      - escalation_request
+      - steward_digest
+    usecases: []
+
+guides:
+  - id: adoption
+    version: "0.1.0"
+    maturity: design-only
+    document: docs/agent-adoption-guide.md
+    read_when: "Selecting or bootstrapping a protocol."
+
+  - id: composition
+    version: "0.1.0"
+    maturity: design-only
+    document: docs/composable-agent-cognition.md
+    level_namespace: composition
+    level_range: ["composition:C0", "composition:C5"]
+    read_when: "Two or more protocols need to exchange artifacts."

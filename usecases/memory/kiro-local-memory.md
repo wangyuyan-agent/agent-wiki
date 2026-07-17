@@ -1,5 +1,13 @@
 # Kiro Local Memory Use Case
 
+- Use case ID: `memory.kiro-local`
+- Protocol: `memory@0.1.0`
+- Evidence: `field-tested`
+- Conformance: `mapped` — lifecycle evidence maps through `memory:L4`; the current item schema was not revalidated
+- Validation scope: deployed local archive/autodream workflow and review path; not re-executed during the 2026-07-17 metadata review
+- Reproducibility: `partial` — architecture and procedures are documented; exact local scripts are not included here
+- Last reviewed: 2026-07-17
+
 ## 1. Context
 
 This use case describes a local `.kiro/memories` memory system for cross-session persistent agent memory on macOS.
@@ -8,13 +16,19 @@ The goal is to let an AI agent keep useful memory across sessions while automati
 
 The design is a practical implementation of [Agent-first Memory Architecture](../../docs/agent-first-memory.md).
 
+### Protocol alignment note
+
+This deployment predates `memory@0.1.0`. Its observed archive, distillation, index, topic, log, and review lifecycle informed the protocol, but the deployed artifacts described here still use legacy additive updates and free-form cleanup markers. Before claiming `memory@0.1.0` conformance, migrate captures to stable `id`, `kind`, `Source`, and `subject` for `state`; replace free-form cleanup markers with the closed `Status` vocabulary; and validate exact-subject non-destructive supersede. The evidence label describes real operation, not schema certification.
+
 ## 2. Design philosophy
 
-This system borrows from three sources:
+This system was informed by three design influences:
 
-1. **Karpathy-style `llm-wiki`** — the idea of a wiki-like index as the entry point for agent knowledge.
-2. **OpenClaw PR #372 autodream pattern** — a staged memory pipeline where raw memory is preserved first and distilled later.
-3. **Claude Code-style `MEMORY.md` + topics separation** — a small hot index plus deeper topic pages, separating frequently loaded memory from cold or warm knowledge.
+1. **[Karpathy's LLM Wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)** — a wiki-like index as the entry point for compiled agent knowledge.
+2. **An earlier OpenClaw autodream contribution reviewed during implementation** — a staged memory pipeline where raw memory is preserved before distillation. This page does not copy or redistribute that contribution.
+3. **Small hot index + deeper topic pages** — separating frequently loaded navigation from warm/cold knowledge bodies.
+
+These influences explain design provenance; they are not runtime evidence or dependencies.
 
 The core idea:
 
@@ -24,15 +38,15 @@ The core idea:
 
 ```text
 ~/.kiro/memories/
-├── conventions.md     -> symlink -> dotfiles-ai stable rules (rarely changed)
+├── conventions.md     -> symlink -> automation repository stable rules (rarely changed)
 ├── memory.md          # daily inbox / hot working memory, written during sessions
 ├── log.md             # operation timeline for archive/dream/review events
-├── index.md           -> symlink -> dotfiles-ai wiki index
-├── archive/           -> symlink -> dotfiles-ai daily archives
+├── index.md           -> symlink -> automation repository wiki index
+├── archive/           -> symlink -> automation repository daily archives
 │   ├── 2026-05-02.md
 │   ├── 2026-05-03.md
 │   └── ...
-└── topics/            -> symlink -> dotfiles-ai topic pages
+└── topics/            -> symlink -> automation repository topic pages
     ├── memory-system-design.md
     ├── steering-design-guide.md
     └── openab-deployment.md
@@ -42,12 +56,12 @@ The core idea:
 
 | Layer | File | Nature | Loading | Versioning |
 | --- | --- | --- | --- | --- |
-| Conventions | `conventions.md` | Stable rules (the "law"), rarely changed | **Hot**: agent resource, auto-loaded every session | Managed by `dotfiles-ai` |
+| Conventions | `conventions.md` | Stable rules (the "law"), rarely changed | **Hot**: agent resource, auto-loaded every session | Managed by an automation repository |
 | Hot inbox | `memory.md` | Daily real-time notes written during sessions | **Hot**: agent resource, auto-loaded | Not versioned |
-| Cold index | `index.md` | Wiki-style knowledge index updated by AI distillation | **Hot**: agent resource, auto-loaded | Managed by `dotfiles-ai` |
+| Hot index | `index.md` | Small wiki-style navigation surface updated by AI distillation | **Hot**: agent resource, auto-loaded | Managed by an automation repository |
 | Timeline | `log.md` | Operation log; keeps recent archive/dream/review entries | Cold | Not versioned |
-| Cold archive | `archive/` | Daily raw memory snapshots | Cold | Managed by `dotfiles-ai` |
-| Cold topics | `topics/` | Deep topic pages split out after enough accumulated material | **Warm**: loaded on demand | Managed by `dotfiles-ai` |
+| Cold archive | `archive/` | Daily raw memory snapshots | Cold | Managed by an automation repository |
+| Warm topics | `topics/` | Deep topic pages split out after enough accumulated material | **Warm**: loaded on demand | Managed by an automation repository |
 
 ### Why conventions is Hot (not Warm)
 
@@ -63,7 +77,7 @@ Therefore conventions must be loaded via agent resource (same mechanism as steer
 
 ## 5. Version-control strategy
 
-Structural memory files are symlinked into a `dotfiles-ai` repository:
+Structural memory files are symlinked into a separate automation repository:
 
 - `conventions.md`
 - `index.md`
@@ -104,6 +118,8 @@ Rationale:
 ### Stage 2: auto-dream, daily 07:40
 
 This stage invokes AI to distill memory.
+
+The steps below describe the deployed legacy behavior. The `add or revise` wording and free-form `[待清理]` marker are evidence of the earlier binding, not recommendations for `memory@0.1.0`; use the migration requirements in the Protocol alignment note before adopting them.
 
 Execution mode:
 
@@ -210,7 +226,21 @@ A review should inspect:
 - topic pages that should be split or merged
 - memories that should or should not be promoted to conventions or steering
 
-## 10. Essence
+## 10. Evidence boundary
+
+### What this use case supports
+
+- A real macOS binding used separate inbox, archive, index, topics, and operation log surfaces.
+- Separating mechanical archive from AI distillation exposed reusable launchd and environment lessons.
+- A manual review entry point remained necessary even with scheduled maintenance.
+
+### What it does not support
+
+- End-to-end conformance with the current `memory@0.1.0` item and status schema.
+- Current runtime health; the deployment was not re-executed during this review.
+- Reproduction from this page alone; exact scripts and private environment assets are omitted.
+
+## 11. Essence
 
 The system can be summarized as:
 

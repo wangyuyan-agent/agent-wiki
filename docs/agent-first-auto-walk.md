@@ -1,5 +1,12 @@
 # Agent-first Auto-Walk Architecture
 
+- Protocol ID: `auto-walk`
+- Version: `0.1.0`
+- Maturity: `practiced`
+- Evidence scope: real-environment runs cover manual generation, runner execution, and semantic-trigger surfacing through parts of `auto-walk:L3`; natural calendar firing and `auto-walk:L4` remain unverified
+- Level namespace: `auto-walk:L0`–`auto-walk:L4`
+- Last updated: 2026-07-17
+
 ## 1. Purpose
 
 This document defines a portable exploratory association mechanism for LLM agents.
@@ -14,7 +21,7 @@ Auto-Dream     — distills raw memory into clean, durable knowledge.
 Auto-Walk      — wanders the distilled memory and proposes new connections.
 ```
 
-The name comes from research on walking and creativity. A 2014 Stanford study found that walking specifically boosts divergent thinking (generating more candidate ideas), but offers no benefit for convergent tasks and may slightly hurt them. Auto-Walk inherits both properties. It is for proposing connections, not for solving problems.
+The name comes from research on walking and creativity. [Oppezzo and Schwartz (2014)](https://pubmed.ncbi.nlm.nih.gov/24749966/) found that walking improved creative ideation, including creative analogy generation, while it did not improve the focused convergent task used in the study. Indoor treadmill and outdoor walking produced comparable creative gains. Auto-Walk borrows that bounded distinction: it proposes connections; it does not decide whether they are true or what action to take.
 
 ## 2. Design goals
 
@@ -66,7 +73,7 @@ The three are sequential and non-overlapping. Compaction happens during a sessio
 
 ## 5. The walking principle
 
-Five rules anchor the entire design. They derive from research on walking and creativity, and they constrain every other section.
+Five rules anchor the design. The first two are direct engineering constraints drawn from the 2014 walking study. The remaining three are protocol policies chosen to make generated associations auditable, non-reactive, and unable to overwrite stable work. They are not presented as experimental findings about human walking.
 
 ### 5.1 Divergent only — never convergent
 
@@ -90,17 +97,17 @@ Therefore:
 
 ### 5.3 Multi-pass, not single-shot
 
-The first 15 to 25 minutes of a walk are reportedly a "clearing cycle" before deeper association emerges.
+This is an auditability and quality-control policy, not a timing claim borrowed from the walking study. Separating inventory, generation, and critique prevents a fluent final answer from hiding whether the corpus was actually read or whether weak bridges were challenged.
 
 Therefore:
 
 - A walk pass must include at least three phases: inventory, roam, critique.
-- A single-prompt LLM call labeled "find associations" is not a walk. It is a wheelchair ride.
+- A single undifferentiated prompt labeled "find associations" is not a walk. It is an unauditable single-pass shortcut.
 - The cost of multi-pass is the price of admission.
 
 ### 5.4 Cadence, not trigger
 
-Historical practitioners of walking-for-thinking (Darwin, Nietzsche, Jobs) walked on a fixed schedule, not when stuck.
+This is an operational isolation policy. A scheduled exploratory pass is less likely to masquerade as task-solving than a walk invoked because the current answer is failing.
 
 Therefore:
 
@@ -118,7 +125,7 @@ Therefore:
 - An Auto-Walk hypothesis that would rewrite the main answer must wait for explicit user invocation (in C mode).
 - Each hypothesis self-declares its impact level at generation time.
 
-These five rules are the conceptual core. Failure to honor any one of them collapses Auto-Walk back into either a Dream or a wheelchair.
+These five rules are the conceptual core. Failure to honor them collapses Auto-Walk back into either consolidation or an unauditable single-pass association prompt.
 
 ## 6. Boundary with memory
 
@@ -135,12 +142,10 @@ These are different epistemic kinds. A hypothesis is not an immature memory wait
 
 ### 6.2 Discharge instead of promote
 
-When a hypothesis is confirmed (by user statement, by repeated behavioral evidence, or by explicit review), it does not promote into memory. Instead:
+When a hypothesis is confirmed by an explicit authoritative statement, independent observable evidence, or governed review with cited evidence, it does not promote into memory. Repetition of ambiguous behavior is not sufficient, especially for claims about a person. Instead:
 
 ```text
-1. A new atomic memory item is generated, citing the corpus items
-   that support it. The hypothesis is named as inspiration only,
-   not as the source of truth.
+1. A new atomic memory item is generated, citing the confirmation event or independent evidence that supports it. Original corpus refs remain corroboration unless they independently establish the claim. The hypothesis is named as inspiration only, not as the source of truth.
 2. The hypothesis itself is archived to walks/discharged/.
 3. The new memory item is added through the ordinary memory capture
    protocol (memory.md inbox), not written directly to topics.
@@ -152,7 +157,7 @@ This preserves a hard invariant: every memory item has its own provenance and so
 
 The discharge step generates one row, but it carries two distinct provenance fields with different epistemic weight:
 
-- **`Source` (primary, evidential).** Names the corpus items that genuinely support the new fact — the same set as the hypothesis's `supporting_refs`. This is the field that justifies the new row to a future auditor.
+- **`Source` (primary, evidential).** Names the confirmation event or independent evidence that establishes the new fact. A hypothesis's `supporting_refs` become `Source` only when those items independently establish the claim; otherwise they remain corroboration.
 - **`inspired_by` (secondary, lineage).** Names the discharged hypothesis id (e.g. `hyp-2026-05-28-001`). This records *how* the agent came to surface the question, not *why* the answer is true.
 
 These MUST be separate fields. Folding the hypothesis id into `Source` would let the lateral artifact (a guess that survived) impersonate evidence. The §6.1 invariant — "memory says what is, hypothesis says what may be related" — only holds if the lineage trace cannot dress itself up as proof.
@@ -249,8 +254,10 @@ claim: |
 supporting_refs:
   - memory/topics/user-preferences.md#L12-L20
   - memory/topics/agent-design.md#L40-L55
+confidence_scheme: ordinal-confidence-v1
 confidence: medium
 impact: add
+status: active
 applies_when:
   - User discusses agent architecture or memory design.
   - User compares layered vs flat data systems.
@@ -268,8 +275,10 @@ Field notes:
 - `seed`: the topic that started this walk pass.
 - `claim`: the candidate insight, one to three sentences.
 - `supporting_refs`: pointers into corpus items. Required. Hypotheses without refs are discarded. **Prefer the smallest addressable unit available** (file + heading / anchor / line range); fall back to file-only when the corpus lacks anchors. **Where the corpus exposes an append-only layer (e.g. `memory/archive/YYYY-MM-DD.md`), prefer anchoring there over mutable layers** (`topics/*.md` get rewritten by future autodream passes, eroding both heading and line anchors over time; archive entries do not move). File-only refs are valid but make audit and discharge harder; runners should be prompted to cite at sub-file granularity *into the most stable available layer* whenever possible.
+- `confidence_scheme`: fixed to `ordinal-confidence-v1`.
 - `confidence`: `low | medium | high`. Bias toward `low` and `medium`.
 - `impact`: `add | rewrite`. Determines surfacing eligibility (see §12).
+- `status`: `active | muted | discharged | rejected | archived | superseded`. Folder location and status MUST agree; `muted` remains in `active/` but is skipped by A mode.
 - `applies_when`: positive triggers. The conversation must look like one of these for the hypothesis to surface in A mode.
 - `never_applies_when`: negative triggers. Surfacing is blocked when any of these match. Negative bounds are easier to write correctly than positive ones.
 - `disconfirm_if`: explicit falsifiers. If observed, the hypothesis moves to `rejected/`.
@@ -303,7 +312,7 @@ A portable layout, placed as a peer of `memory/` rather than under it:
 
 Folder semantics:
 
-- `active/`: hypotheses currently eligible for surfacing.
+- `active/`: live hypotheses; `status: active` is eligible for normal surfacing, while `status: muted` is skipped in A mode.
 - `discharged/`: confirmed; the corresponding memory item is the live artifact.
 - `rejected/`: refuted by user or by counter-evidence.
 - `archived/`: expired without engagement; kept for audit.
@@ -372,7 +381,7 @@ Critique:   Apply the critic gate (§11.5) to each candidate.
             Reject most. Keep the few that survive with full hypothesis records.
 ```
 
-What fails: skipping straight to Critique-shaped output without a visible Inventory and Roam (the "wheelchair walk" — see §15). The shape of the trace matters because audit relies on it; the number of shell calls does not.
+What fails: skipping straight to Critique-shaped output without a visible Inventory and Roam (the single-pass-shortcut failure — see §15). The shape of the trace matters because audit relies on it; the number of shell calls does not.
 
 ### 11.5 Critic gate
 
@@ -429,6 +438,8 @@ Use noteworthy sparingly. If most rejections are flagged noteworthy, the critic 
 ## 12. Conversation surfacing
 
 Surfacing has two modes. Default is silent.
+
+A standalone binding may surface directly into the current conversation. When [Active Workspace](agent-first-active-workspace.md) is present, a surfaced hypothesis enters `weak_signals[]` with `origin_status` preserving the Walk token, a workspace-local `status`, and its original `confidence_scheme`, `confidence`, and `supporting_refs`; it never enters `evidence[]` without independent verification. This is an optional composition path, not an Auto-Walk dependency.
 
 ### 12.1 Two modes
 
@@ -497,7 +508,7 @@ Read from the user's turn structure, not from a session flag:
 | Decision distance | Far (thinking phase) | Near (must ship) |
 | Pace | Long, exploratory framing | Short, direct |
 
-`mode_confidence` is per-turn, not session-wide. The same conversation can swing between modes. This is intentional. The cost is occasional inconsistency in whether side-notes appear; the gain is correctness in each turn.
+`mode_confidence` is per-turn, not session-wide. It is a binding-local gate score, not the hypothesis artifact's `confidence` field; a binding that uses it MUST define its own threshold scale. The same conversation can swing between modes. This is intentional. The cost is occasional inconsistency in whether side-notes appear; the gain is correctness in each turn.
 
 ### 12.5 Negative feedback
 
@@ -526,13 +537,13 @@ A hypothesis leaves `active/` through one of four paths.
 
 ### 13.1 Confirmed → discharged
 
-When a hypothesis is confirmed by explicit user statement or by repeated behavioral evidence:
+When a hypothesis is confirmed by an explicit authoritative statement, independent observable evidence, or governed review with cited evidence:
 
 1. Generate a new atomic memory item that states the fact independently. The item carries `inspired_by: <this hypothesis id>` (lineage, secondary). The `Source` (primary, evidential) is chosen by which confirmation path applied:
    - **User-statement confirmation** → `Source: user statement on YYYY-MM-DD`. The corpus refs that the hypothesis happened to cite MAY appear as `corroborating_refs`, but MUST NOT be promoted into `Source`. Doing so would silently dress the agent's prior speculation as "the corpus said so" — the laundering pattern §6.2.2 forbids.
-   - **Behavioral-evidence confirmation** → `Source` cites the corpus items that support the fact. The hypothesis is named only via `inspired_by`, never as `Source` (§6.2 invariant).
+   - **Independent-evidence confirmation** → `Source` cites the new runtime observation, experiment, external source, or review evidence that established the claim. Original `supporting_refs` MAY be carried as `corroborating_refs`; they are not automatically promoted into `Source`. The hypothesis is named only via `inspired_by`, never as `Source` (§6.2 invariant).
 2. Append the new memory item through the ordinary capture protocol (`memory/memory.md`).
-3. Move the hypothesis file to `walks/discharged/`.
+3. Set `status: discharged` and move the hypothesis file to `walks/discharged/`.
 4. Log a `discharge` event in `walks/log.md` with a back-pointer from the discharged hypothesis to the new memory item's id.
 
 This preserves the hard invariant: memory items have first-class provenance and are not "promoted hypotheses."
@@ -541,7 +552,7 @@ This preserves the hard invariant: memory items have first-class provenance and 
 
 When a hypothesis is explicitly refuted or its `disconfirm_if` clause is observed:
 
-1. Move to `walks/rejected/`.
+1. Set `status: rejected` and move to `walks/rejected/`.
 2. Log a `reject` event including the refuting evidence.
 
 Rejected hypotheses are kept (not deleted) so that future walks can avoid regenerating them.
@@ -550,12 +561,12 @@ Rejected hypotheses are kept (not deleted) so that future walks can avoid regene
 
 When a hypothesis sits in `active/` for `expires_after_walks` cycles without being surfaced or engaged:
 
-1. Move to `walks/archived/`.
+1. Set `status: archived` and move to `walks/archived/`.
 2. Log an `archive` event.
 
 ### 13.4 Superseded
 
-When a new walk produces a hypothesis that is strictly more general than an existing one, the older one moves to `walks/archived/` with a `superseded_by` pointer.
+When a new walk produces a hypothesis that is strictly more general than an existing one, the older one sets `status: superseded` and moves to `walks/archived/` with a `superseded_by` pointer.
 
 ### 13.5 Noteworthy
 
@@ -630,7 +641,7 @@ The protocol's lifecycle still holds: hypotheses still discharge, get rejected, 
 | One-walk overgeneralization | Single corpus item produces a universal rule | Critic gate rejects single-source generalizations |
 | Hypothesis pool bloat | Active pool grows without bound | `expires_after_walks` + decay scheduler |
 | Stable memory contamination | Walk runner writes directly to `memory/topics/` | Read-only consumption (§6.3); discharge spawns new items, never promotes |
-| Wheelchair walks | Single-prompt LLM call labeled "walk" | Multi-pass workflow (§11.4) enforced by walk runner |
+| Single-pass shortcut | Undifferentiated LLM call labeled "walk" | Visible multi-pass workflow (§11.4) enforced by walk runner |
 | Rewrite leak | Rewrite-level hypothesis surfaces in A mode | `impact` self-declaration (§12.3) + A-mode gate |
 | Surfacing fatigue | Agent injects side-notes too often | Negative feedback decay (§12.5); muted state |
 | Seed concatenation | Walk pass tries to handle multiple seeds at once | Single-seed rule (§11.2) |
@@ -641,7 +652,9 @@ The protocol's lifecycle still holds: hypotheses still discharge, get rejected, 
 
 ## 16. Agent-specific mapping
 
-| Agent | Walk runner | Pool location | Surfacing path |
+The table below is illustrative. Scheduler, hook, command, and skill support must be rechecked against the installed runtime; absence of a true per-turn hook requires the C/report fallback.
+
+| Agent | Possible walk runner | Pool location | Possible surfacing path |
 | --- | --- | --- | --- |
 | Kiro | launchd job invoking a walk skill | `~/.kiro/walks/` (or symlinked to dotfiles) | Skill called by agent when match found |
 | Codex | usercron / CronJob | `walks/` next to `memory/` | `.codex/skills/walk-surface/SKILL.md` |
@@ -656,13 +669,13 @@ The protocol is identical. Only the runner, pool path, and surfacing wiring vary
 
 | Level | Name | Capability |
 | --- | --- | --- |
-| L0 | Manual walk | Human or agent runs a walk on demand; writes a hypothesis pool by hand. |
-| L1 | Structured pool | `walks/` layout, hypothesis format, log present. |
-| L2 | Scheduled walks | Cadence runner produces hypotheses without prompting. |
-| L3 | Surfacing | A mode gating + C mode invocation wired into the agent. |
-| L4 | Feedback loop | Negative feedback decay, discharge protocol, muting, and expiration all automated. |
+| `auto-walk:L0` | Manual walk | Human or agent runs an operator-initiated exploratory pass for bootstrap/review, not to solve the current task; writes a hypothesis pool by hand. |
+| `auto-walk:L1` | Structured pool | `walks/` layout, hypothesis format, log present. |
+| `auto-walk:L2` | Scheduled walks | Cadence runner produces hypotheses without prompting. |
+| `auto-walk:L3` | Surfacing | A surfacing target is wired: gated A mode where hooks exist, or user-pulled C/report fallback where they do not. |
+| `auto-walk:L4` | Feedback loop | Negative feedback decay, discharge protocol, muting, and expiration all automated. |
 
-Start at L0. Each level is testable in isolation.
+Start at `auto-walk:L0`. Individual capabilities may be tested in isolation, but conformance claims are cumulative: an observed L3-style surface does not establish `auto-walk:L3` while required L2 cadence remains unverified.
 
 ## 18. Validation checklist
 
@@ -677,7 +690,7 @@ After implementing Auto-Walk for an agent, verify:
 7. **(A-capable runtimes only)** Surfacing fires during a clearly exploratory turn (test with "聊聊 X 这个想法"). Semantic-trigger-only runtimes (e.g., Kiro per its use case §11.3) deliberately stay silent here; for those, validate C-mode triggering instead.
 8. A `rewrite`-impact hypothesis does not surface in A mode (where A mode exists).
 9. C mode returns all eligible hypotheses including `rewrite`. Trigger is natural language ("散步看看", "walk note", or C-meta divergence phrases); a slash command (`/walk`) works only if the runtime supports custom slash invocations.
-10. An ignored hypothesis is muted after N surfacing attempts (L4).
+10. An ignored hypothesis is muted after N surfacing attempts (`auto-walk:L4`).
 11. A confirmed hypothesis discharges and spawns a new memory item, without mutating any topic file.
 12. The walk runner runs on a cadence, not in response to user requests for help.
 13. The `noteworthy/` folder exists, has its own schema, and is **not** read by the surfacing layer.

@@ -1,5 +1,14 @@
 # Research Corpus Walk Use Case
 
+- Use case ID: `auto-walk.research-corpus`
+- Protocol: `auto-walk@0.1.0`
+- Evidence: `design-example`
+- Conformance: `proposed` — no protocol level has been executed
+- Validation scope: testable rollout and provisional pitfalls only; no completed run is claimed
+- Reproducibility: `conceptual` — sufficient to build a trial, but no run artifacts are included
+- Level namespace: `auto-walk`
+- Last reviewed: 2026-07-17
+
 ## 1. Context
 
 This use case describes a standalone Auto-Walk binding for a mixed research corpus — papers, CVE entries, and personal research notes — focused on a single long-running research domain (security research, agent systems, ML, distributed systems, etc.).
@@ -22,6 +31,8 @@ Core claim:
 
 ## 3. Corpus layout
 
+All filenames, paper titles, CVE ids, versions, and claims in the schemas and sample report below are placeholders. They are not vulnerability assertions.
+
 ```text
 ~/research/<domain>/                       # e.g., ~/research/agent-systems/
 ├── papers/
@@ -29,7 +40,7 @@ Core claim:
 │   ├── 2025-attention-revisited.md
 │   └── pdfs/                              # optional, original PDFs
 ├── cves/
-│   ├── CVE-2026-12345.md
+│   ├── CVE-YYYY-NNNNN.md
 │   └── ...
 ├── notes/
 │   └── <freeform research notes>.md
@@ -68,7 +79,7 @@ year: 2025
 venue: ...
 tags: [memory, agent, llm]
 links_to:
-  - cves/CVE-2026-12345.md
+  - cves/CVE-YYYY-NNNNN.md
   - notes/2026-03-15-agent-design.md
 ---
 ```
@@ -78,11 +89,11 @@ Recommended frontmatter for CVEs:
 ```yaml
 ---
 type: cve
-id: CVE-2026-12345
-year: 2026
-cvss: 7.5
+id: CVE-YYYY-NNNNN
+year: YYYY
+cvss: <score-from-authoritative-record>
 tags: [container-escape, kubernetes]
-affected: [k3s, k8s 1.28-1.31]
+affected: [<products-and-versions-from-authoritative-record>]
 related_papers:
   - papers/2024-container-isolation.md
 ---
@@ -148,7 +159,7 @@ The noteworthy escape valve (§11.6) is **especially valuable** here: research d
 - papers/2024-claude-memory.md — claims: ...
 
 **CVEs**
-- cves/CVE-2026-12345.md — memory leak in container memory manager
+- cves/CVE-YYYY-NNNNN.md — <authoritative vulnerability summary>
 
 **Notes**
 - notes/2026-03-15-agent-design.md — observations on session context drift
@@ -156,7 +167,7 @@ The noteworthy escape valve (§11.6) is **especially valuable** here: research d
 ## Candidate associations
 
 ### hyp-2026-05-28-001 — Cross-type bridge: <claim>
-- **Refs**: papers/2025-context-window-bottlenecks.md, cves/CVE-2026-12345.md, notes/2026-03-15-agent-design.md
+- **Refs**: papers/2025-context-window-bottlenecks.md, cves/CVE-YYYY-NNNNN.md, notes/2026-03-15-agent-design.md
 - **Why it may matter**: ...
 - **Applies when**: future paper reading on long-running processes; future CVE triage on memory management
 - **Confidence**: medium
@@ -211,7 +222,7 @@ When a hypothesis is confirmed and it bridged multiple types, the discharged YAM
 discharged_at: 2026-06-15
 spawned_artifacts:
   - papers/2026-06-15-new-summary.md
-  - cves/CVE-2026-12345.md          # updated with new technique reference
+  - cves/CVE-YYYY-NNNNN.md          # updated with new technique reference
   - notes/2026-06-15-experiment-results.md
 ```
 
@@ -243,7 +254,7 @@ Research bridges have long investigation horizons. Without explicit status track
 
 ## 10. Testable rollout
 
-### 10.1 L1 — Build the corpus and one walk
+### 10.1 `auto-walk:L1` — Build the corpus and one walk
 
 1. Create `~/research/<domain>/{papers,cves,notes,walks}/`.
 2. Add 5–10 papers (extracted summaries with frontmatter), 3–5 CVEs, 5–10 notes.
@@ -251,13 +262,15 @@ Research bridges have long investigation horizons. Without explicit status track
 
 Pass criterion: at least one cross-type bridge survives in `active/`.
 
-### 10.2 L2 — Scheduled
+### 10.2 `auto-walk:L2` — Scheduled
 
 Weekly Friday. Same skeleton as `kiro-local-walk.md` §11.2.
 
-### 10.3 L3 — Not applicable
+### 10.3 `auto-walk:L3` — Report surface
 
-### 10.4 L4 — Investigation tracking
+The generated report is this binding's surfacing target. A mode is not applicable.
+
+### 10.4 `auto-walk:L4` — Investigation tracking
 
 Add the `investigation_status` field. The walk runner can periodically surface active hypotheses with `investigation_status: unstarted` older than N weeks ("you flagged this in March; is it still interesting?").
 
@@ -271,10 +284,23 @@ Add the `investigation_status` field. The walk runner can periodically surface a
 | Corpus type imbalance | Many papers, few CVEs | Skip walk until minimum coverage per type |
 | Domain leakage | Walks span security + ML produce shallow results | One walk per domain, no mixing |
 | Frontmatter drift | Inconsistent metadata across items | Per-type templates; lint pass before walks |
-| Old hypotheses linger | No `investigation_status` discipline | L4 adds explicit status tracking |
+| Old hypotheses linger | No `investigation_status` discipline | `auto-walk:L4` adds explicit status tracking |
 | PDF-only items invisible | Walk reads Markdown, not PDFs | Pre-extract each PDF into a Markdown summary file with frontmatter |
 
-## 12. Essence
+## 12. Evidence boundary
+
+### What this design contributes
+
+- A typed paper/CVE/note corpus adapter, placeholder-safe schemas, and a long-horizon investigation lifecycle for a trial.
+- Explicit rules against author-intent inference and unsupported vulnerability claims.
+
+### What it does not demonstrate
+
+- That cross-type bias improves research quality or that the proposed thresholds are calibrated.
+- That any placeholder paper, CVE, version, or bridge is real.
+- Any completed protocol level, confirmed vulnerability relation, or observed research outcome.
+
+## 13. Essence
 
 ```text
 The corpus holds a research domain.

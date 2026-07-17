@@ -1,5 +1,14 @@
 # Kiro Local Walk Use Case
 
+- Use case ID: `auto-walk.kiro-local`
+- Protocol: `auto-walk@0.1.0`
+- Evidence: `field-tested`
+- Conformance: `partially-verified` — generation and semantic-trigger surfacing were observed; current status/discharge fields, natural calendar firing, and `auto-walk:L4` remain unverified
+- Validation scope: manual generation, launchd-environment runner execution, and semantic-trigger surfacing tests through parts of `auto-walk:L3` are documented; natural calendar firing and `auto-walk:L4` remain deferred
+- Reproducibility: `partial` — observed runs and procedures are documented; exact local scripts are not included here
+- Level namespace: `auto-walk`
+- Last reviewed: 2026-07-17
+
 ## 1. Context
 
 This use case describes a local `~/.kiro/walks` Auto-Walk system layered on top of the existing `~/.kiro/memories` setup on macOS.
@@ -8,13 +17,17 @@ The goal is to give the Kiro agent a low-stakes background process that runs ove
 
 The design is a practical implementation of [Agent-first Auto-Walk Architecture](../../docs/agent-first-auto-walk.md). It also depends on the memory layer described in [Kiro Local Memory](../memory/kiro-local-memory.md), which is the canonical corpus this binding consumes.
 
+### Protocol alignment note
+
+The observed runs predate the current explicit hypothesis `status` field and the tightened discharge provenance rule. Those fields must be migrated and tested before this binding can claim complete conformance at any higher contiguous level. This is why the header says `partially-verified` rather than `verified`.
+
 ## 2. Design philosophy
 
 This implementation borrows from three sources:
 
 1. **Agent-first Auto-Walk Architecture** — the five-rule walking principle (§5), the discharge-not-promote invariant (§6), and the two-step gating model for surfacing (§12).
-2. **Existing Kiro Local Memory** — the launchd + script + dotfiles-ai layout, and the hybrid symlink strategy (local high-churn files, version-controlled stable files).
-3. **APA 2014 walking-and-creativity research and HN discussion (id=48272670)** — divergent over convergent, treadmill not scenery, multi-pass not single-shot, cadence not trigger.
+2. **Existing Kiro Local Memory** — the launchd + script + automation-repository layout, and the hybrid symlink strategy (local high-churn files, version-controlled stable files).
+3. **[Oppezzo and Schwartz (2014)](https://pubmed.ncbi.nlm.nih.gov/24749966/)** — evidence for creative ideation and comparable indoor/outdoor gains. Multi-pass traces, cadence, and non-rewrite behavior are protocol engineering policies, not findings attributed to that study.
 
 The core claim:
 
@@ -34,13 +47,13 @@ The core claim:
 └── walks/                                 # NEW
     ├── README.md
     ├── log.md                             # local, high-churn
-    ├── active/      -> dotfiles-ai/kiro/walks/active/
-    ├── discharged/  -> dotfiles-ai/kiro/walks/discharged/
-    ├── rejected/    -> dotfiles-ai/kiro/walks/rejected/
-    ├── archived/    -> dotfiles-ai/kiro/walks/archived/
-    └── noteworthy/  -> dotfiles-ai/kiro/walks/noteworthy/
+    ├── active/      -> automation-config/kiro/walks/active/
+    ├── discharged/  -> automation-config/kiro/walks/discharged/
+    ├── rejected/    -> automation-config/kiro/walks/rejected/
+    ├── archived/    -> automation-config/kiro/walks/archived/
+    └── noteworthy/  -> automation-config/kiro/walks/noteworthy/
 
-~/dotfiles-ai/kiro/
+~/automation-config/kiro/
 ├── scripts/
 │   ├── auto-archive.sh                    # existing
 │   ├── auto-dream.sh                      # existing
@@ -56,9 +69,9 @@ The core claim:
         └── SKILL.md
 
 ~/Library/LaunchAgents/
-├── com.icex.kiro.auto-archive.plist       # existing
-├── com.icex.kiro.auto-dream.plist         # existing
-└── com.icex.kiro.auto-walk.plist          # NEW
+├── com.example.kiro.auto-archive.plist       # existing
+├── com.example.kiro.auto-dream.plist         # existing
+└── com.example.kiro.auto-walk.plist          # NEW
 ```
 
 `walks/` is a **peer of `memories/`**, not a child. This reinforces the §6.1 lateral-not-vertical invariant from the protocol: a hypothesis is a sibling of memory, not a sub-product of it.
@@ -83,7 +96,7 @@ The hypothesis pool is **never Hot**. Even in A mode, a hypothesis only enters t
 
 Mirrors the memory side, by intent:
 
-Symlinked into `dotfiles-ai` (cross-machine sharable, low churn):
+Symlinked into the automation repository (cross-machine sharable, low churn):
 
 - `walks/active/`
 - `walks/discharged/`
@@ -106,7 +119,7 @@ A weekly script that mirrors the `auto-dream.sh` pattern.
 
 ### 6.1 Scheduling
 
-- launchd job: `com.icex.kiro.auto-walk.plist` (deployed 2026-05-29; `Weekday 5`, `Hour 7`, `Minute 50`)
+- launchd job: identifier de-identified as `com.example.kiro.auto-walk.plist` (deployed 2026-05-29; `Weekday 5`, `Hour 7`, `Minute 50`)
 - Cadence: weekly, **Friday 07:50** — after that day's `auto-archive` (07:30) and `auto-dream` (07:40), so the walk reads freshly-distilled topics
 - Rationale for fixed Friday:
   - Once-per-week fits a small corpus (4 topics + ~3 weeks of archive). Daily or every-3-days walks would regenerate similar bridges.
@@ -144,13 +157,13 @@ The runner mirrors `auto-dream.sh` exactly: **shell only assembles one prompt an
 
 Decay / expiration / discharge are **not** in the L2 script — that is L4. The runner only *generates*. While the corpus is small, monotonic growth of `active/` is harmless; a human `review walks` (§12) handles pruning until L4 automates it.
 
-The three passes (INVENTORY / ROAM / CRITIQUE) are labeled phases **inside the single prompt**, executed by Kiro in one session — not three shell calls. The "wheelchair" failure mode (§11.4 / §15 of protocol) is skipping straight to conclusions without the INVENTORY warm-up and CRITIQUE gate; it has nothing to do with how many times the shell invokes the wrapper.
+The three passes (INVENTORY / ROAM / CRITIQUE) are labeled phases **inside the single prompt**, executed by Kiro in one session — not three shell calls. The single-pass-shortcut failure (§11.4 / §15 of protocol) is skipping straight to conclusions without the INVENTORY warm-up and CRITIQUE gate; it has nothing to do with how many times the shell invokes the wrapper.
 
 ### 6.3 Skeleton
 
-The deployed shape (canonical source: `dotfiles-ai/kiro/scripts/auto-walk.sh`):
+The deployed shape (canonical source in the private automation repository):
 
-> Parameterized skeleton. The deployed file (`dotfiles-ai/kiro/scripts/auto-walk.sh`) uses literal absolute paths; replace `<USER_HOME>` / `<USER>` with your own when adapting.
+> Parameterized skeleton. The deployed file uses literal absolute paths; replace `<USER_HOME>` / `<USER>` with your own when adapting.
 
 ```sh
 #!/bin/bash
@@ -194,7 +207,7 @@ The full prompt body is intentionally not duplicated here — the canonical sour
 
 The protocol's §11.4 phase separation MUST be honored. The single prompt to `kiro-wrap` (see §6.2) instructs Kiro to execute three labeled phases sequentially in one session, emitting each phase's output visibly so the trace can be audited after the fact. The walk-auto log entry must contain three sections: an `inventory:` summary (1–2 lines of key facts per corpus item — proof INVENTORY ran and was not skipped), a `candidates:` list with per-candidate verdicts (proof ROAM + CRITIQUE ran), and any `noteworthy:` routing decisions. A pure final-answer dump with no inventory trace fails §11.4 / §18 item 5.
 
-The phase roles, summarized — the actual prompt text used by L1 manual walks lives in `dotfiles-ai/kiro/skills/auto-walk/walk-emit-prompt.md`; the L2 runner `dotfiles-ai/kiro/scripts/auto-walk.sh` issues a single prompt that wraps the same three roles:
+The phase roles are summarized below. The exact prompt and runner remain in the private automation repository, consistent with this page's `partial` reproducibility label:
 
 ```text
 INVENTORY phase:
@@ -214,7 +227,7 @@ CRITIQUE phase:
   unfalsifiable claim). Reject most; emit YAML for survivors per §9.
 ```
 
-The critic gate is the protocol's §11.5. Its strictness — together with the visible per-candidate verdicts in `log.md` — is the safeguard against the "wheelchair walk" failure mode.
+The critic gate is the protocol's §11.5. Its strictness — together with the visible per-candidate verdicts in `log.md` — is the safeguard against the single-pass-shortcut failure.
 
 ## 8. Surfacing wiring
 
@@ -280,11 +293,11 @@ Constraints:
 
 ## 9. Discharge wiring
 
-When the user (explicitly or by behavioral evidence over time) confirms a hypothesis:
+When an explicit authoritative statement, independent observable evidence, or governed review with cited evidence confirms a hypothesis:
 
 1. The walk skill identifies the relevant hypothesis id.
-2. It generates **a new atomic memory item** that states the fact independently. The new item cites the corpus items (the original `supporting_refs`), **not** the hypothesis.
-3. It appends the new item to `memories/memory.md` through the ordinary capture format (`- [YYYY-MM-DD] <fact>. Source: ...`).
+2. It generates **a new atomic memory item** that states the fact independently. `Source` names the confirmation event or independent evidence. Original `supporting_refs` remain `corroborating_refs` unless they independently establish the claim; the hypothesis appears only in `inspired_by`.
+3. It appends the new item to `memories/memory.md` through the ordinary minimum schema, including date, stable memory id, `kind`, and `Source` (plus `subject` for `state`).
 4. It moves the hypothesis file from `walks/active/` to `walks/discharged/`, adding a `discharged_at` and `spawned_memory_ref` field pointing to the new memory item.
 5. It appends a `discharge` event to `walks/log.md`.
 
@@ -322,47 +335,47 @@ Consistent with `auto-dream.sh`. The wrapper handles HOME normalization, trust-a
 
 Three milestones. Each is independently testable.
 
-### 11.1 L1 — Manual walk, structured pool (done 2026-05-28)
+### 11.1 `auto-walk:L1` — Manual walk, structured pool (done 2026-05-28)
 
 Goal: produce one walk by hand, validate the hypothesis YAML format, surface via natural language.
 
 Steps:
 
-1. Create `~/.kiro/walks/` and the `active/ discharged/ rejected/ archived/ noteworthy/` subdirs (symlinked to `dotfiles-ai/kiro/walks/`).
+1. Create `~/.kiro/walks/` and the `active/ discharged/ rejected/ archived/ noteworthy/` subdirs (symlinked to the private automation repository).
 2. Create `skills/auto-walk/SKILL.md` describing the surfacing skill (C mode). **Trigger by natural language, not `/walk`** — see §11.3.
 3. Manually invoke a walk by composing a prompt (mimicking what auto-walk.sh will eventually do) and running it through Kiro interactively.
 4. Place the output YAML(s) into `walks/active/`. Route critic-rejected-but-noteworthy candidates to `walks/noteworthy/`.
 5. Test from a fresh conversation by saying "散步看看". Confirm side-notes match the format in §8.3.
 
-Pass criterion: at least one hypothesis with all required fields, surfaced cleanly. Achieved: 5 hypotheses + 1 noteworthy (R7 self-lock), critic gate rejected a deliberately-planted sensitive-attribute inference (R11).
+Historical pass criterion: at least one hypothesis with all fields required by the then-current schema, surfaced cleanly. Achieved: 5 hypotheses + 1 noteworthy (R7 self-lock), and the critic gate rejected a deliberately planted sensitive-attribute inference (R11). The later `status` field remains a declared migration gap.
 
-### 11.2 L2 — Scheduled walk (deployed 2026-05-29; round-1 and round-2 prompts both validated by kickstart; Friday calendar trigger pending)
+### 11.2 `auto-walk:L2` — Scheduled profile (runner kickstarted 2026-05-29; Friday calendar trigger pending)
 
 Goal: weekly auto-walk runs unattended, produces hypotheses without manual prompting.
 
 Steps:
 
 1. ✓ Wrote `scripts/auto-walk.sh` per §6.3 — single prompt to `kiro-wrap chat`, three labeled phases inside it, Kiro writes the files itself.
-2. ✓ Added `com.icex.kiro.auto-walk.plist` running **Friday 07:50** (`Weekday 5`); plist itself lives in `dotfiles-ai/kiro/launchd/` (in version control) and is symlinked into `~/Library/LaunchAgents/`.
+2. ✓ Added a de-identified launchd job running **Friday 07:50** (`Weekday 5`); its plist lives in the private automation repository and is symlinked into `~/Library/LaunchAgents/`.
 3. ✓ Loaded with `launchctl bootstrap "gui/$(id -u)" <plist>` — **not** `launchctl load`, and **not** under `sudo` (LaunchAgent owner must equal the loader).
-4. ✓ **kickstart run 2026-05-29 succeeded under round-1 prompt** (exit 0, ~5m48s, 4 hypotheses + 1 noteworthy, ~44% critic pass rate matching the L1 manual rate). First run exposed and fixed a real bug: launchd does not load `.zshrc`, so `kiro-wrap` had no proxy env and hit a non-Anthropic endpoint without the requested model. The fix (explicit Surge proxy export) was applied to `auto-walk.sh` and back-ported to `auto-dream.sh`. The runner also gained a 3× retry + `walk-error` log line so future failures are visible, not silent.
+4. ✓ **kickstart run 2026-05-29 succeeded under round-1 prompt** (exit 0, ~5m48s, 4 hypotheses + 1 noteworthy, ~44% critic pass rate matching the L1 manual rate). First run exposed and fixed a real bug: launchd does not load `.zshrc`, so `kiro-wrap` lacked the required proxy environment and reached the wrong upstream endpoint. The fix (explicit proxy environment in the scheduled script) was applied to `auto-walk.sh` and back-ported to `auto-dream.sh`. The runner also gained a 3× retry + `walk-error` log line so future failures are visible, not silent.
 5. ✓ **Second kickstart 2026-05-29 21:46 validated round-2 prompt** (exit 0, ~4m25s). All round-2 invariants verified by the produced artifact:
    - `inventory:` section present, with 5 corpus items × 1-2 lines of key facts each — protocol §11.4 / §18 item 5 visible-trace rule satisfied at the artifact level (not only in the model's transient conversation stream).
    - All four `hyp-2026-05-29-005..007` and `noteworthy-002` carry sub-file `supporting_refs` (e.g. `topics/memory-system-design.md#架構決策`, `topics/steering-design-guide.md#反模式`) — protocol §9 sub-file-granularity rule honored.
    - hyp-005's claim cites facts retrievable from the named refs — §11.5 corpus-coverage rule honored after two rounds of review-caught cleanup. Round-3 fix added a missing AutoDream-section ref to cover "index 控 200 行內" and corrected a heading-space typo on a sibling ref. A subsequent round-4 review caught a cascading issue: the topic heading itself had been updated in the same change (adding "2026-05-29 排程修正" to the section title), which broke text-anchor matching for the just-added ref; that ref was then converted to a line-range form (`#L40-L43`) which is robust to heading edits. A sibling typo on hyp-007 (same missing space pattern as hyp-005's) was also fixed in the same pass. Lesson recorded: when refs use heading text as anchor, simultaneously editing the heading breaks the ref — prefer line ranges or copy the post-edit heading verbatim.
    - critic pass rate 3/8 ≈ 38%, in the same band as prior runs (45% / 44%) — gate neither over-loose nor self-locking.
    - Runner's own `notes:` flagged a meta-observation: noteworthy-routed candidates have recurred across three walks under the same single-source-cross-domain pattern (28 R7, 29-early R5, 29-late R6) — useful for future protocol review, not actioned this run.
-6. ○ **Friday calendar trigger pending** — `StartCalendarInterval` itself has not yet fired naturally. Same mechanism is in production for auto-archive and auto-dream for months, so risk is low; pending only as a final no-touch validation. Note: `launchctl print` currently shows `runs = 0 / last exit code = (never exited)` — this is a counter reset from a `bootout / bootstrap` cycle during the plist migration into `dotfiles-ai/kiro/launchd/`, **not** evidence that the round-1/round-2 kickstart runs did not happen (they did, see `walks/log.md` and `scripts/cron.log` entries for 2026-05-29 19:30 and 21:46). The plist still points at the canonical dotfiles location, schedule and exec path are intact.
+6. ○ **Friday calendar trigger pending** — `StartCalendarInterval` itself has not yet fired naturally. The same mechanism had operated auto-archive and auto-dream, but that does not validate this job's calendar firing. `launchctl print` showed `runs = 0 / last exit code = (never exited)` after a `bootout / bootstrap` reset; separate walk and runner logs record the two kickstart runs. The remaining claim is therefore narrow: runner execution was observed, natural scheduled firing was not.
 
 Pass criterion under round-1 prompt: met by the 2026-05-29 first kickstart.
 
 Pass criterion under round-2 prompt: met by the 2026-05-29 21:46 second kickstart — `inventory:` artifact present, sub-file refs used, claim stayed within corpus.
 
-### 11.3 L3 — surfacing mode (tested 2026-05-29)
+### 11.3 `auto-walk:L3` — Surfacing mode (tested 2026-05-29)
 
 Goal: determine which surfacing mode Kiro can actually support, and verify executive-turn silence.
 
-**Result: Kiro is A2 (semantic-trigger only). No per-turn hook exists.** The three-stage test (agent 王語嫣, claude-opus-4.8):
+**Result for the tested Kiro runtime: semantic-trigger only; no per-turn hook was found.** The staged test used one configured Kiro model:
 
 | Stage | Input | Behavior | Verdict |
 | --- | --- | --- | --- |
@@ -379,7 +392,7 @@ Goal: determine which surfacing mode Kiro can actually support, and verify execu
 
 **Adopted strategy: C mode with C-meta extension** (protocol §12.1). The SKILL.md trigger set was extended from explicit walk requests to also include divergence-request language ("还有别的角度吗", "我是不是漏了什么", "换个思路"). Stage 3 proves executive turns do not contain such language, so C-meta inherits the zero-false-trigger safety. Stage 4 verified the extension live: appending "有没有什么我没考虑到的角度?" to the same prompt that stayed silent in stage 2 now surfaces — and the agent placed the walk notes as a labeled "旁支" *after* a complete main answer, honoring §5.5 ADD-not-REWRITE without being told. True A mode (Hot rule forcing per-turn `active/` checks) was explicitly rejected: it would sacrifice the stage-3 zero-false-trigger property for marginal automation.
 
-### 11.4 L4 — Feedback loop (deferred)
+### 11.4 `auto-walk:L4` — Feedback loop (deferred)
 
 Negative-feedback decay, automated muting, automated discharge detection. Out of scope for the initial test. Manual decisions are fine while the corpus is small.
 
@@ -415,9 +428,24 @@ Rows marked **[observed]** were confirmed during the 2026-05-28 L1 and 2026-05-2
 | Discharged but no new memory item | Discharge step skipped or failed | Inspect `discharge` log entry against `memory.md` diff |
 | `kiro-wrap chat` hangs | HOME or PATH wrong | Mirror the §8.3/§8.4 fixes from `kiro-local-memory.md` |
 | High-value cross-domain bridge discarded | Critic gate rejects single-source generalization (protocol §11.5) | **[observed]** Route to `walks/noteworthy/` (protocol §11.6); R7 self-lock insight preserved this way |
-| Surface selects only "interesting" hypotheses, skips others | Agent applies relevance filtering on top of `applies_when` | **[observed, benign]** 王語嫣 surfaced 3/5 by relevance and stated the rest "stayed in the pool" — this matches §12.2 match-first intent |
+| Surface selects only "interesting" hypotheses, skips others | Agent applies relevance filtering on top of `applies_when` | **[observed, benign]** The tested agent surfaced 3/5 by relevance and stated the rest "stayed in the pool" — this matches §12.2 match-first intent |
 
-## 14. Essence
+## 14. Evidence boundary
+
+### What this use case supports
+
+- Manual and kickstarted runner executions produced structured hypotheses and visible phase traces in a real Kiro environment.
+- Semantic-trigger C and C-meta surfacing worked in the tested runtime while an executive task stayed silent.
+- Launchd environment differences, id allocation, and source-anchor drift produced concrete operational lessons.
+
+### What it does not support
+
+- Natural `StartCalendarInterval` firing for the walk job; that remained pending.
+- True per-turn A-mode hooks in Kiro.
+- Automated `auto-walk:L4` feedback, discharge, muting, or expiration.
+- Current runtime behavior after model, wrapper, or Kiro changes.
+
+## 15. Essence
 
 The system can be summarized as:
 

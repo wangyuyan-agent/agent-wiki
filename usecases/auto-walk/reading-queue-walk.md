@@ -1,5 +1,14 @@
 # Reading Queue Walk Use Case
 
+- Use case ID: `auto-walk.reading-queue`
+- Protocol: `auto-walk@0.1.0`
+- Evidence: `design-example`
+- Conformance: `proposed` — no protocol level has been executed
+- Validation scope: testable rollout and provisional pitfalls only; no completed run is claimed
+- Reproducibility: `conceptual` — sufficient to build a trial, but no run artifacts are included
+- Level namespace: `auto-walk`
+- Last reviewed: 2026-07-17
+
 ## 1. Context
 
 This use case describes a standalone Auto-Walk binding for a personal reading queue — daily or weekly digests of articles, HN posts, blogs, papers, and newsletters. The walk runs over digested article summaries, produces cross-article associations, and writes Walk reports for periodic reading.
@@ -58,7 +67,7 @@ Each entry in a digest file is one item. Recommended format:
 ```md
 ## <article title>
 
-- **Source**: https://news.ycombinator.com/item?id=12345
+- **Source**: <source-url>
 - **Type**: hn-thread | paper | blog | newsletter | video-transcript
 - **Tags**: ai-agents, memory, walking-creativity
 - **Read**: 2026-05-28
@@ -197,7 +206,7 @@ LLM-only summarization tends to flatten differences across articles. Human curat
 
 ## 10. Testable rollout
 
-### 10.1 L1 — Build the queue and one manual walk
+### 10.1 `auto-walk:L1` — Build the queue and one manual walk
 
 1. Set up `~/reading-queue/digests/` and add 1–2 weeks of digest files. Use existing tooling (`x-digest`, manual saves, etc.) — do not block on a perfect digest pipeline.
 2. Pick a propositional seed by hand.
@@ -206,15 +215,15 @@ LLM-only summarization tends to flatten differences across articles. Human curat
 
 Pass criterion: at least one hypothesis names a real cross-article bridge that you had not consciously noticed.
 
-### 10.2 L2 — Scheduled
+### 10.2 `auto-walk:L2` — Scheduled
 
 Same as obsidian §10.2 but with the tighter cadence (3–7 days).
 
-### 10.3 L3 — Not applicable
+### 10.3 `auto-walk:L3` — Report surface
 
-No A mode in standalone.
+The generated report is this binding's surfacing target. No A mode is required in this standalone profile.
 
-### 10.4 L4 — Optional feedback loop
+### 10.4 `auto-walk:L4` — Optional feedback loop
 
 Similar to obsidian §10.4: track confirmation rates per topic over time.
 
@@ -240,7 +249,20 @@ The walk does not care about the production path. It only requires the structure
 | Privacy leak in digest | Personal context bleeds into shared dotfiles | Keep `digests/` outside dotfiles by default; tag sensitive items |
 | Digest format drift | Tooling produces inconsistent items | Lint pass over `digests/` before each walk |
 
-## 13. Essence
+## 13. Evidence boundary
+
+### What this design contributes
+
+- A structured digest corpus adapter, report format, and reading-agenda output for a trial.
+- Explicit privacy, staleness, and format-drift risks to validate.
+
+### What it does not demonstrate
+
+- That the proposed cadence, thresholds, or agenda improve reading outcomes.
+- That any named integration produces the assumed Markdown shape today.
+- Any completed protocol level or observed user benefit.
+
+## 14. Essence
 
 ```text
 The queue holds what you've read.

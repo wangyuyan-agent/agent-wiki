@@ -13,10 +13,29 @@ Use this directory for documents that answer:
 
 ## Current documents
 
-- [Agent-first Memory Architecture](agent-first-memory.md) — Portable memory mechanism and implementation protocol for LLM agents.
-- [Agent-first Auto-Walk Architecture](agent-first-auto-walk.md) — Portable exploratory association mechanism that runs over consolidated memory or any structured corpus, generating weak hypotheses without mutating stable memory.
+Start here:
+
+- [Agent Adoption Guide](agent-adoption-guide.md) — Low-context protocol selection, reading order, minimal bindings, and bootstrap record.
+- [Protocol manifest](../protocols.yaml) — Machine-readable versions, maturity, level namespaces, dependencies, artifacts, and evidence.
+
+Practiced protocols:
+
+- [Agent-first Memory Architecture](agent-first-memory.md) — `practiced`; portable memory mechanism and implementation protocol for LLM agents.
+- [Agent-first Auto-Walk Architecture](agent-first-auto-walk.md) — `practiced`; exploratory association over consolidated memory or any structured corpus.
+- [Agent-first Council Architecture](agent-first-council.md) — `practiced`; single-agent and multi-agent deliberation, revision, evaluation, and termination.
+
+Design-only protocols:
+
+- [Agent-first Active Workspace Architecture](agent-first-active-workspace.md) — `design-only`; short-lived, source-aware task state for calibrating current attention.
+- [Agent-first Inner Speech Architecture](agent-first-inner-speech.md) — `design-only`; bounded runtime self-guidance, including the Inside-Outsider stance.
+- [Agent-first Steward Architecture](agent-first-steward.md) — `design-only`; the `1:1:N` relationship and coordination protocol.
+
+Advanced:
+
+- [Composable Agent Cognition Protocols](composable-agent-cognition.md) — `design-only`; composition rules for explicit artifact exchange. Read after selecting two or more protocols.
 
 ## Related use cases
 
 - [Memory use cases](../usecases/memory/README.md) — Practical implementations of the memory architecture.
 - [Auto-Walk use cases](../usecases/auto-walk/README.md) — Practical implementations of Auto-Walk.
+- [Council use cases](../usecases/council/README.md) — Same-runtime sub-agent and heterogeneous-model Council bindings.

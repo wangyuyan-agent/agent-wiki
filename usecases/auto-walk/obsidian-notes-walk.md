@@ -1,5 +1,14 @@
 # Obsidian Notes Walk Use Case
 
+- Use case ID: `auto-walk.obsidian-notes`
+- Protocol: `auto-walk@0.1.0`
+- Evidence: `design-example`
+- Conformance: `proposed` — no protocol level has been executed
+- Validation scope: testable rollout and provisional pitfalls only; no completed run is claimed
+- Reproducibility: `conceptual` — sufficient to build a trial, but no run artifacts are included
+- Level namespace: `auto-walk`
+- Last reviewed: 2026-07-17
+
 ## 1. Context
 
 This use case describes a standalone Auto-Walk binding for a Markdown notes vault (Obsidian, Logseq, Foam, or plain Markdown). The walk runs over the user's own notes, produces candidate associations between distant notes, and writes Walk reports back into the vault as ordinary Markdown files for human reading.
@@ -68,7 +77,7 @@ An "item" in this corpus is one of:
 Metadata sources:
 
 - **Frontmatter** (YAML at file top): explicit tags, status, date, type
-- **File mtime + ctime**: implicit timeline
+- **File mtime and any trustworthy creation metadata**: implicit timeline. Filesystem `ctime` is not portable creation time and may change during sync or metadata updates.
 - **Wikilinks** (`[[Target Note]]`): explicit neighbor edges
 - **Tags** (`#topic/subtopic`): taxonomic neighbors
 - **Backlinks** (computed from wikilinks): reverse neighbors
@@ -83,7 +92,7 @@ Neighbor retrieval (§11.3 of protocol):
 
 A weekly script (Friday, mirroring `kiro-local-walk.md` §6.1) that:
 
-1. Skips if vault has fewer than ~20 substantive notes (smaller vaults rarely produce useful bridges).
+1. Enumerates source notes while explicitly excluding `walks/`, templates, attachments, and generated/plugin directories; then skips if the remaining corpus has fewer than ~20 substantive notes.
 2. Picks one **propositional** seed (per §11.2 of protocol):
    - Default: a tag or wikilink cluster that appeared frequently in the last 7 days.
    - Alternative: a "stalled" topic — many notes but no recent updates.
@@ -173,7 +182,7 @@ For transparency, list rejected candidates with reasons:
 
 The `[[wikilinks]]` make hypothesis IDs clickable. Each YAML file in `active/` renders as its own note when the vault is opened in Obsidian/Logseq, with the report linking to it.
 
-Reports accumulate in `walks/reports/` and form an audit trail.
+Reports accumulate in `walks/reports/` and form a readable run history. They count as a durable audit trail only if the binding makes them append-only or versions them.
 
 ## 8. Lifecycle adaptations for standalone
 
@@ -187,6 +196,7 @@ In `kiro-local-walk.md`, discharge writes a new atomic memory item into `memory/
 - The walk runner **does not** auto-write to user notes. Ever.
 - The user manually moves the hypothesis YAML from `active/` to `discharged/` after writing the corresponding note.
 - The discharged YAML can carry an optional `note_link` field pointing to the user's new note.
+- The move records the confirmation source and appends a `discharge` event to `walks/log.md`.
 
 ### 8.2 No A mode
 
@@ -218,7 +228,7 @@ Same reasoning as `kiro-local-walk.md` §10.1: end-of-work-week consolidation rh
 
 ## 10. Testable rollout
 
-### 10.1 L1 — Manual walk, one report
+### 10.1 `auto-walk:L1` — Manual walk, one report
 
 1. Create `walks/` inside the vault with the structure in §3.
 2. Pick a propositional seed by hand. Pick 5–8 notes by hand for near/middle/far.
@@ -228,7 +238,7 @@ Same reasoning as `kiro-local-walk.md` §10.1: end-of-work-week consolidation rh
 
 Pass criterion: at least one hypothesis with valid fields; report renders correctly in your tool of choice.
 
-### 10.2 L2 — Scheduled walk
+### 10.2 `auto-walk:L2` — Scheduled walk
 
 1. Write `scripts/walk-run.sh` that does §5 unattended.
 2. Schedule it (cron, launchd, systemd timer, or GitHub Action) for Friday.
@@ -236,11 +246,11 @@ Pass criterion: at least one hypothesis with valid fields; report renders correc
 
 Pass criterion: unattended run produces a report; critic rejections logged.
 
-### 10.3 L3 — Not applicable
+### 10.3 `auto-walk:L3` — Report surface
 
-There is no A-mode surfacing in this binding. Skip.
+The generated report is this binding's surfacing target. A mode is not applicable; the report is the user-pulled fallback allowed by the protocol.
 
-### 10.4 L4 — Feedback loop (optional)
+### 10.4 `auto-walk:L4` — Feedback loop (optional)
 
 If the user maintains a habit of moving confirmed hypotheses to `discharged/`, the runner can learn:
 
@@ -260,7 +270,20 @@ Optional; deferred until enough data accumulates.
 | Vault sync conflicts on `walks/` | Multi-device walks run simultaneously | Pin the walk runner to one device; sync results outward |
 | Tag-heavy bridges feel forced | Near retrieval relies only on tags | Mix in wikilink and backlink graph for "Near" |
 
-## 12. Essence
+## 12. Evidence boundary
+
+### What this design contributes
+
+- A concrete corpus adapter, exclusion rule, report surface, and manual discharge path for Markdown vaults.
+- A checklist that can be used to run a bounded trial.
+
+### What it does not demonstrate
+
+- That the note-count thresholds or Friday cadence improve bridge quality.
+- That Obsidian, Logseq, Foam, sync, or any LLM runner behaves as described without a local test.
+- Any completed protocol level or observed user benefit.
+
+## 13. Essence
 
 ```text
 The vault holds what you've written.

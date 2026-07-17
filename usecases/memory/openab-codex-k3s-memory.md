@@ -1,5 +1,13 @@
 # OpenAB + Codex + k3s Memory Use Case
 
+- Use case ID: `memory.openab-codex-k3s`
+- Protocol: `memory@0.1.0`
+- Evidence: `field-tested`
+- Conformance: `mapped` — lifecycle evidence maps through `memory:L4`; the current item schema was not revalidated
+- Validation scope: deployment-derived architecture, scheduling checks, and operational pitfalls; live cluster was not rechecked during the 2026-07-17 metadata review
+- Reproducibility: `partial` — the binding is environment-specific and requires an equivalent cluster/runtime
+- Last reviewed: 2026-07-17
+
 ## 1. Context
 
 This use case describes an agent memory system for a long-running OpenAB + Codex environment on k3s.
@@ -14,6 +22,10 @@ The system must let an agent:
 
 The design is a practical implementation of [Agent-first Memory Architecture](../../docs/agent-first-memory.md).
 
+### Protocol alignment note
+
+This deployment predates `memory@0.1.0`. Its persistence, scheduling, archive-first workflow, distillation, and operational failures are real evidence, but the documented binding still permits direct topic writes and legacy `[待清理]` markers. Before claiming `memory@0.1.0` conformance, route captures through the inbox, add stable `id`, `kind`, `Source`, and `subject` for `state`, adopt the closed `Status` vocabulary, and validate exact-subject non-destructive supersede. The evidence label does not certify the current schema.
+
 ## 2. Design philosophy
 
 This design combines several ideas:
@@ -24,7 +36,7 @@ This design combines several ideas:
 
 Final principles:
 
-- `AGENTS.md` stores soul, rules, and memory entry points, not short-term memory bodies.
+- `AGENTS.md` stores the hot behavior contract, rules, and memory entry points, not short-term memory bodies.
 - `memory.md` is a hot inbox, not the final knowledge base.
 - `index.md` is cold/warm navigation, not a second garbage pile.
 - `topics/` stores distilled long-term knowledge.
@@ -160,6 +172,8 @@ They should not be loaded first in normal work.
 
 ## 6. Memory write rules
 
+The following records the historical binding. Step 3 is a declared deviation from `memory@0.1.0`, whose current capture path writes the inbox first and lets the governed distillation path update topics.
+
 When the user explicitly says:
 
 - remember
@@ -191,7 +205,8 @@ This implementation is hybrid.
 
 ### Stage 1: archive
 
-Execution: Kubernetes CronJob  
+Execution: Kubernetes CronJob
+
 Time: Asia/Shanghai 04:10
 
 Purpose:
@@ -209,7 +224,8 @@ Why Kubernetes CronJob:
 
 ### Stage 2: autodream
 
-Execution: OpenAB usercron  
+Execution: OpenAB usercron
+
 Time: Asia/Shanghai 04:20
 
 Purpose:
@@ -246,7 +262,7 @@ Outputs:
 
 ## 9. Distillation rules
 
-Autodream is conservative.
+Autodream is conservative, but these are legacy deployed rules. Free-form `[待清理]` must be migrated to the current closed `Status` vocabulary before claiming protocol conformance.
 
 Rules:
 
@@ -313,7 +329,21 @@ Verify:
 
 If it becomes the final knowledge base, the system loses the hot/warm/cold separation.
 
-## 11. Essence
+## 11. Evidence boundary
+
+### What this use case supports
+
+- A real containerized binding separated writable persistent memory from immutable deployment configuration.
+- Archive-first scheduling and layered runtime checks exposed concrete k3s, environment, and cron pitfalls.
+- The lifecycle survived beyond one chat session and one process lifetime.
+
+### What it does not support
+
+- End-to-end conformance with the current `memory@0.1.0` item and status schema.
+- Current cluster health; the live environment was not rechecked during this review.
+- A claim that ConfigMap, PVC, CronJob, or OpenAB is required by the general protocol.
+
+## 12. Essence
 
 One-sentence version:
 
@@ -322,11 +352,11 @@ One-sentence version:
 Metaphor:
 
 ```text
-AGENTS.md is the soul.
+AGENTS.md is the hot behavior contract.
 memory.md is the temporary box.
 index.md is the signpost.
 topics/ is the shelf of artifacts.
 archive/ is raw evidence.
 log.md is the footprints.
-archive + autodream is the daily mechanism that maintains the tomb.
+archive + autodream is the daily mechanism that maintains the knowledge base.
 ```
