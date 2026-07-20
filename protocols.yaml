@@ -1,5 +1,5 @@
 manifest_version: 1
-updated: "2026-07-17"
+updated: "2026-07-20"
 purpose: "Machine-readable routing index for agent-wiki protocols and guides."
 level_policy: "Ranges are protocol-local cumulative conformance ladders; isolated higher-level capability tests do not establish that level without lower requirements."
 
@@ -159,7 +159,7 @@ protocols:
     name: "Agent-first Council"
     version: "0.1.0"
     maturity: practiced
-    evidence_scope: "One run-reported binding demonstrates council:L1-style blind review and selected council:L2 revision pressure without full L2 lineage/checkpoint validation; one implementation is source-inspected."
+    evidence_scope: "One run-reported binding demonstrates council:L1-style blind review and selected council:L2 revision pressure without full L2 lineage/checkpoint validation; one implementation is source-inspected; one field-tested same-runtime role-diverse binding demonstrates selected council:L0 mechanisms without independent CandidateArtifacts or anonymized peer review."
     document: docs/agent-first-council.md
     level_namespace: council
     level_range: ["council:L0", "council:L5"]
@@ -186,12 +186,17 @@ protocols:
         conformance: mapped
         conformance_scope: "Source structure mapped to the protocol; runtime conformance not assessed."
         document: usecases/council/llm-council-local.md
+      - id: council.kiro-local
+        evidence: field-tested
+        conformance: mapped
+        conformance_scope: "Same-runtime, same-model-family role-diverse review maps to selected council:L0 mechanisms: isolated role outputs, conflict extraction, and synthesis. Complete council:L0 is not claimed because the run reviewed one shared draft rather than producing independent CandidateArtifacts; council:L1 anonymity and council:L2 lineage are also absent."
+        document: usecases/council/kiro-local-council.md
 
   - id: steward
     name: "Agent-first Steward"
     version: "0.1.0"
-    maturity: design-only
-    evidence_scope: "No documented binding yet."
+    maturity: practiced
+    evidence_scope: "One field-tested single-agent binding operates the 1:1:N topology at steward:S1 with substantial steward:S2 coverage (participant and managed-resource registries, result integration) and partial steward:S3/steward:S4 elements; the steward@0.1.0 artifact schema, a field-tested durable canonical task record in ordinary Steward work, per-order revocable grants, heterogeneous-participant operation within the binding, and formal takeover remain unvalidated."
     document: docs/agent-first-steward.md
     level_namespace: steward
     level_range: ["steward:S0", "steward:S5"]
@@ -209,7 +214,12 @@ protocols:
       - result_envelope
       - escalation_request
       - steward_digest
-    usecases: []
+    usecases:
+      - id: steward.kiro-local
+        evidence: field-tested
+        conformance: partially-verified
+        conformance_scope: "steward:S1 delegation, participant/managed-resource registries, and standing-authority gates operated and source-inspected; a field-tested steward:S2 durable canonical task record in ordinary Steward work, steward:S3 per-order revocable grants with audit, and steward:S4 heterogeneous-participant operation plus formal takeover remain declared gaps."
+        document: usecases/steward/kiro-local-steward.md
 
 guides:
   - id: adoption

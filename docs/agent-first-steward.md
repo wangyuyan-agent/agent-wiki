@@ -2,10 +2,10 @@
 
 - Protocol ID: `steward`
 - Version: `0.1.0`
-- Maturity: `design-only`
-- Evidence scope: no documented binding yet
+- Maturity: `practiced`
+- Evidence scope: one field-tested single-agent binding operates the `1:1:N` topology at `steward:S1` with substantial `steward:S2` coverage and partial `steward:S3`/`steward:S4` elements; the `steward@0.1.0` artifact schema, a field-tested durable canonical task record in ordinary Steward work, per-order revocable grants, heterogeneous-participant operation within the binding, and formal takeover remain unvalidated (see [Kiro Local Steward](../usecases/steward/kiro-local-steward.md))
 - Level namespace: `steward:S0`–`steward:S5`
-- Last updated: 2026-07-17
+- Last updated: 2026-07-20
 - Origin: maintainer design discussion captured on 2026-07-15; raw private conversations are intentionally omitted
 
 ## 1. Purpose
@@ -644,7 +644,11 @@ Before calling a binding a Steward architecture, verify:
 13. Simple tasks may still be executed directly.
 14. The design works as a protocol before it becomes a service.
 
-## 21. Final rule
+## 21. Practical use cases
+
+- [Kiro Local Steward](../usecases/steward/kiro-local-steward.md) — `Evidence: field-tested`; `Conformance: partially-verified`. A local `steward:S1` binding with substantial `steward:S2` coverage and explicit higher-level gaps.
+
+## 22. Final rule
 
 ```text
 1:1 gives the human one relationship.

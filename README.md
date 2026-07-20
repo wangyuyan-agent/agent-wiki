@@ -69,10 +69,14 @@ agent-wiki/
     │   ├── obsidian-notes-walk.md
     │   ├── reading-queue-walk.md
     │   └── research-corpus-walk.md
-    └── council/
+    ├── council/
+    │   ├── README.md
+    │   ├── multi-agent-roundtable.md
+    │   ├── llm-council-local.md
+    │   └── kiro-local-council.md
+    └── steward/
         ├── README.md
-        ├── multi-agent-roundtable.md
-        └── llm-council-local.md
+        └── kiro-local-steward.md
 ```
 
 ## Content model
@@ -84,10 +88,11 @@ agent-wiki/
 - `usecases/memory/` — Real memory-system implementations that correspond to [Agent-first Memory Architecture](docs/agent-first-memory.md).
 - `usecases/auto-walk/` — Real Auto-Walk implementations that correspond to [Agent-first Auto-Walk Architecture](docs/agent-first-auto-walk.md).
 - `usecases/council/` — Same-runtime role-diverse and heterogeneous-model bindings that correspond to [Agent-first Council Architecture](docs/agent-first-council.md).
+- `usecases/steward/` — Real Steward `1:1:N` bindings that correspond to [Agent-first Steward Architecture](docs/agent-first-steward.md).
 
 `docs/` starts flat on purpose. Add subdirectories only when a topic grows enough to justify structure.
 
-`usecases/` may use small topic folders when multiple practical cases clearly belong together, such as `usecases/memory/`, `usecases/auto-walk/`, and `usecases/council/`.
+`usecases/` may use small topic folders when multiple practical cases clearly belong together, such as `usecases/memory/`, `usecases/auto-walk/`, `usecases/council/`, and `usecases/steward/`.
 
 ## Current entry points
 
@@ -101,12 +106,12 @@ Practiced protocols:
 - [Agent-first Memory Architecture](docs/agent-first-memory.md) and [Memory use cases](usecases/memory/README.md)
 - [Agent-first Auto-Walk Architecture](docs/agent-first-auto-walk.md) and [Auto-Walk use cases](usecases/auto-walk/README.md)
 - [Agent-first Council Architecture](docs/agent-first-council.md) and [Council use cases](usecases/council/README.md)
+- [Agent-first Steward Architecture](docs/agent-first-steward.md) and [Steward use cases](usecases/steward/README.md)
 
 Design-only protocols:
 
 - [Agent-first Active Workspace Architecture](docs/agent-first-active-workspace.md)
 - [Agent-first Inner Speech Architecture](docs/agent-first-inner-speech.md)
-- [Agent-first Steward Architecture](docs/agent-first-steward.md)
 
 Advanced composition:
 

@@ -23,12 +23,12 @@ Practiced protocols:
 - [Agent-first Memory Architecture](agent-first-memory.md) — `practiced`; portable memory mechanism and implementation protocol for LLM agents.
 - [Agent-first Auto-Walk Architecture](agent-first-auto-walk.md) — `practiced`; exploratory association over consolidated memory or any structured corpus.
 - [Agent-first Council Architecture](agent-first-council.md) — `practiced`; single-agent and multi-agent deliberation, revision, evaluation, and termination.
+- [Agent-first Steward Architecture](agent-first-steward.md) — `practiced`; the `1:1:N` relationship and coordination protocol.
 
 Design-only protocols:
 
 - [Agent-first Active Workspace Architecture](agent-first-active-workspace.md) — `design-only`; short-lived, source-aware task state for calibrating current attention.
 - [Agent-first Inner Speech Architecture](agent-first-inner-speech.md) — `design-only`; bounded runtime self-guidance, including the Inside-Outsider stance.
-- [Agent-first Steward Architecture](agent-first-steward.md) — `design-only`; the `1:1:N` relationship and coordination protocol.
 
 Advanced:
 
@@ -39,3 +39,4 @@ Advanced:
 - [Memory use cases](../usecases/memory/README.md) — Practical implementations of the memory architecture.
 - [Auto-Walk use cases](../usecases/auto-walk/README.md) — Practical implementations of Auto-Walk.
 - [Council use cases](../usecases/council/README.md) — Same-runtime sub-agent and heterogeneous-model Council bindings.
+- [Steward use cases](../usecases/steward/README.md) — Real `1:1:N` Steward bindings coordinating participants and managed resources.

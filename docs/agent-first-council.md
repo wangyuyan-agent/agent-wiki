@@ -3,9 +3,9 @@
 - Protocol ID: `council`
 - Version: `0.1.0`
 - Maturity: `practiced`
-- Evidence scope: one run-reported binding demonstrates `council:L1`-style blind review and selected `council:L2` revision pressure without full lineage/checkpoint validation; one implementation is source-inspected
+- Evidence scope: one run-reported binding demonstrates `council:L1`-style blind review and selected `council:L2` revision pressure without full lineage/checkpoint validation; one implementation is source-inspected; one field-tested same-runtime role-diverse binding demonstrates selected `council:L0` mechanisms without independent CandidateArtifacts or anonymized peer review
 - Level namespace: `council:L0`–`council:L5`
-- Last updated: 2026-07-17
+- Last updated: 2026-07-20
 
 ## 1. Purpose
 
@@ -661,6 +661,7 @@ Walk hypotheses may inspire candidates but remain labeled weak evidence. Council
 
 - [Multi-Agent Roundtable](../usecases/council/multi-agent-roundtable.md) — `Evidence: run-reported`; `Conformance: mapped`. A four-round, same-runtime sub-agent binding with role diversity, blind review, one high-impact follow-up, and an actionable decision package.
 - [Local LLM Council](../usecases/council/llm-council-local.md) — `Evidence: source-inspected`; `Conformance: mapped`. An early heterogeneous-model service binding using independent answers, anonymous peer ranking, Chair synthesis, and optional Elo history.
+- [Kiro Local Council](../usecases/council/kiro-local-council.md) — `Evidence: field-tested`; `Conformance: mapped`. A same-runtime role-diverse review binding covering isolated review, conflict extraction, and synthesis, without claiming complete `council:L0`.
 
 ## 24. Final rule
 

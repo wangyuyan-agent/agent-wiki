@@ -68,3 +68,4 @@ A use case MUST NOT claim a verified level merely because its behavior resembles
 - [memory/](memory/README.md) — Real implementations of agent memory systems.
 - [auto-walk/](auto-walk/README.md) — Field-tested and design-example bindings of Auto-Walk over consolidated memory or other structured corpora.
 - [council/](council/README.md) — Same-runtime role-diverse and heterogeneous-model Council bindings at explicitly labeled evidence levels.
+- [steward/](steward/README.md) — Real `1:1:N` Steward bindings at explicitly labeled evidence and conformance levels.
