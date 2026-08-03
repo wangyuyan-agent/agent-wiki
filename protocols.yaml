@@ -1,5 +1,5 @@
 manifest_version: 1
-updated: "2026-07-20"
+updated: "2026-08-03"
 purpose: "Machine-readable routing index for agent-wiki protocols and guides."
 level_policy: "Ranges are protocol-local cumulative conformance ladders; isolated higher-level capability tests do not establish that level without lower requirements."
 
@@ -43,7 +43,12 @@ confidence_schemes:
 verdict_schemes:
   intervention-outcome-v1:
     values: [helpful, misleading, neutral, unknown]
-    use: "Outcome attribution for Memory activation and Inner Speech intervention feedback."
+    use: "Outcome attribution for Memory activation, Inner Speech intervention feedback, and Skill activation observation."
+
+evaluation_schemes:
+  procedure-evaluation-v1:
+    values: [unevaluated, supported, contradicted, inconclusive]
+    use: "Scoped comparison state for one procedural artifact version against a named baseline; never a global artifact status."
 
 protocols:
   - id: memory
@@ -114,6 +119,29 @@ protocols:
         evidence: design-example
         conformance: proposed
         document: usecases/auto-walk/research-corpus-walk.md
+
+  - id: skill
+    name: "Agent-first Skill Lifecycle"
+    version: "0.1.0"
+    maturity: design-only
+    evidence_scope: "No documented binding yet."
+    document: docs/agent-first-skill-lifecycle.md
+    level_namespace: skill
+    level_range: ["skill:L0", "skill:L4"]
+    minimal_level: "skill:L0"
+    standalone: true
+    required_dependencies: []
+    optional_dependencies: [memory, active-workspace, council, steward]
+    confidence_schemes: []
+    evaluation_schemes: [procedure-evaluation-v1]
+    primary_artifacts:
+      - candidate_record
+      - evidence_record
+      - adoption_decision
+      - activation_observation
+      - lifecycle_event
+      - execution_context_snapshot
+    usecases: []
 
   - id: active-workspace
     name: "Agent-first Active Workspace"

@@ -3,7 +3,7 @@
 - Document ID: `adoption`
 - Version: `0.1.0`
 - Maturity: `design-only`
-- Last updated: 2026-07-17
+- Last updated: 2026-08-03
 
 ## 1. Purpose
 
@@ -29,6 +29,7 @@ Before claiming conformance, read the selected protocol document completely. The
 | --- | --- | --- | --- |
 | Useful context must survive sessions | [Memory](agent-first-memory.md) | `memory:L0` | Capture one concise, source-aware memory item in a small inbox/store. |
 | A corpus needs weak lateral exploration | [Auto-Walk](agent-first-auto-walk.md) | `auto-walk:L0` | Run one manual walk and write hypotheses outside Memory. |
+| Imported or relationship-formed procedures need governed adoption and evolution | [Skill Lifecycle](agent-first-skill-lifecycle.md) | `skill:L0` | Record one candidate's provenance, version, surfaces, authority decision, and rollback target. |
 | The wrong information is active during a task | [Active Workspace](agent-first-active-workspace.md) | `active-workspace:L0` | Maintain one bounded in-context goal/evidence/assumption/action snapshot. |
 | An Agent needs a short self-guidance cue | [Inner Speech](agent-first-inner-speech.md) | `inner-speech:L0` | Apply one explicit cue with a trigger and expiry condition. |
 | A decision needs inspectable competing views | [Council](agent-first-council.md) | `council:L0` | Create a GoalContract, candidates, ConflictMap, and DecisionRecord. |
@@ -63,7 +64,19 @@ Minimum:
 
 Memory is optional. Any structured corpus with stable references is valid.
 
-### 4.3 Active Workspace
+### 4.3 Skill Lifecycle
+
+Minimum:
+
+1. Select one imported or relationship-formed candidate.
+2. Give it a stable artifact id and immutable version/content identity.
+3. Record acquisition mode, contribution lineage, activation boundary, and changed surfaces.
+4. Escalate privileged changes to a separate authority/security decision; split out or reject constitutional content, which cannot enter through this protocol.
+5. Record an attributable adoption decision and a rollback target.
+
+`skill:L0` does not claim that the candidate improved behavior. Add scoped comparison evidence before using improvement language or automatic adoption.
+
+### 4.4 Active Workspace
 
 Minimum:
 
@@ -81,7 +94,7 @@ actions: []
 
 Keep this in current context if persistence is unnecessary. Separate evidence from assumptions and close/expire it when the task ends.
 
-### 4.4 Inner Speech
+### 4.5 Inner Speech
 
 Minimum:
 
@@ -95,7 +108,7 @@ expires_after: <observation or phase>
 
 Silence is valid. Do not emit a cue merely because the protocol exists.
 
-### 4.5 Council
+### 4.6 Council
 
 Minimum:
 
@@ -107,7 +120,7 @@ Minimum:
 
 Do not add ranking, Elo, multiple providers, or repeated rounds at `council:L0`.
 
-### 4.6 Steward
+### 4.7 Steward
 
 Minimum:
 

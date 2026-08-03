@@ -52,6 +52,7 @@ agent-wiki/
 │   ├── agent-adoption-guide.md
 │   ├── agent-first-memory.md
 │   ├── agent-first-auto-walk.md
+│   ├── agent-first-skill-lifecycle.md
 │   ├── agent-first-active-workspace.md
 │   ├── agent-first-inner-speech.md
 │   ├── agent-first-council.md
@@ -110,6 +111,7 @@ Practiced protocols:
 
 Design-only protocols:
 
+- [Agent-first Skill Lifecycle Architecture](docs/agent-first-skill-lifecycle.md)
 - [Agent-first Active Workspace Architecture](docs/agent-first-active-workspace.md)
 - [Agent-first Inner Speech Architecture](docs/agent-first-inner-speech.md)
 

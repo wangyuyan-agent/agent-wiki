@@ -5,7 +5,7 @@
 - Maturity: `design-only`
 - Evidence scope: component protocols have independent evidence; the full composition has no documented conformance run
 - Level namespace: `composition:C0`–`composition:C5`
-- Last updated: 2026-07-17
+- Last updated: 2026-08-03
 
 ## 1. Purpose
 
@@ -19,6 +19,7 @@ The protocols currently covered are:
 
 - [Agent-first Memory](agent-first-memory.md) — calibrates trust in retained experience.
 - [Agent-first Auto-Walk](agent-first-auto-walk.md) — explores weak, lateral hypotheses without mutating memory.
+- [Agent-first Skill Lifecycle](agent-first-skill-lifecycle.md) — calibrates trust in adopted procedure through provenance, authority, scoped evidence, and rollback.
 - [Agent-first Active Workspace](agent-first-active-workspace.md) — calibrates what receives attention in the current task.
 - [Agent-first Inner Speech](agent-first-inner-speech.md) — converts active state into bounded self-guidance.
 - [Agent-first Council](agent-first-council.md) — creates, critiques, revises, and adjudicates multiple candidate views.
@@ -56,6 +57,7 @@ Each protocol calibrates a different resource:
 | --- | --- | --- | --- |
 | Memory | Trust in the past | Memory item | Cross-session |
 | Auto-Walk | Possibility at the edge | Weak hypothesis | Multi-session until discharge/expiry |
+| Skill Lifecycle | Trust in adopted procedure | Candidate/evidence/adoption/lifecycle records | Cross-session version lifecycle plus bounded activation episodes |
 | Active Workspace | Current attention | Workspace snapshot/item | One task or bounded run |
 | Inner Speech | Explicit self-guidance | Control cue | One step or short phase |
 | Council | Plural deliberation | Candidate/review/decision record | One decision run plus outcome record |
@@ -71,6 +73,7 @@ Implementation levels are local cumulative capability ladders, not a shared matu
 | --- | --- | --- |
 | Memory | `memory:L0`–`memory:L5` | Memory implementation capability |
 | Auto-Walk | `auto-walk:L0`–`auto-walk:L4` | Walk generation, surfacing, and feedback capability |
+| Skill Lifecycle | `skill:L0`–`skill:L4` | Procedure adoption, evidence, automation, and formation capability |
 | Active Workspace | `active-workspace:L0`–`active-workspace:L4` | Workspace structure and sharing capability |
 | Inner Speech | `inner-speech:L0`–`inner-speech:L4` | Cue generation and feedback capability |
 | Council | `council:L0`–`council:L5` | Deliberation and outcome-evaluation capability |
@@ -92,9 +95,13 @@ Allowed:
   Steward invokes Council with a GoalContract and evidence snapshot.
   A confirmed Council outcome enters Memory through Memory capture.
   A discharged Walk hypothesis spawns a new Memory item through capture.
+  A Skill activation observation enters Memory only through Memory capture.
+  A Skill privilege delta requests a decision from its binding's authority/security path.
 
 Forbidden:
   Auto-Walk edits a Memory topic directly.
+  A staged Skill activates itself or widens the standing grant used to adopt it.
+  Skill evaluation rewrites historical evidence when execution context changes.
   Inner Speech silently rewrites long-term Memory.
   Council changes Steering because several members agreed.
   Steward expands authority because a participant requests it.
@@ -113,7 +120,7 @@ A binding MAY use files, JSON, database rows, events, or in-memory objects. Any 
 
 ```yaml
 artifact_id: <stable id within the run or store>
-artifact_type: <producer-defined type such as memory_item, hypothesis, control_cue, candidate_artifact, metamemory_feedback, or policy_proposal>
+artifact_type: <producer-defined type such as memory_item, hypothesis, control_cue, candidate_artifact, candidate_record, metamemory_feedback, or policy_proposal>
 producer_protocol: <protocol id>
 protocol_version: <producer protocol version>
 created_at: <timestamp>
@@ -151,7 +158,7 @@ When producer and receiver define different status vocabularies, the receiver MU
 
 ### 6.2 Outcome verdict scheme
 
-Memory activation and Inner Speech intervention feedback share `intervention-outcome-v1`:
+Memory activation, Inner Speech intervention feedback, and Skill activation observation share `intervention-outcome-v1`:
 
 | Value | Meaning |
 | --- | --- |
@@ -297,6 +304,7 @@ Every composed run MUST name an owner for each mutable surface:
 | Memory inbox | Memory capture path |
 | Memory distilled store | Autodream/review binding |
 | Walk pool | Walk runner |
+| Skill candidates and lifecycle records | Skill Lifecycle binding; Principal or granted authority owns adoption |
 | Active Workspace | Task controller or elected workspace owner |
 | Inner Speech cue | Acting agent or bounded observer role |
 | Council artifacts | Role owner; RunRecord owned by controller |
@@ -335,6 +343,7 @@ Each protocol must fail independently:
 - If Inner Speech is unavailable, the agent can act directly from Workspace.
 - If Council members fail, the run degrades according to its minimum quorum and records missing perspectives.
 - If Auto-Walk is unavailable, stable task execution is unaffected.
+- If Skill Lifecycle automation is unavailable, explicit manual adoption and rollback may continue at `skill:L0`.
 - If Workspace persistence is unavailable, a single-session in-memory snapshot is valid.
 - If Steward is unavailable, the Principal can inspect/export canonical state and continue directly or appoint a replacement.
 
@@ -368,6 +377,7 @@ Before claiming that protocols compose safely, verify:
 9. Degraded operation is explicit and testable.
 10. No component requires full chain-of-thought persistence.
 11. Steward delegation preserves Principal intent, bounded authority, participant provenance, and takeover paths.
+12. Skill candidates cannot activate themselves, rewrite their evidence, or widen their own adoption authority.
 
 ## 16. Final rule
 
@@ -379,6 +389,7 @@ Workspace calibrates present attention.
 Inner Speech calibrates explicit self-guidance.
 Council calibrates plural deliberation.
 Auto-Walk expands possibility without claiming truth.
+Skill Lifecycle calibrates procedure at adoption and automation boundaries.
 Steward compresses coordination while preserving one accountable relationship.
 
 Artifacts cross boundaries.
