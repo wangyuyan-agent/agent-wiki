@@ -2,8 +2,8 @@
 
 - Protocol ID: `skill`
 - Version: `0.1.0`
-- Maturity: `design-only`
-- Evidence scope: No documented binding yet.
+- Maturity: `practiced`
+- Evidence scope: One field-tested imported-skill binding contributes repeated real-environment activation evidence, a runtime-fallback lesson, and unrecorded version drift mapped to `skill@0.1.0`; no `CandidateRecord`, `EvidenceRecord`, `AdoptionDecision`, rollback record, or `skill:L0+` conformance was validated.
 - Level namespace: `skill:L0`–`skill:L4`
 - Last updated: 2026-08-03
 
@@ -37,7 +37,7 @@ Three public lines of work make the problem class and major mechanisms concrete:
 - [SkillOpt](https://huggingface.co/papers/2605.23904) treats a textual skill as an optimizable external procedural artifact and uses held-out evaluation to gate candidate changes.
 - [SkillOpt-Sleep](https://github.com/microsoft/SkillOpt/blob/e7014cd18a18e11e6f6c10b897f7a009960d2e1b/docs/sleep/README.md) demonstrates an offline shape that harvests Agent usage, replays tasks, stages candidates, and separates staging from user adoption.
 
-They are design inputs, not conforming bindings of this protocol. None of them establishes `skill:L0`–`skill:L4` conformance, and none upgrades this document beyond `design-only`.
+They are design inputs, not conforming bindings of this protocol. None of them establishes `skill:L0`–`skill:L4` conformance. This document's `practiced` maturity comes instead from the mapped local field evidence in §25; that evidence also validates no implementation level.
 
 ## 3. Design goals
 
@@ -700,9 +700,9 @@ Before claiming a Skill Lifecycle level, verify:
 
 ## 25. Practical use cases
 
-No conforming binding is documented yet.
+- [Kiro Taobao Native](../usecases/skill/kiro-taobao-native.md) — Evidence: `field-tested`; Conformance: `mapped`. A pre-protocol imported-skill operation maps real activation observations, a runtime-fallback lesson, and unrecorded version drift to this protocol's concepts. No lifecycle governance record was operated, and no `skill:L0+` level is claimed.
 
-The public systems in §2 motivate the problem and design, but they are not use cases of `skill@0.1.0`. The first use case should manually walk one imported skill and one formed skill through the same lifecycle, then state exactly which checks were reproduced and which remain proposed.
+No conformance-validated binding is documented yet. The public systems in §2 motivate the problem and design, but they are not use cases of `skill@0.1.0`. The first conformance-oriented use case should still manually walk one imported skill and one relationship-formed skill through the same lifecycle, then state exactly which checks were reproduced and which remain proposed.
 
 ## 26. Final rule
 

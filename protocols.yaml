@@ -123,8 +123,8 @@ protocols:
   - id: skill
     name: "Agent-first Skill Lifecycle"
     version: "0.1.0"
-    maturity: design-only
-    evidence_scope: "No documented binding yet."
+    maturity: practiced
+    evidence_scope: "One field-tested imported-skill binding contributes repeated real-environment activation evidence, a runtime-fallback lesson, and unrecorded version drift mapped to skill@0.1.0; no CandidateRecord, EvidenceRecord, AdoptionDecision, rollback record, or skill:L0+ conformance was validated."
     document: docs/agent-first-skill-lifecycle.md
     level_namespace: skill
     level_range: ["skill:L0", "skill:L4"]
@@ -141,7 +141,12 @@ protocols:
       - activation_observation
       - lifecycle_event
       - execution_context_snapshot
-    usecases: []
+    usecases:
+      - id: skill.kiro-taobao-native
+        evidence: field-tested
+        conformance: mapped
+        conformance_scope: "Repeated private real-environment activations, runtime fallback, and unrecorded version drift are mapped to protocol concepts; lifecycle governance records and all skill:L0+ requirements remain unvalidated."
+        document: usecases/skill/kiro-taobao-native.md
 
   - id: active-workspace
     name: "Agent-first Active Workspace"
