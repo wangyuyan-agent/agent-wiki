@@ -18,7 +18,7 @@ This guide routes protocol reading. It does not grant permission to create files
 1. Read [`protocols.yaml`](../protocols.yaml) for protocol ids, versions, maturity, dependencies, artifacts, and usecase evidence.
 2. Select one protocol from the problem table below.
 3. Read that protocol's metadata, Purpose, Non-goals, core artifact/schema, minimum binding, implementation levels, validation checklist, and Final rule.
-4. Read one matching use case and calibrate claims from its `Evidence` and `Validation scope` fields.
+4. Read one matching use case, when one exists, and calibrate claims from its `Evidence` and `Validation scope` fields.
 5. Read [Composable Agent Cognition Protocols](composable-agent-cognition.md) only when two or more protocols must exchange artifacts.
 
 Before claiming conformance, read the selected protocol document completely. The short path is for selection and bootstrap, not for skipping invariants.
@@ -193,7 +193,7 @@ Move to the next protocol level only when:
 - the current level has an observed limitation;
 - the next level directly addresses it;
 - new state, automation, authority, and failure modes are understood;
-- the current level's validation checklist passes;
+- the checklist items applicable at the current level pass;
 - rollback or degraded operation remains possible.
 
 Higher levels are not maturity scores and are not inherently better.
@@ -207,6 +207,6 @@ Higher levels are not maturity scores and are not inherently better.
 5. Sources and provenance are inspectable.
 6. No optional protocol was made mandatory.
 7. The implementation stays within user-granted authority.
-8. The protocol-specific checklist passes for the claimed level.
+8. The applicable protocol-specific checklist items pass for the claimed level.
 9. Evidence claims match the recorded validation.
 10. Another Agent can discover and resume the binding without reading an entire chat history.

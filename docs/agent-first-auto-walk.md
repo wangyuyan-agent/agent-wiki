@@ -5,7 +5,7 @@
 - Maturity: `practiced`
 - Evidence scope: real-environment runs cover manual generation, runner execution, and semantic-trigger surfacing through parts of `auto-walk:L3`; natural calendar firing and `auto-walk:L4` remain unverified
 - Level namespace: `auto-walk:L0`–`auto-walk:L4`
-- Last updated: 2026-07-17
+- Last updated: 2026-08-03
 
 ## 1. Purpose
 
@@ -28,11 +28,11 @@ The name comes from research on walking and creativity. [Oppezzo and Schwartz (2
 A good Auto-Walk system should:
 
 1. Generate candidate associations that are unlikely to surface during ordinary task work.
-2. Never mutate stable memory directly.
+2. Never mutate the consumed corpus directly; write the confirmation target only through its authorized capture path.
 3. Default to silence in conversations — opt-in surfacing, not opt-out.
 4. Run on a fixed cadence, not on stuck-points or user requests.
 5. Treat hypotheses as a lateral artifact, not a junior version of memory.
-6. Provide a discharge path so confirmed hypotheses can spawn new memory items without being promoted into memory themselves.
+6. Provide a discharge path so confirmed hypotheses can spawn new conclusion artifacts in the confirmation target without being promoted into it themselves.
 7. Work on any structured corpus, not only agent-wiki memory.
 
 ## 3. Non-goals
@@ -42,7 +42,7 @@ Auto-Walk is not:
 - A problem solver. It must never be invoked to answer a convergent question.
 - A memory cleanup process. That is Auto-Dream's job.
 - A personality profiler. It must not infer psychological, medical, or other sensitive attributes.
-- A promotion pipeline. Hypotheses do not become memory items; they spawn new memory items when confirmed.
+- A promotion pipeline. Hypotheses do not become conclusion artifacts; they spawn new conclusion artifacts in the confirmation target when confirmed.
 - A retrieval trick. The novelty comes from the processing workflow, not from clever input selection.
 - A reactive feature. It must not be triggered by failure, user frustration, or the agent feeling stuck.
 
@@ -129,7 +129,7 @@ These five rules are the conceptual core. Failure to honor them collapses Auto-W
 
 ## 6. Boundary with memory
 
-Auto-Walk consumes stable memory but never writes to it.
+The walk runner consumes the corpus's stable layer — in the canonical binding, stable memory — and never modifies it on its own authority; confirmed conclusions enter the confirmation target only through its owner's authorized capture path (§6.2).
 
 ### 6.1 Hypothesis is lateral, not vertical
 
@@ -140,20 +140,30 @@ Hypothesis says:   "A and B may be related."
 
 These are different epistemic kinds. A hypothesis is not an immature memory waiting to grow up. It is a sibling artifact with its own lifecycle.
 
+In a standalone binding (§14), replace "Memory" with the corpus's stable layer; the epistemic contrast is identical.
+
 ### 6.2 Discharge instead of promote
 
-When a hypothesis is confirmed by an explicit authoritative statement, independent observable evidence, or governed review with cited evidence, it does not promote into memory. Repetition of ambiguous behavior is not sufficient, especially for claims about a person. Instead:
+Every binding declares a **confirmation target**: the stable layer where discharged conclusions are recorded. In a Memory-coupled binding the confirmation target is the ordinary memory capture protocol (`memory.md` inbox). A standalone binding (§14) declares a corpus-appropriate target instead — a note, summary, or corpus item store. The target MUST lie outside the hypothesis pool, MUST provide stable addresses so discharge back-pointers do not corrode, and MUST be written only through its own authorized capture path; the walk runner never bypasses that path.
+
+When a hypothesis is confirmed by an explicit authoritative statement, independent observable evidence, or governed review with cited evidence, it does not promote into the confirmation target. Repetition of ambiguous behavior is not sufficient, especially for claims about a person. Instead:
 
 ```text
-1. A new atomic memory item is generated, citing the confirmation event or independent evidence that supports it. Original corpus refs remain corroboration unless they independently establish the claim. The hypothesis is named as inspiration only, not as the source of truth.
+1. A new atomic conclusion artifact is generated in the confirmation
+   target, citing the confirmation event or independent evidence that
+   supports it. Original corpus refs remain corroboration unless they
+   independently establish the claim. The hypothesis is named as
+   inspiration only, not as the source of truth.
 2. The hypothesis itself is archived to walks/discharged/.
-3. The new memory item is added through the ordinary memory capture
-   protocol (memory.md inbox), not written directly to topics.
+3. In a Memory-coupled binding, the new item enters through the ordinary
+   memory capture protocol (memory.md inbox), not written directly to
+   topics; a standalone binding writes through its declared target's own
+   capture path.
 ```
 
-This preserves a hard invariant: every memory item has its own provenance and source date. No memory item is "an old hypothesis."
+This preserves a hard invariant: every discharged conclusion has its own provenance and source date. No conclusion artifact is "an old hypothesis."
 
-#### 6.2.1 Lineage separation in the new memory item
+#### 6.2.1 Lineage separation in the new conclusion artifact
 
 The discharge step generates one row, but it carries two distinct provenance fields with different epistemic weight:
 
@@ -164,13 +174,13 @@ These MUST be separate fields. Folding the hypothesis id into `Source` would let
 
 #### 6.2.2 User-confirmation discharge: name the real source
 
-A common confirmation path is the user saying "yes, that's right" in conversation. In that case, the *truth-making* event is the user's statement, not the corpus refs the hypothesis happened to cite. The new memory item MUST reflect this honestly:
+A common confirmation path is the user saying "yes, that's right" in conversation. In that case, the *truth-making* event is the user's statement, not the corpus refs the hypothesis happened to cite. The new conclusion artifact MUST reflect this honestly:
 
-- `Source: user statement on YYYY-MM-DD`  (the actual event that turned the hypothesis into memory).
+- `Source: user statement on YYYY-MM-DD`  (the actual event that turned the hypothesis into a recorded conclusion).
 - `corroborating_refs:` MAY enumerate the original `supporting_refs` as further support, but only as corroboration, not as the basis.
 - `inspired_by:` still records the hypothesis id.
 
-Without this discipline, a "user confirmed" memory item can quietly read as if the corpus proved it — which is how the agent's own past speculation, plus a user nod, gets laundered into "the docs say so." The retrieval-side trust calibration (§15.2 of the memory protocol) cannot detect this dressing-up after the fact; only honest authorship at discharge time prevents it.
+Without this discipline, a "user confirmed" conclusion can quietly read as if the corpus proved it — which is how the agent's own past speculation, plus a user nod, gets laundered into "the docs say so." Retrieval-side trust calibration (for Memory targets, §15.2 of the memory protocol) cannot detect this dressing-up after the fact; only honest authorship at discharge time prevents it.
 
 ### 6.3 Read-only consumption
 
@@ -193,7 +203,7 @@ Auto-Walk writes to:
 - walks/log.md               (walk events)
 ```
 
-Auto-Walk never writes to `memory/`. Discharge-triggered memory items are written by the memory capture protocol, not by the walk runner.
+Auto-Walk never writes to `memory/`. Discharge-triggered conclusions enter only through the confirmation target's authorized capture path — in this binding, the memory capture protocol (`memory.md` inbox, never `topics/` directly). The walk runner holds no write authority beyond that path in any binding.
 
 ## 7. Hot / Warm / Cold placement
 
@@ -278,7 +288,7 @@ Field notes:
 - `confidence_scheme`: fixed to `ordinal-confidence-v1`.
 - `confidence`: `low | medium | high`. Bias toward `low` and `medium`.
 - `impact`: `add | rewrite`. Determines surfacing eligibility (see §12).
-- `status`: `active | muted | discharged | rejected | archived | superseded`. Folder location and status MUST agree; `muted` remains in `active/` but is skipped by A mode.
+- `status`: `active | muted | discharged | rejected | archived | superseded`. Folder location and status MUST agree, with two named exceptions: `muted` remains in `active/` but is skipped by A mode, and `superseded` retires into `archived/` with a `superseded_by` pointer (§13.4).
 - `applies_when`: positive triggers. The conversation must look like one of these for the hypothesis to surface in A mode.
 - `never_applies_when`: negative triggers. Surfacing is blocked when any of these match. Negative bounds are easier to write correctly than positive ones.
 - `disconfirm_if`: explicit falsifiers. If observed, the hypothesis moves to `rejected/`.
@@ -313,14 +323,14 @@ A portable layout, placed as a peer of `memory/` rather than under it:
 Folder semantics:
 
 - `active/`: live hypotheses; `status: active` is eligible for normal surfacing, while `status: muted` is skipped in A mode.
-- `discharged/`: confirmed; the corresponding memory item is the live artifact.
+- `discharged/`: confirmed; the corresponding conclusion artifact in the confirmation target is the live artifact.
 - `rejected/`: refuted by user or by counter-evidence.
 - `archived/`: expired without engagement; kept for audit.
 - `noteworthy/`: critic-gate-rejected candidates that a reviewer flagged as high-value (see §11.6). **Never read by the surfacing layer.** Human review only.
 
 `log.md` records walk events: `walk-start`, `walk-emit`, `surface`, `surface-ignored`, `surface-engaged`, `discharge`, `reject`, `archive`, `noteworthy`.
 
-`log.md` is Markdown by design — readable as a narrative trace during `auto-walk:L1`/`auto-walk:L2`. When `auto-walk:L4` (automated decay and feedback) becomes active, a structured sidecar (e.g., `walks/runs/<date>-record.yaml`) MAY be emitted alongside `log.md` for machine parsing. The narrative log and the structured sidecar are not mutually exclusive.
+`log.md` is Markdown by design — readable as a narrative trace during `auto-walk:L1`/`auto-walk:L2`. When `auto-walk:L4` (automated decay and feedback) becomes active, a structured sidecar (e.g., `walks/runs/<date>-record.yaml`) MAY be emitted alongside `log.md` for machine parsing; that sidecar is the protocol's `walk_run_record` artifact. The narrative log and the structured sidecar are not mutually exclusive.
 
 Placing `walks/` as a peer of `memory/` (not as `memory/walks/`) reinforces the §6.1 invariant: a hypothesis is a lateral artifact, not a sub-product of memory.
 
@@ -392,7 +402,7 @@ Reject a candidate hypothesis if any of the following:
 - No `applies_when` that points to an identifiable conversational situation.
 - It infers a psychological, medical, gender, age, ethnicity, or other sensitive attribute.
 - It generalizes from a single source item.
-- It restates an existing memory item (this is a Dream-like consolidation, not a walk).
+- It restates an existing corpus item (this is a Dream-like consolidation, not a walk).
 - Its `claim` mentions specific facts (system names, behaviors, citations, prior conclusions) that are not represented in any `supporting_refs`. Walks may not introduce material the corpus does not contain — including the Auto-Walk protocol itself (§8). If a claim wants to reference an external fact, the runner must add that source to the corpus and re-walk, not slip it in via narration.
 - Its `impact` is unclear or refuses self-assessment.
 - Its claim is unfalsifiable in principle.
@@ -539,14 +549,14 @@ A hypothesis leaves `active/` through one of four paths.
 
 When a hypothesis is confirmed by an explicit authoritative statement, independent observable evidence, or governed review with cited evidence:
 
-1. Generate a new atomic memory item that states the fact independently. The item carries `inspired_by: <this hypothesis id>` (lineage, secondary). The `Source` (primary, evidential) is chosen by which confirmation path applied:
+1. Generate a new atomic conclusion artifact in the binding's confirmation target (§6.2) that states the fact independently. The artifact carries `inspired_by: <this hypothesis id>` (lineage, secondary). The `Source` (primary, evidential) is chosen by which confirmation path applied:
    - **User-statement confirmation** → `Source: user statement on YYYY-MM-DD`. The corpus refs that the hypothesis happened to cite MAY appear as `corroborating_refs`, but MUST NOT be promoted into `Source`. Doing so would silently dress the agent's prior speculation as "the corpus said so" — the laundering pattern §6.2.2 forbids.
    - **Independent-evidence confirmation** → `Source` cites the new runtime observation, experiment, external source, or review evidence that established the claim. Original `supporting_refs` MAY be carried as `corroborating_refs`; they are not automatically promoted into `Source`. The hypothesis is named only via `inspired_by`, never as `Source` (§6.2 invariant).
-2. Append the new memory item through the ordinary capture protocol (`memory/memory.md`).
+2. Record the artifact through the target's authorized capture path — in a Memory-coupled binding, the ordinary capture protocol (`memory/memory.md`, never `topics/` directly); in a standalone binding, whatever write path the target's owner has authorized, which MAY be the owner creating the stable artifact directly. The walk runner does not bypass that path and does not convert the hypothesis file in place.
 3. Set `status: discharged` and move the hypothesis file to `walks/discharged/`.
-4. Log a `discharge` event in `walks/log.md` with a back-pointer from the discharged hypothesis to the new memory item's id.
+4. Log a `discharge` event in `walks/log.md` with a back-pointer from the discharged hypothesis to the new artifact's stable id.
 
-This preserves the hard invariant: memory items have first-class provenance and are not "promoted hypotheses."
+This preserves the hard invariant: discharged conclusions have first-class provenance and are not "promoted hypotheses."
 
 ### 13.2 Rejected
 
@@ -593,6 +603,7 @@ A standalone binding must define:
 3. Neighbor retrieval: how the walker finds near/middle/far items.
 4. Pool location: where `walks/` lives.
 5. Surfacing target: where insights go (a Markdown report, an agent-readable pool, or both).
+6. Confirmation target: where discharged conclusions are recorded (§6.2) — outside the hypothesis pool, stably addressable, written only through its own capture path.
 
 ### 14.2 Output for human consumption
 
@@ -630,7 +641,7 @@ If no conversational agent consumes the pool, surfacing degrades to:
 - An optional digest e-mail or push notification with the top candidate.
 - A manual review session where the user reads `walks/active/` and decides what to engage with.
 
-The protocol's lifecycle still holds: hypotheses still discharge, get rejected, expire, or get superseded. Only the surfacing wire changes.
+The protocol's lifecycle still holds: hypotheses still discharge (into the declared confirmation target, §6.2), get rejected, expire, or get superseded. Only the surfacing wire changes.
 
 ## 15. Failure modes
 
@@ -640,7 +651,7 @@ The protocol's lifecycle still holds: hypotheses still discharge, get rejected, 
 | Convergent surfacing | Walk insight interrupts user during debugging | Two-step gating + mode signal heuristics (§12.2, §12.4) |
 | One-walk overgeneralization | Single corpus item produces a universal rule | Critic gate rejects single-source generalizations |
 | Hypothesis pool bloat | Active pool grows without bound | `expires_after_walks` + decay scheduler |
-| Stable memory contamination | Walk runner writes directly to `memory/topics/` | Read-only consumption (§6.3); discharge spawns new items, never promotes |
+| Stable-layer contamination | Walk runner bypasses the confirmation target's capture path (e.g. writes `memory/topics/` directly) | Capture-path-only writes (§6.2, §6.3); discharge spawns new artifacts, never converts in place |
 | Single-pass shortcut | Undifferentiated LLM call labeled "walk" | Visible multi-pass workflow (§11.4) enforced by walk runner |
 | Rewrite leak | Rewrite-level hypothesis surfaces in A mode | `impact` self-declaration (§12.3) + A-mode gate |
 | Surfacing fatigue | Agent injects side-notes too often | Negative feedback decay (§12.5); muted state |
@@ -679,21 +690,21 @@ Start at `auto-walk:L0`. Individual capabilities may be tested in isolation, but
 
 ## 18. Validation checklist
 
-After implementing Auto-Walk for an agent, verify:
+Verify the items applicable at the claimed level and under the conditions the binding has enabled; untagged items apply from `auto-walk:L0`.
 
 1. A walk pass produces at least one hypothesis with all required fields.
 2. A walk pass rejects candidates lacking `supporting_refs`.
 3. The critic gate rejects sensitive-attribute inferences (test with a deliberately bad seed).
 4. The critic gate rejects a candidate whose `claim` mentions facts absent from `supporting_refs` (§11.5).
 5. Each phase (Inventory / Roam / Critique) leaves a visible trace in the log or a sidecar — a pure final-answer dump fails §11.4.
-6. Surfacing stays silent during a clearly executive turn (test with a stack trace).
-7. **(A-capable runtimes only)** Surfacing fires during a clearly exploratory turn (test with "聊聊 X 这个想法"). Semantic-trigger-only runtimes (e.g., Kiro per its use case §11.3) deliberately stay silent here; for those, validate C-mode triggering instead.
-8. A `rewrite`-impact hypothesis does not surface in A mode (where A mode exists).
-9. C mode returns all eligible hypotheses including `rewrite`. Trigger is natural language ("散步看看", "walk note", or C-meta divergence phrases); a slash command (`/walk`) works only if the runtime supports custom slash invocations.
+6. (`auto-walk:L3+`) Surfacing stays silent during a clearly executive turn (test with a stack trace).
+7. (`auto-walk:L3+`, A-capable runtimes only) Surfacing fires during a clearly exploratory turn (test with "聊聊 X 这个想法"). Semantic-trigger-only runtimes (e.g., Kiro per its use case §11.3) deliberately stay silent here; for those, validate C-mode triggering instead.
+8. (`auto-walk:L3+`) A `rewrite`-impact hypothesis does not surface in A mode (where A mode exists).
+9. (`auto-walk:L3+`) C mode returns all eligible hypotheses including `rewrite`. Trigger is natural language ("散步看看", "walk note", or C-meta divergence phrases); a slash command (`/walk`) works only if the runtime supports custom slash invocations.
 10. An ignored hypothesis is muted after N surfacing attempts (`auto-walk:L4`).
-11. A confirmed hypothesis discharges and spawns a new memory item, without mutating any topic file.
-12. The walk runner runs on a cadence, not in response to user requests for help.
-13. The `noteworthy/` folder exists, has its own schema, and is **not** read by the surfacing layer.
+11. (when a discharge occurs) A confirmed hypothesis discharges and spawns a new conclusion artifact through the confirmation target's authorized capture path; the runner neither bypasses that path nor converts the hypothesis file in place.
+12. (`auto-walk:L2+`) The walk runner runs on a cadence, not in response to user requests for help.
+13. (`auto-walk:L1+`) The `noteworthy/` folder exists, has its own schema, and is **not** read by the surfacing layer.
 
 ## 19. Practical use cases
 

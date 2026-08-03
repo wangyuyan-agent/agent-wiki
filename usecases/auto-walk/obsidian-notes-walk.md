@@ -7,7 +7,7 @@
 - Validation scope: testable rollout and provisional pitfalls only; no completed run is claimed
 - Reproducibility: `conceptual` — sufficient to build a trial, but no run artifacts are included
 - Level namespace: `auto-walk`
-- Last reviewed: 2026-07-17
+- Last reviewed: 2026-08-03
 
 ## 1. Context
 
@@ -188,15 +188,16 @@ Reports accumulate in `walks/reports/` and form a readable run history. They cou
 
 Most of protocol §13 applies as-is. Two differences:
 
-### 8.1 Discharge: no memory inbox
+### 8.1 Discharge: the vault is the confirmation target
 
-In `kiro-local-walk.md`, discharge writes a new atomic memory item into `memory/memory.md`. Here, there is no inbox. Instead:
+This binding's declared confirmation target (protocol §6.2 / §14.1 item 6) is the vault's note layer: outside `walks/`, stably addressable by note name/wikilink, and written only through its authorized capture path — the user writing notes by hand. In `kiro-local-walk.md`, discharge writes into the memory inbox; here, instead:
 
-- When the user confirms a hypothesis, they write a new note (or extend an existing one) in the vault — by hand.
+- When the user confirms a hypothesis, they write a new note (or extend an existing one) in the vault — by hand. The user is the target's authorized writer.
 - The walk runner **does not** auto-write to user notes. Ever.
 - The user manually moves the hypothesis YAML from `active/` to `discharged/` after writing the corresponding note.
-- The discharged YAML can carry an optional `note_link` field pointing to the user's new note.
-- The move records the confirmation source and appends a `discharge` event to `walks/log.md`.
+- At discharge, the YAML MUST carry `note_link` — the conclusion note's stable address, realizing the §13.1 back-pointer.
+- The conclusion note or the discharged YAML records the real confirmation `Source` (e.g. `user statement on YYYY-MM-DD`, or the independent evidence) with the hypothesis id kept separately as `inspired_by`, per protocol §6.2.1 — evidence and lineage stay auditable and distinct.
+- The move appends a `discharge` event to `walks/log.md`.
 
 ### 8.2 No A mode
 
@@ -220,7 +221,7 @@ Sub-note granularity requires more wiring (block IDs, parsing) and yields margin
 
 The walk runner can read everything in the vault. It writes only to `walks/`. This protects the user from silent changes to canonical notes.
 
-This is the same invariant as protocol §6.3 "Auto-Walk reads memory but never writes to it" — applied to a different corpus.
+This is the protocol's capture-path invariant (§6.2, §6.3) applied to this corpus: the runner reads everything but writes only `walks/`; conclusion notes are created solely by the target's authorized writer — the user.
 
 ### 9.4 Why Friday weekly
 

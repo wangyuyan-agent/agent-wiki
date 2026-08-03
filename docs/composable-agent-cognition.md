@@ -104,6 +104,7 @@ Forbidden:
   Skill evaluation rewrites historical evidence when execution context changes.
   Inner Speech silently rewrites long-term Memory.
   Council changes Steering because several members agreed.
+  An agent promotes its own repeated observation into Conventions or Steering without an attributable authorizing decision.
   Steward expands authority because a participant requests it.
   Steward rewrites participant dissent while synthesizing a result.
   Workspace persists every transient thought as durable knowledge.

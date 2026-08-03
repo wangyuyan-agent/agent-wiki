@@ -105,7 +105,7 @@ protocols:
       - id: auto-walk.kiro-local
         evidence: field-tested
         conformance: partially-verified
-        conformance_scope: "Observed generation and semantic-trigger surfacing through parts of auto-walk:L3; current hypothesis status/discharge fields, natural scheduled firing, and L4 are unverified."
+        conformance_scope: "Observed generation and semantic-trigger surfacing through parts of auto-walk:L3; current hypothesis status/discharge fields, natural scheduled firing, and auto-walk:L4 are unverified."
         document: usecases/auto-walk/kiro-local-walk.md
       - id: auto-walk.obsidian-notes
         evidence: design-example

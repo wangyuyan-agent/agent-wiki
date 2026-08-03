@@ -7,7 +7,7 @@
 - Validation scope: testable rollout and provisional pitfalls only; no completed run is claimed
 - Reproducibility: `conceptual` — sufficient to build a trial, but no run artifacts are included
 - Level namespace: `auto-walk`
-- Last reviewed: 2026-07-17
+- Last reviewed: 2026-08-03
 
 ## 1. Context
 
@@ -169,11 +169,11 @@ The **Reading agenda** is the standalone analog of "side-note in conversation." 
 
 ### 8.1 Discharge is observational, not factual
 
-A confirmed hypothesis here is "a pattern across articles I've read," not "a fact about my own work." There is no agent memory inbox. The confirmation step:
+A confirmed hypothesis here is "a pattern across articles I've read," not "a fact about my own work." The declared confirmation target (protocol §6.2 / §14.1 item 6) is the user's own note layer — notes vault, journal, or follow-up digest — outside `walks/`, stably addressable, and written only by the user as its authorized writer. The confirmation step:
 
-- The user writes a personal note (in their notes vault, journal, or follow-up digest).
+- The user writes the pattern observation as a personal note in that target.
 - The user moves the hypothesis from `active/` to `discharged/`.
-- The discharged YAML carries an optional `note_link` field.
+- At discharge, the YAML MUST carry `note_link` — the conclusion note's stable address, realizing the §13.1 back-pointer — and the note or the discharged YAML records the real confirmation `Source` with the hypothesis id kept separately as `inspired_by` (protocol §6.2.1), so evidence and lineage stay auditable and distinct.
 
 ### 8.2 Decay is faster
 

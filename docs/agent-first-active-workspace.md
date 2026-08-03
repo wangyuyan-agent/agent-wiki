@@ -3,9 +3,9 @@
 - Protocol ID: `active-workspace`
 - Version: `0.1.0`
 - Maturity: `design-only`
-- Evidence scope: no documented binding yet
+- Evidence scope: No documented binding yet.
 - Level namespace: `active-workspace:L0`–`active-workspace:L4`
-- Last updated: 2026-07-17
+- Last updated: 2026-08-03
 
 ## 1. Purpose
 
@@ -168,6 +168,8 @@ decision_log: []
 ```
 
 ### 6.1 Required top-level fields
+
+These fields are required for a structured snapshot (`active-workspace:L1+`). An `active-workspace:L0` in-context binding (§12) preserves the same semantic distinctions without the formal schema.
 
 - `workspace_id` — stable within the task.
 - `task_id` — links artifacts from other protocols.
@@ -476,15 +478,17 @@ Each completed level remains useful without adopting another protocol. Conforman
 
 ## 19. Validation checklist
 
+Verify the items applicable at the claimed level and under the conditions the binding has enabled; untagged items apply from `active-workspace:L0`.
+
 1. A new task can initialize goal, success criteria, and constraints.
 2. Evidence and assumptions are represented separately.
 3. Every load-bearing item has a source reference.
-4. Retrieved Memory retains its original trust metadata.
-5. A Walk hypothesis cannot enter `evidence` without verification.
+4. (`active-workspace:L2+`, when Memory is adopted) Retrieved Memory retains its original trust metadata.
+5. (`active-workspace:L2+`, when Auto-Walk is adopted) A Walk hypothesis cannot enter `evidence` without verification.
 6. At most one owner mutates the canonical revision by default.
-7. A stale multi-agent patch is rejected or rebased.
+7. (`active-workspace:L3+`) A stale multi-agent patch is rejected or rebased.
 8. An interrupt is accepted, rejected, deferred, or expired explicitly.
-9. Task closure routes durable knowledge through Memory capture.
+9. (when Memory is adopted) Task closure routes durable knowledge through Memory capture.
 10. Transient cues and weak signals expire.
 11. Replay does not require hidden chain-of-thought.
 12. The protocol works in a single-agent, in-context-only binding.

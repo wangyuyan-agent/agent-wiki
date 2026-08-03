@@ -3,9 +3,9 @@
 - Protocol ID: `inner-speech`
 - Version: `0.1.0`
 - Maturity: `design-only`
-- Evidence scope: no documented binding yet
+- Evidence scope: No documented binding yet.
 - Level namespace: `inner-speech:L0`–`inner-speech:L4`
-- Last updated: 2026-07-17
+- Last updated: 2026-08-03
 
 ## 1. Purpose
 
@@ -186,7 +186,7 @@ created_at: 2026-07-15T10:20:00+08:00
 expires_after: "next discriminating observation"
 ```
 
-Required fields:
+Required fields for a structured cue record (`inner-speech:L1+`; an `inner-speech:L0` manual cue may remain an unstructured checklist entry):
 
 - `cue_id`
 - `task_id`
@@ -468,6 +468,20 @@ Allowed verdicts:
 
 One outcome must not automatically rewrite the trigger policy. Repeated evidence may produce a policy-change proposal for human or governed review.
 
+A policy-change proposal is the protocol's `policy_proposal` artifact, mirroring the governed-proposal pattern of [Memory §23.5](agent-first-memory.md#235-policy-proposal):
+
+```yaml
+proposal_id: ispolicy-2026-07-15-001
+target: trigger-policy:repeated-failure-threshold
+supporting_cue_feedback:
+  - iv-2026-07-15-001
+expected_benefit: "Earlier frame checks after repeated failures"
+risk: "More interruptions during recoverable work"
+status: pending-review
+```
+
+A `policy_proposal` MUST NOT auto-apply. It waits for human or governed review; an accepted change is applied by the reviewer's decision, not by the proposing path.
+
 ## 17. Failure modes
 
 | Failure mode | Symptom | Prevention |
@@ -495,18 +509,20 @@ One outcome must not automatically rewrite the trigger policy. Repeated evidence
 
 ## 19. Validation checklist
 
+Verify the items applicable at the claimed level and under the conditions the binding has enabled; untagged items apply from `inner-speech:L0`.
+
 1. A trivial task can complete with no Inner Speech cue.
 2. A cue names a trigger and recommended action.
 3. Factual or frame-changing cues carry source references.
 4. The acting agent can reject or defer a cue.
 5. A cue expires after its named condition.
 6. The protocol does not require chain-of-thought persistence.
-7. Inside-Outsider can return `frame-holds`.
-8. Every Inside-Outsider challenge includes a re-entry action.
+7. (when the Inside-Outsider mode is implemented) Inside-Outsider can return `frame-holds`.
+8. (when the Inside-Outsider mode is implemented) Every Inside-Outsider challenge includes a re-entry action.
 9. A cue cannot directly edit Memory, Steering, or the user goal.
 10. A single agent can execute the protocol without a service.
-11. A sub-agent binding discloses its model, role, context scope, and authority.
-12. Only decision-relevant outcomes become durable artifacts.
+11. (`inner-speech:L3+`) A sub-agent binding discloses its model, role, context scope, and authority.
+12. (when cues are persisted) Only decision-relevant outcomes become durable artifacts.
 
 ## 20. Final rule
 

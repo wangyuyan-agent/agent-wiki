@@ -7,7 +7,7 @@
 - Validation scope: the deployed `1:1:N` relationship (one Principal, one primary Steward agent, five local role-specialized sub-agent participants, six managed resources) was operated in ordinary daily work; agent bots hosted on some managed resources are outside this binding's participant count and conformance assessment; the binding was not re-executed as a formal per-level conformance run during this write-up
 - Reproducibility: `partial` — architecture, registry shape, delegation primitive, and authority model are documented; exact agent definitions, skill files, credentials, and private environment assets are intentionally omitted
 - Level namespace: `steward`
-- Last reviewed: 2026-07-20
+- Last reviewed: 2026-08-03
 
 ## 1. Context
 
@@ -166,19 +166,31 @@ Honest summary: **`field-tested` at `steward:S1`, with substantial `steward:S2` 
 
 ## 13. Protocol feedback: proposed adjustments
 
-These are field-evidence-driven proposals for the protocol author to accept or reject. Per the repository model, a use case is evidence and does not redefine the protocol; the protocol documents themselves are intentionally left unedited here.
+These are field-evidence-driven proposals for the protocol author to accept or reject. Per the repository model, a use case is evidence and does not redefine the protocol. Maintainer triage on 2026-08-03 recorded a disposition for each proposal below; accepted clarifications were applied to the protocol document in that same change. The dispositions do not alter this page's evidence or conformance labels.
 
 1. **Dual-role host (refine §9.2 / §12.5).** §9.2 states "A VPS is a managed resource, not an agent." The deployment confirms this but shows a host can *simultaneously* be a managed resource and the host of one or more agent processes. Proposed clarification: the machine is a managed resource; an agent process it hosts may be a participant under its own binding; one host may carry both roles at once, and operating the host is a distinct authority from commanding the hosted agent. This refines, and does not contradict, the existing rule.
 
+   *Outcome (2026-08-03): accepted — protocol §9.2 now names the dual-role host and the distinct host/agent authorities.*
+
 2. **Registry drift as a failure mode (add to §16).** The participant/resource registry silently diverges from reality (addresses, running services, health change). Routing on a stale card causes wrong action. Proposed new failure mode "Registry drift": mitigate with a `last_verified_at` discipline (the field already exists in §9.1/§9.2) plus mandatory re-verification before high-risk operations on a resource whose card is stale.
+
+   *Outcome (2026-08-03): accepted, merged with item 6 into the protocol's new stale-view failure mode (§16.11).*
 
 3. **Sharpen the S1/S2 boundary on the canonical task record (§11, §18.3, §19).** The deployment satisfies `steward:S1` with only an in-context/ephemeral task record, but that is precisely what makes §16.4 (information monopoly) and §16.9 (single point of failure) bite. Proposed clarification: an in-context record satisfies `steward:S1`; `steward:S2` requires the canonical task record to be **durable and inspectable independently of the Steward's live context**. This makes the ladder's real inflection point explicit.
 
+   *Outcome (2026-08-03): accepted — protocol §18 and the `steward:S2` row now require the canonical task record to be durable and inspectable independently of the live context.*
+
 4. **Standing policy as a first-class S3 substrate (clarify §10.4 / §19 S3).** §10.4 reads as if per-order `AuthorityGrant`s are the norm. Field evidence: a reviewable standing policy plus confirmation gates carries most of the authority-awareness weight for a single-writer, human-in-the-loop binding, and per-order expiring grants were unnecessary for routine work. Proposed clarification: a binding MAY satisfy `steward:S3` primarily through a reviewable standing policy, reserving per-order `AuthorityGrant`s for actions that exceed standing policy.
+
+   *Outcome (2026-08-03): accepted with guardrails — protocol §10.4 admits a standing policy only if attributable to an explicit Principal decision, reviewable, revocable, bounded with explicit always-confirm classes, and audited; per-order grants remain required beyond it, and the `steward:S3` audit requirement is not waived. This acceptance does not upgrade this binding's conformance.*
 
 5. **Delegation primitive → work graph mapping (non-normative note).** A spawner exposing a `depends_on` DAG and a `loop_to` review edge already realizes the §11 work graph and a §15.6 separation-of-duties cycle without extra infrastructure. Proposed: cite this as a concrete minimal realization in §12 or §18.
 
+   *Outcome (2026-08-03): retained as a non-normative use-case observation; not added to the protocol.*
+
 6. **Concurrent Principal action (add to §15.5 or §16).** Bypass (§15.5) is treated as a preserved capability; in practice the Principal operates managed resources directly and in parallel very frequently. Proposed note: the Steward MUST NOT assume exclusive control of a managed resource or that its cached view is current; concurrent Principal (or other-agent) writes are normal and healthy.
+
+   *Outcome (2026-08-03): merged into item 2's accepted stale-view failure mode (§16.11).*
 
 ## 14. Reusable lessons
 

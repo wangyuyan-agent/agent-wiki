@@ -5,7 +5,7 @@
 - Maturity: `practiced`
 - Evidence scope: one field-tested single-agent binding operates the `1:1:N` topology at `steward:S1` with substantial `steward:S2` coverage and partial `steward:S3`/`steward:S4` elements; the `steward@0.1.0` artifact schema, a field-tested durable canonical task record in ordinary Steward work, per-order revocable grants, heterogeneous-participant operation within the binding, and formal takeover remain unvalidated (see [Kiro Local Steward](../usecases/steward/kiro-local-steward.md))
 - Level namespace: `steward:S0`–`steward:S5`
-- Last updated: 2026-07-20
+- Last updated: 2026-08-03
 - Origin: maintainer design discussion captured on 2026-07-15; raw private conversations are intentionally omitted
 
 ## 1. Purpose
@@ -290,7 +290,7 @@ last_verified_at: <timestamp>
 
 Secrets MUST NOT be embedded in capability cards, work orders, prompts, logs, or wiki documents. Bindings should pass opaque credential references through a separate secret boundary.
 
-A VPS is a managed resource, not an agent. An agent acting through it remains responsible for the action; the machine does not become the decision owner.
+A VPS is a managed resource, not an agent. An agent acting through it remains responsible for the action; the machine does not become the decision owner. One host MAY simultaneously be a managed resource and host one or more agent processes that participate under their own bindings; operating the host and commanding a hosted agent are distinct authorities with distinct scopes.
 
 ## 10. Core protocol artifacts
 
@@ -344,6 +344,8 @@ revocable: true
 ```
 
 An `AuthorityGrant` can narrow inherited authority but cannot broaden it.
+
+A binding MAY satisfy authority-awareness primarily through a standing authority policy (§8) instead of per-order grants, provided the policy is attributable to an explicit Principal decision, reviewable, revocable, and bounded with explicit always-confirm classes, and actions taken under it leave an audit trail. Per-order `AuthorityGrant`s remain REQUIRED for any action that exceeds the standing policy. This choice does not waive `steward:S3`'s audit requirement.
 
 ### 10.5 ProgressEvent
 
@@ -583,6 +585,10 @@ If the Steward disappears, ongoing work may become inaccessible. Persist resumab
 
 The Steward may delegate for appearance or claim supervision it did not perform. Prefer direct execution for simple work and record actual verification events.
 
+### 16.11 Stale view
+
+The Steward's picture of its environment drifts in two ways: registry entries diverge from reality (addresses, services, health), and the Principal or another agent legitimately mutates a managed resource in parallel. Routing or acting on a stale view causes wrong action. The Steward MUST NOT assume exclusive control of a managed resource or that its cached view is current. Keep `last_verified_at` honest on capability and resource cards, and re-verify a stale card before high-risk operations on that participant or resource.
+
 ## 17. Degraded operation and recovery
 
 - If a participant fails, reassign, narrow, retry under policy, or return a partial result with the failure visible.
@@ -601,7 +607,7 @@ A single capable agent can implement the protocol without external infrastructur
 
 1. Treat the current user as Principal.
 2. Preserve their original request and identify goal, constraints, and authority.
-3. Maintain one explicit canonical task record; use Active Workspace if that optional protocol is adopted.
+3. Maintain one explicit canonical task record; use Active Workspace if that optional protocol is adopted. (An in-context record satisfies `steward:S1`; `steward:S2` requires it to be durable and inspectable independently of the live context.)
 4. Decide whether to act directly or delegate to available sub-agents/tools.
 5. Give every delegated task bounded context and success criteria.
 6. Track status and evidence in the canonical task record.
@@ -618,8 +624,8 @@ This is already a valid `1:1:N` Steward binding. A hosted butler system is an op
 | --- | --- | --- |
 | `steward:S0` | Direct relationship | One Principal and one agent; no delegated participants. |
 | `steward:S1` | Explicit delegation | The Steward creates bounded work orders for one or more participants. |
-| `steward:S2` | Canonical coordination | Shared workspace, capability registry, status, provenance, and result integration. |
-| `steward:S3` | Authority-aware | Revocable grants, approval gates, resource scopes, and audit records. |
+| `steward:S2` | Canonical coordination | A durable canonical task record inspectable independently of the Steward's live context, capability registry, status, provenance, and result integration. |
+| `steward:S3` | Authority-aware | Revocable authority (standing policy and/or per-order grants, §10.4), approval gates, resource scopes, and audit records. |
 | `steward:S4` | Resilient `1:1:N` | Failure recovery, takeover/export, heterogeneous participants, and independent verification. |
 | `steward:S5` | Service binding | A separately specified persistent or hosted butler-style system implements the protocol. |
 
@@ -627,20 +633,20 @@ This is already a valid `1:1:N` Steward binding. A hosted butler system is an op
 
 ## 20. Conformance checklist
 
-Before calling a binding a Steward architecture, verify:
+Before calling a binding a Steward architecture, verify the items applicable at the claimed level and under the conditions the binding has enabled; untagged items apply from `steward:S1`.
 
 1. The Principal has one logical relationship and accountability interface.
 2. The original Principal intent survives decomposition.
 3. The Principal no longer has to manually manage routine N-way session state.
-4. Every participant and resource has a known scope and capability.
+4. (`steward:S2+`) Every participant and resource has a known scope and capability.
 5. Every delegated action has a bounded work order and authority source.
 6. The Steward cannot expand its own authority.
 7. Progress, failure, provenance, dissent, cost, and material risk remain inspectable.
 8. Result synthesis does not convert consensus into evidence.
-9. The Principal can interrupt, revoke, export, bypass, or replace the Steward.
+9. The Principal can interrupt and bypass the Steward at any level; revoke a grant or the standing policy (`steward:S3+`); and export state or replace the Steward (`steward:S4+`).
 10. Relationship memory distinguishes explicit statements from inference.
 11. Participant private reasoning is not required for observability.
-12. Steward failure has a resumable recovery path.
+12. (`steward:S4+`) Steward failure has a resumable recovery path.
 13. Simple tasks may still be executed directly.
 14. The design works as a protocol before it becomes a service.
 

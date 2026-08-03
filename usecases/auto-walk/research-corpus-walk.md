@@ -7,7 +7,7 @@
 - Validation scope: testable rollout and provisional pitfalls only; no completed run is claimed
 - Reproducibility: `conceptual` — sufficient to build a trial, but no run artifacts are included
 - Level namespace: `auto-walk`
-- Last reviewed: 2026-07-17
+- Last reviewed: 2026-08-03
 
 ## 1. Context
 
@@ -206,7 +206,7 @@ A research-corpus hypothesis is often "this bridge between paper X and CVE Y des
 
 ### 8.2 Discharge produces new corpus items
 
-Unlike obsidian or reading-queue walks, research-corpus discharge often produces:
+The declared confirmation target (protocol §6.2 / §14.1 item 6) is the corpus item store itself — `papers/`, `cves/`, `notes/` — outside `walks/`, stably addressable by file path, and written only by the user as its authorized writer. Unlike obsidian or reading-queue walks, research-corpus discharge often produces:
 
 - A new paper-summary file (if confirmed by literature search).
 - A new note file (if confirmed by your own experiment).
@@ -216,15 +216,19 @@ The walk runner **does not** auto-create these. The user does, then moves the hy
 
 ### 8.3 Cross-type discharge
 
-When a hypothesis is confirmed and it bridged multiple types, the discharged YAML records all spawned artifacts:
+When a hypothesis is confirmed, the discharged YAML MUST record every spawned artifact's stable path (realizing the §13.1 back-pointer), the real confirmation `Source`, and the hypothesis id as separate `inspired_by` lineage; a multi-type bridge lists them all:
 
 ```yaml
 discharged_at: 2026-06-15
+Source: "own experiment on 2026-06-14"
+inspired_by: hyp-2026-05-28-001
 spawned_artifacts:
   - papers/2026-06-15-new-summary.md
   - cves/CVE-YYYY-NNNNN.md          # updated with new technique reference
   - notes/2026-06-15-experiment-results.md
 ```
+
+Each spawned artifact (or this discharge record on its behalf) carries `Source` and `inspired_by: <hypothesis id>` as separate fields, per protocol §6.2.1 — evidence and lineage stay auditable and distinct.
 
 ### 8.4 No A mode
 

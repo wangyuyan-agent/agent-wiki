@@ -5,7 +5,7 @@
 - Maturity: `practiced`
 - Evidence scope: real-environment evidence informs the lifecycle through `memory:L4`; the `memory@0.1.0` item schema and `memory:L5` are not end-to-end revalidated
 - Level namespace: `memory:L0`–`memory:L5`
-- Last updated: 2026-07-17
+- Last updated: 2026-08-03
 
 ## 1. Purpose
 
@@ -139,7 +139,7 @@ Promotion path:
 Memory (observed once) → Conventions (confirmed stable rule) → Steering (changes agent behavior)
 ```
 
-Do not promote one incident into a convention. Put experience into memory first; promote to conventions only after repeated confirmation or explicit user decision. Promote to steering only if it changes the agent's fundamental behavior.
+Do not promote one incident into a convention. Put experience into memory first; promote to conventions only after repeated confirmation or explicit user decision. Promote to steering only if it changes the agent's fundamental behavior. Repeated confirmation establishes promotion *eligibility*; the write into conventions or steering additionally requires promotion *authority* (§17).
 
 ## 6. Hot / Warm / Cold decision tree
 
@@ -539,6 +539,8 @@ Steps:
 4. Append an archive entry to `log.md`.
 5. Rotate long logs if needed.
 
+Each `archive/YYYY-MM-DD.md` file is the protocol's `archive_snapshot` artifact: one durable, append-only capture of the inbox for that date.
+
 Possible schedulers:
 
 | Environment | Scheduler |
@@ -722,6 +724,14 @@ Memory items can be promoted through layers as they prove stable:
 Memory → Conventions → Steering
 ```
 
+### Eligibility vs authority
+
+The criteria below establish promotion *eligibility*: evidence that a rule is stable enough to promote. Eligibility does not create promotion *authority*:
+
+- Writing to Conventions or Steering requires an attributable human decision or a pre-existing constitutional grant that covers the change.
+- An Agent-initiated path — live session, autodream, or metamemory — MUST NOT write Conventions or Steering directly on the strength of repeated evidence. It emits a governed promotion proposal (the §23.5 shape, which applies beyond metamemory) and waits for review.
+- An Agent MAY apply the edit as the executor of a recorded authorizing decision. The authority lies in that decision, not in the Agent or in the volume of evidence.
+
 ### Memory → Conventions
 
 Promote when a memory item becomes a stable behavioral rule.
@@ -754,9 +764,10 @@ Criteria:
 
 1. Identify the memory item and source date.
 2. Rewrite it as a stable rule (for conventions) or WHAT/HOW behavior (for steering).
-3. Add it to the appropriate file.
-4. Leave a pointer or note in memory if useful.
-5. Remove or mark duplicate wording to avoid contradiction.
+3. Record the authorizing decision: the explicit human approval, or the pre-existing constitutional grant that covers this change.
+4. Add it to the appropriate file only after that decision is recorded.
+5. Leave a pointer or note in memory if useful.
+6. Remove or mark duplicate wording to avoid contradiction.
 
 ## 18. Failure modes
 
@@ -770,7 +781,7 @@ Criteria:
 | **Blind trust in self-records** | Agent acts on stale or contradictory memory as if current | §15.2 retrieval discipline: read metadata first, down-weight `superseded`/`stale`, surface conflicts via Reconcile |
 | **Cleanup-marker bloat** (`[待清理]` accumulating without ever being cleared) | Index fills with unresolved markers; signal-to-noise drops | Closed `Status` token enum (§9); `state` cleared by autodream supersede (§14.2); `knowledge pending-cleanup` resolved by review (§16) |
 | **`knowledge` misclassified as `state`** | Hard-won lesson silently overwritten by a later "value" | High-precision classifier with false-negative tolerance (§4); supersede gated on formal `kind` field and exact `subject` match, never text similarity (§14.2) |
-| One incident becomes permanent rule | Overgeneralized behavior | Promote to steering only after review |
+| Unauthorized or premature promotion | One incident — or the Agent's own repeated observation — becomes a standing rule without an authorizing decision | §17 eligibility/authority separation; Agent paths emit §23.5 proposals |
 | Archive not distilled | Knowledge stays hidden | Log archive/autodream status |
 | Duplicate rules | Contradictions | Single source of truth; surface via Reconcile (§15.2) |
 | Secrets in memory | Security leak | Never store credentials or tokens |
@@ -797,7 +808,7 @@ The mapping can vary. The invariant is the protocol: Hot entry, inbox capture, r
 | Level | Name | Capability |
 | --- | --- | --- |
 | `memory:L0` | Manual memory | Agent writes minimum-schema, source-aware items to `memory.md` when asked. |
-| `memory:L1` | Structured memory | Adds stable item ids, `index.md`, `topics/`, append-only `archive/`, and operation log. |
+| `memory:L1` | Structured memory | Adds the structured item store guaranteeing stable-id persistence (§7.2), `index.md`, `topics/`, append-only `archive/`, and operation log. |
 | `memory:L2` | Scheduled archive | Raw inbox is archived automatically. |
 | `memory:L3` | Autodream | AI distills archive into index/topics. |
 | `memory:L4` | Review + validation | Explicit audit, cleanup, and fresh-session tests. |
@@ -807,23 +818,24 @@ A system can start at `memory:L0` and evolve. Do not block adoption on full auto
 
 ## 21. Validation checklist
 
-After implementing memory for an agent, verify:
+Verify the items applicable at the claimed level and under the conditions the binding has enabled; untagged items apply from `memory:L0`.
 
 1. A fresh session can locate the memory root.
-2. The agent knows when to read `index.md`.
+2. (`memory:L1+`) The agent knows when to read `index.md`.
 3. The agent can write a distilled note to `memory.md`.
-4. Archive preserves `memory.md` before distillation.
-5. Autodream does not delete existing knowledge.
-6. `index.md` links to relevant topics with clear triggers.
-7. A topic page has source dates.
-8. Raw archive is not loaded by default.
-9. `review memory` produces a cleanup plan before deletion.
-10. A known high-risk rule still works in a fresh session.
+4. (`memory:L3+`) Archive preserves `memory.md` before distillation.
+5. (`memory:L3+`) Autodream does not delete existing knowledge.
+6. (`memory:L1+`) `index.md` links to relevant topics with clear triggers.
+7. (`memory:L1+`) A topic page has source dates.
+8. (`memory:L1+`) Raw archive is not loaded by default.
+9. (`memory:L4+`) `review memory` produces a cleanup plan before deletion.
+10. (`memory:L4+`) A known high-risk rule still works in a fresh session.
 11. Every captured item has date, stable `id`, `kind`, and `Source`; every `state` item also has `subject`.
-12. (`memory:L5`) A retrieved item's later outcome can be recorded without rewriting the original source.
-13. (`memory:L5`) A single helpful or misleading outcome cannot automatically change the memory constitution.
-14. (`memory:L5`) Policy changes are emitted as reviewable proposals with supporting event references.
-15. (`memory:L5`) Transient traces from other protocols, when present, are not persisted wholesale as Memory.
+12. An Agent-initiated Conventions or Steering change remains a proposal until an attributable human decision or an applicable constitutional grant is recorded; repeated evidence alone never authorizes the write (§17).
+13. (`memory:L5`) A retrieved item's later outcome can be recorded without rewriting the original source.
+14. (`memory:L5`) A single helpful or misleading outcome cannot automatically change the memory constitution.
+15. (`memory:L5`) Policy changes are emitted as reviewable proposals with supporting references.
+16. (`memory:L5`) Transient traces from other protocols, when present, are not persisted wholesale as Memory.
 
 ## 22. Practical use cases
 
@@ -881,13 +893,25 @@ pretrained language/world knowledge
 
 The analogy motivates staged learning. It does not justify copying human reconstructive forgetting, confabulation, or identity narratives into the agent.
 
-### 23.2 Feedback event
+### 23.2 Retrieval and feedback events
 
-A binding MAY record how a retrieved memory item participated in a later action:
+A binding MAY record the retrieval itself as a `retrieval_record`:
+
+```yaml
+retrieval_id: memret-2026-07-15-001
+task_id: task-001
+memory_item_ids:
+  - mem-2026-06-01-003
+use_role: action-premise
+retrieved_at: 2026-07-15T10:00:00+08:00
+```
+
+It MAY then record how a retrieved memory item participated in a later action. A feedback event MAY reference the originating `retrieval_id` instead of restating retrieval details:
 
 ```yaml
 event_id: memfb-2026-07-15-001
 task_id: task-001
+retrieval_ref: memret-2026-07-15-001
 memory_item_ids:
   - mem-2026-06-01-003
 workspace_id: ws-2026-07-15-001
@@ -954,13 +978,13 @@ It MUST NOT:
 
 ### 23.5 Policy proposal
 
-Repeated feedback may emit a governed proposal:
+The governed proposal is the single shape for any Agent-initiated change to memory policy or promotion into Conventions/Steering (§17). Metamemory feedback is one emitting path; a live session proposing a stable rule from repeated experience is another. `supporting_refs` cites whatever evidence the emitting path actually has — metamemory feedback events, memory item ids, archive anchors, or recorded user statements:
 
 ```yaml
 proposal_id: mempolicy-2026-07-15-001
-target: retrieval-trigger:environment-state
+target: retrieval-trigger:environment-state   # a memory-policy element, or a proposed Conventions/Steering rule
 proposed_change: "Require live verification when source age exceeds 30 days"
-supporting_events:
+supporting_refs:
   - memfb-2026-06-02-004
   - memfb-2026-06-19-002
   - memfb-2026-07-15-001
@@ -969,12 +993,13 @@ risk: "Adds verification latency to stable environments"
 status: pending-review
 ```
 
-Policy proposals follow the same promotion discipline as §17:
+Proposals follow the §17 promotion discipline:
 
 ```text
-feedback events
-  → candidate policy in Memory/review queue
-  → repeated evidence or explicit human decision
+supporting evidence accumulates
+  → candidate proposal in the review queue
+  → repeated evidence establishes eligibility only
+  → an attributable human decision or pre-existing constitutional grant authorizes the write
   → Convention when stable
   → Steering only if it must change every relevant action
 ```
@@ -990,10 +1015,10 @@ record_retrieval(task_id, memory_item_ids, use_role)
 record_outcome(task_id, outcome, evidence_refs)
 attribute_feedback(task_id, memory_item_ids, verdict, attribution_confidence)
 list_feedback(memory_item_id)
-propose_policy_change(target, supporting_events, expected_benefit, risk)
+propose_policy_change(target, supporting_refs, expected_benefit, risk)
 ```
 
-These operations are optional below `memory:L5`. A conforming `memory:L0`–`memory:L4` binding remains valid without them.
+These operations are optional below `memory:L5`. A conforming `memory:L0`–`memory:L4` binding remains valid without them. `record_retrieval` emits the `retrieval_record` artifact (§23.2).
 
 `attribution_confidence` uses `ordinal-confidence-v1` (`low | medium | high`) and measures confidence that the cited memory item materially contributed to the outcome. It does not change the original item's `epistemic-status-v1` value.
 

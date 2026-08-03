@@ -5,7 +5,7 @@
 - Maturity: `practiced`
 - Evidence scope: one run-reported binding demonstrates `council:L1`-style blind review and selected `council:L2` revision pressure without full lineage/checkpoint validation; one implementation is source-inspected; one field-tested same-runtime role-diverse binding demonstrates selected `council:L0` mechanisms without independent CandidateArtifacts or anonymized peer review
 - Level namespace: `council:L0`–`council:L5`
-- Last updated: 2026-07-20
+- Last updated: 2026-08-03
 
 ## 1. Purpose
 
@@ -640,19 +640,21 @@ Walk hypotheses may inspire candidates but remain labeled weak evidence. Council
 
 ## 22. Validation checklist
 
+Verify the items applicable at the claimed level and under the conditions the binding has enabled; untagged items apply from `council:L0`.
+
 1. The GoalContract names success criteria, constraints, owner, and budget.
 2. Initial candidates are produced independently.
 3. Member descriptors disclose model, role, context, and independence group when known.
-4. Blind review preserves an auditable identity mapping.
+4. (`council:L1+`) Blind review preserves an auditable identity mapping.
 5. Reviews identify material issues, not only rankings.
-6. Revisions point to parent artifacts and review dispositions.
+6. (`council:L2+`) Revisions point to parent artifacts and review dispositions.
 7. Conflicts are classified and carry discriminating evidence or value ownership.
 8. The Frame observer can return `frame-holds` or a sourced challenge.
-9. Controller and Chair authorities are separate.
-10. Hard termination does not depend on model consent.
-11. The best checkpoint can precede the last round.
+9. Controller and Chair authorities and their records are separate from `council:L0`; distinct actors hold them from `council:L3`.
+10. (`council:L3+`) Hard termination does not depend on model consent.
+11. (`council:L2+`) The best checkpoint can precede the last round.
 12. Consensus is not treated as external evidence.
-13. Historical capability is scoped by role/domain and carries uncertainty.
+13. (`council:L4+`) Historical capability is scoped by role/domain and carries uncertainty.
 14. A failed participant or missing perspective is visible.
 15. The final output contains decision, dissent, action, and reversal/stop-loss conditions.
 16. A single agent can execute `council:L0` without a Council service.
