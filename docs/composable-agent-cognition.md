@@ -5,7 +5,7 @@
 - Maturity: `design-only`
 - Evidence scope: component protocols have independent evidence; the full composition has no documented conformance run
 - Level namespace: `composition:C0`–`composition:C5`
-- Last updated: 2026-08-03
+- Last updated: 2026-08-06
 
 ## 1. Purpose
 
@@ -265,6 +265,12 @@ Principal maintains one conversation with Steward
 ```
 
 The Steward compresses coordination, not accountability. The Principal can inspect, interrupt, revoke, bypass, export, or replace the Steward.
+
+### 8.6 Governed shared standing
+
+When several participants need durable shared standing over existing artifacts, read the [Governed Shared Memory Composition Profile](governed-shared-memory-profile.md).
+
+The profile preserves each artifact's producer, source, status, confidence, and authority while a declared space grants bounded standing. It is not a shared-truth store, does not authorize direct writes to participants' Memory stores, and defines no separate conformance level. An Agent may discover that the profile appears applicable, but space creation, audience, authority, and admission require a declared binding.
 
 ## 9. Beliefs and expectations
 

@@ -1,5 +1,5 @@
 manifest_version: 1
-updated: "2026-08-03"
+updated: "2026-08-06"
 purpose: "Machine-readable routing index for agent-wiki protocols and guides."
 level_policy: "Ranges are protocol-local cumulative conformance ladders; isolated higher-level capability tests do not establish that level without lower requirements."
 
@@ -268,3 +268,9 @@ guides:
     level_namespace: composition
     level_range: ["composition:C0", "composition:C5"]
     read_when: "Two or more protocols need to exchange artifacts."
+
+  - id: governed-shared-memory
+    version: "0.1.0"
+    maturity: design-only
+    document: docs/governed-shared-memory-profile.md
+    read_when: "Several participants need governed shared standing over existing artifacts."

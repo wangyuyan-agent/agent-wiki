@@ -3,7 +3,7 @@
 - Document ID: `adoption`
 - Version: `0.1.0`
 - Maturity: `design-only`
-- Last updated: 2026-08-03
+- Last updated: 2026-08-06
 
 ## 1. Purpose
 
@@ -35,8 +35,11 @@ Before claiming conformance, read the selected protocol document completely. The
 | A decision needs inspectable competing views | [Council](agent-first-council.md) | `council:L0` | Create a GoalContract, candidates, ConflictMap, and DecisionRecord. |
 | One human wants one interface over many executors | [Steward](agent-first-steward.md) | `steward:S1` | Issue one bounded WorkOrder and integrate one ResultEnvelope. |
 | Several chosen protocols must cooperate | [Composition guide](composable-agent-cognition.md) | `composition:C1` | Put a shared envelope around the first cross-protocol artifact. |
+| Several participants need governed shared standing over existing artifacts | [Governed Shared Memory profile](governed-shared-memory-profile.md) | No level; `design-only` guide | Read a declared space or propose one without silently creating authority. |
 
 If the problem is already solved by a simpler checklist, direct tool call, or one Agent response, do not add a protocol.
+
+An Agent may discover the Governed Shared Memory profile from the manifest and decide that it appears applicable. A shared space itself must be declared: discovery does not authorize the Agent to create the space, widen its audience, choose its authority, or admit artifacts. Once a binding declares those boundaries, the Agent need not ask again for each permitted retrieval or proposal, but every admission and constitutional change still follows the declared authority path.
 
 ## 4. Minimal bindings
 

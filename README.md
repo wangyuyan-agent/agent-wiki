@@ -57,6 +57,7 @@ agent-wiki/
 │   ├── agent-first-inner-speech.md
 │   ├── agent-first-council.md
 │   ├── agent-first-steward.md
+│   ├── governed-shared-memory-profile.md
 │   └── composable-agent-cognition.md
 └── usecases/
     ├── README.md
@@ -122,6 +123,7 @@ Design-only protocols:
 Advanced composition:
 
 - [Composable Agent Cognition Protocols](docs/composable-agent-cognition.md)
+- [Governed Shared Memory Composition Profile](docs/governed-shared-memory-profile.md)
 
 ## Writing rules
 
