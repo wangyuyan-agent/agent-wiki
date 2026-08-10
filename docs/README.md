@@ -35,6 +35,7 @@ Advanced:
 
 - [Composable Agent Cognition Protocols](composable-agent-cognition.md) — `design-only`; composition rules for explicit artifact exchange. Read after selecting two or more protocols.
 - [Governed Shared Memory Composition Profile](governed-shared-memory-profile.md) — `design-only`; perspective-preserving shared standing over existing artifacts with declared audience and admission authority.
+- [Governed Artifact Portability and Recovery Guide](governed-artifact-portability-recovery.md) — `design-only`; backup, restore, and cross-binding migration semantics without copying authority or runtime state.
 
 ## Related use cases
 

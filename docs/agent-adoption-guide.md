@@ -3,7 +3,7 @@
 - Document ID: `adoption`
 - Version: `0.1.0`
 - Maturity: `design-only`
-- Last updated: 2026-08-06
+- Last updated: 2026-08-10
 
 ## 1. Purpose
 
@@ -36,6 +36,7 @@ Before claiming conformance, read the selected protocol document completely. The
 | One human wants one interface over many executors | [Steward](agent-first-steward.md) | `steward:S1` | Issue one bounded WorkOrder and integrate one ResultEnvelope. |
 | Several chosen protocols must cooperate | [Composition guide](composable-agent-cognition.md) | `composition:C1` | Put a shared envelope around the first cross-protocol artifact. |
 | Several participants need governed shared standing over existing artifacts | [Governed Shared Memory profile](governed-shared-memory-profile.md) | No level; `design-only` guide | Read a declared space or propose one without silently creating authority. |
+| Governed artifacts or a binding must be backed up, restored, or moved | [Governed Artifact Portability and Recovery guide](governed-artifact-portability-recovery.md) | No level; `design-only` guide | Classify state into the four planes before copying anything. |
 
 If the problem is already solved by a simpler checklist, direct tool call, or one Agent response, do not add a protocol.
 

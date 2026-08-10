@@ -58,6 +58,7 @@ agent-wiki/
 │   ├── agent-first-council.md
 │   ├── agent-first-steward.md
 │   ├── governed-shared-memory-profile.md
+│   ├── governed-artifact-portability-recovery.md
 │   └── composable-agent-cognition.md
 └── usecases/
     ├── README.md
@@ -120,10 +121,11 @@ Design-only protocols:
 - [Agent-first Active Workspace Architecture](docs/agent-first-active-workspace.md)
 - [Agent-first Inner Speech Architecture](docs/agent-first-inner-speech.md)
 
-Advanced composition:
+Advanced guides:
 
 - [Composable Agent Cognition Protocols](docs/composable-agent-cognition.md)
 - [Governed Shared Memory Composition Profile](docs/governed-shared-memory-profile.md)
+- [Governed Artifact Portability and Recovery Guide](docs/governed-artifact-portability-recovery.md)
 
 ## Writing rules
 
