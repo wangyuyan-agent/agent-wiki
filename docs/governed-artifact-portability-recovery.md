@@ -49,7 +49,7 @@ A same-host disaster restore preserves the binding shape and normally continues 
 
 When the source may remain active, its liveness is unknown, or the target intentionally diverges, the target must use a new binding identity and an explicit relationship to the source.
 
-This guide stops at single-target recovery or migration. If source and target remain authorized to modify the same logical state after cutover, the operation is a multi-writer synchronization problem outside this guide. The binding must fail closed rather than pretending that migration completed.
+This guide stops at single-target recovery or migration. The [Governed Artifact Replication and Exchange Guide](governed-artifact-replication-exchange.md) covers only ongoing one-way replication and attributed append-only exchange. If source and target remain authorized to modify the same semantic state after cutover, the operation is a multi-writer synchronization problem outside both guides. The binding must fail closed rather than pretending that migration completed.
 
 ## 3. Non-goals
 
@@ -252,7 +252,7 @@ Recovery point, recovery time, retention, and drill frequency are binding-define
 | Imported content activates immediately | Unvalidated artifacts influence behavior in a new context | Stage first; require validation and attributable activation. |
 | Producer or artifact identity cloned | Two live bindings emit indistinguishable provenance | Continue identity only under single-instance succession; otherwise mint a new binding identity. |
 | Source resumes after replacement restore | One logical identity silently gains two writers | Record succession and keep the returning source decommissioned or read-only. |
-| Source and target both remain authorized after cutover | Migration has become an undesigned multi-writer system | Fail closed, suspend conflicting mutation, and route to a separate synchronization design. |
+| Source and target both remain authorized after cutover | Migration has become an undesigned multi-writer system | Fail closed and suspend conflicting mutation; neither this guide nor the Replication and Exchange Guide covers that topology. |
 | Immutable history stores erasable content | Retention conflicts with rights or compliance deletion | Keep erasable content in deletable storage; retain only permitted tombstones or digests. |
 | Backup exists but restore was never exercised | Recoverability is asserted without evidence | Mark the path `unevaluated` and run a restore drill before stronger claims. |
 
@@ -276,7 +276,7 @@ This checklist describes what a future binding would verify. Passing it does not
 14. A restore drill or migration rehearsal records exactly which path and scope were exercised and which claims remain `unevaluated`.
 15. If two active mutation authorities remain, the binding reports that this guide no longer covers the topology.
 
-Incremental-tail algorithms, archive formats, encryption mechanisms, storage adapters, retention schedules, recovery objectives, whole-space migration procedure, and multi-writer synchronization remain binding-defined or deferred until practice produces reusable evidence.
+Incremental-tail algorithms, archive formats, encryption mechanisms, storage adapters, retention schedules, recovery objectives, whole-space migration procedure, and true multi-writer synchronization remain binding-defined or deferred until practice produces reusable evidence.
 
 ## 13. Informative environment-shift checks
 

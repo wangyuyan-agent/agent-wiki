@@ -280,3 +280,9 @@ guides:
     maturity: design-only
     document: docs/governed-artifact-portability-recovery.md
     read_when: "Backing up, restoring, or porting governed artifacts and reconstructing their bindings across hosts, tools, or storage forms."
+
+  - id: governed-artifact-replication-exchange
+    version: "0.1.0"
+    maturity: design-only
+    document: docs/governed-artifact-replication-exchange.md
+    read_when: "Keeping declared governed-artifact surfaces available across independently usable bindings through one-way replication or attributed append-only exchange."

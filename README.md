@@ -59,6 +59,7 @@ agent-wiki/
 │   ├── agent-first-steward.md
 │   ├── governed-shared-memory-profile.md
 │   ├── governed-artifact-portability-recovery.md
+│   ├── governed-artifact-replication-exchange.md
 │   └── composable-agent-cognition.md
 └── usecases/
     ├── README.md
@@ -126,6 +127,7 @@ Advanced guides:
 - [Composable Agent Cognition Protocols](docs/composable-agent-cognition.md)
 - [Governed Shared Memory Composition Profile](docs/governed-shared-memory-profile.md)
 - [Governed Artifact Portability and Recovery Guide](docs/governed-artifact-portability-recovery.md)
+- [Governed Artifact Replication and Exchange Guide](docs/governed-artifact-replication-exchange.md)
 
 ## Writing rules
 
