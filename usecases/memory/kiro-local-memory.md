@@ -3,11 +3,11 @@
 - Use case ID: `memory.kiro-local`
 - Protocol: `memory@0.1.0`
 - Evidence: `field-tested`
-- Conformance: `mapped` — lifecycle evidence maps through `memory:L4`; the current item schema was not revalidated
-- Validation scope: deployed local archive/autodream workflow and review path; not re-executed during the 2026-07-17 metadata review
+- Conformance: `mapped` — historical lifecycle evidence maps through `memory:L4` against `memory@0.1.0`; the `memory@0.2.0` withdrawal/erasure contract and current item schema were not revalidated
+- Validation scope: deployed local archive/autodream workflow and review path; not re-executed during the 2026-08-13 withdrawal-protocol alignment review
 - Reproducibility: `partial` — architecture and procedures are documented; exact local scripts are not included here
 - Level namespace: `memory`
-- Last reviewed: 2026-07-17
+- Last reviewed: 2026-08-13
 
 ## 1. Context
 
@@ -19,7 +19,7 @@ The design is a practical implementation of [Agent-first Memory Architecture](..
 
 ### Protocol alignment note
 
-This deployment predates `memory@0.1.0`. Its observed archive, distillation, index, topic, log, and review lifecycle informed the protocol, but the deployed artifacts described here still use legacy additive updates and free-form cleanup markers. Before claiming `memory@0.1.0` conformance, migrate captures to stable `id`, `kind`, `Source`, and `subject` for `state`; replace free-form cleanup markers with the closed `Status` vocabulary; and validate exact-subject non-destructive supersede. The evidence label describes real operation, not schema certification.
+This deployment predates `memory@0.1.0`. Its observed archive, distillation, index, topic, log, and review lifecycle informed the protocol, but the deployed artifacts described here still use legacy additive updates and free-form cleanup markers. Before claiming current `memory@0.2.0` conformance, migrate captures to stable `id`, `kind`, `Source`, and `subject` for `state`; replace free-form cleanup markers with the closed `Status` vocabulary; validate exact-subject non-destructive supersede; and implement withdrawal routing, control records, anti-resurrection, and authorized-erasure receipts. The evidence label describes real operation, not schema certification.
 
 ## 2. Design philosophy
 
@@ -120,7 +120,7 @@ Rationale:
 
 This stage invokes AI to distill memory.
 
-The steps below describe the deployed legacy behavior. The `add or revise` wording and free-form `[待清理]` marker are evidence of the earlier binding, not recommendations for `memory@0.1.0`; use the migration requirements in the Protocol alignment note before adopting them.
+The steps below describe the deployed legacy behavior. The `add or revise` wording and free-form `[待清理]` marker are evidence of the earlier binding, not recommendations for current `memory@0.2.0`; use the migration requirements in the Protocol alignment note before adopting them.
 
 Execution mode:
 
@@ -237,7 +237,7 @@ A review should inspect:
 
 ### What it does not support
 
-- End-to-end conformance with the current `memory@0.1.0` item and status schema.
+- End-to-end conformance with the current `memory@0.2.0` item, withdrawal, and erasure contract.
 - Current runtime health; the deployment was not re-executed during this review.
 - Reproduction from this page alone; exact scripts and private environment assets are omitted.
 

@@ -66,7 +66,8 @@ agent-wiki/
     ├── memory/
     │   ├── README.md
     │   ├── kiro-local-memory.md
-    │   └── openab-codex-k3s-memory.md
+    │   ├── openab-codex-k3s-memory.md
+    │   └── failed-exploration-withdrawal.md
     ├── auto-walk/
     │   ├── README.md
     │   ├── kiro-local-walk.md

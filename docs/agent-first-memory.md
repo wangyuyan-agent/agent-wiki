@@ -1,11 +1,11 @@
 # Agent-first LLM Memory Architecture
 
 - Protocol ID: `memory`
-- Version: `0.1.0`
+- Version: `0.2.0`
 - Maturity: `practiced`
-- Evidence scope: real-environment evidence informs the lifecycle through `memory:L4`; the `memory@0.1.0` item schema and `memory:L5` are not end-to-end revalidated
+- Evidence scope: Real-environment evidence informs the lifecycle through `memory:L4`. One private run report exposed a failed-exploration withdrawal boundary and informed `memory@0.2.0`, but no `WithdrawalRecord`, erasure path, current item schema, or `memory:L5` path has been end-to-end validated
 - Level namespace: `memory:L0`–`memory:L5`
-- Last updated: 2026-08-03
+- Last updated: 2026-08-13
 
 ## 1. Purpose
 
@@ -44,6 +44,7 @@ A good agent memory system should:
 5. Support automatic maintenance without trusting automation to delete knowledge silently.
 6. Preserve enough source context to audit how a memory was created.
 7. Work across different agent products by mapping the same protocol onto each product's native instruction and workflow mechanisms.
+8. Let an attributable owner withdraw a bounded memory scope without pretending to erase model context, undo project mutations, or physically delete retained content.
 
 ## 3. Non-goals
 
@@ -54,6 +55,7 @@ This architecture is not:
 - A place to store secrets or credentials.
 - A guarantee that all memories are true forever.
 - A system where AI can freely delete or rewrite long-term `knowledge` without review. (`state` facts are non-destructively superseded — see §4 and §14 — which is *not* deletion: the prior value is retained as history and recoverable from archive.)
+- A project rollback, temporary-workspace cleanup, or selective deletion mechanism for the current model context. Memory withdrawal changes future influence; external effects and retained bytes remain under their owning surfaces.
 - A single fixed directory layout that every platform must copy exactly.
 
 The protocol matters more than the exact filenames.
@@ -176,16 +178,16 @@ To keep the protocol portable, structured bindings expose a small abstract inter
 Any binding that claims `memory:L1` or higher MUST provide the five operations below. The names are notional; what matters is that each operation exists and behaves as described.
 
 1. **Inbox append.** Append a captured item to the hot inbox, in the §9 schema. (Backed by a `memory.md` file, a row in a SQLite table, an append-only log, etc.)
-2. **Archive (durable, append-only).** Move or copy the inbox's accumulated content into a durable, append-only layer keyed by a date or other monotonically advancing identifier. The archive layer MUST NOT be mutated after writing, because §13, §14.2 (state supersede recovery floor), and §9 (preferred `Source` anchor) all depend on its immutability.
+2. **Archive (durable, append-only in ordinary operation).** Move or copy the inbox's accumulated content into a durable, append-only layer keyed by a date or other monotonically advancing identifier. Except for an authorized §12.3 erasure, the archive layer MUST NOT be mutated after writing, because §13, §14.2 (state supersede recovery floor), and §9 (preferred `Source` anchor) all depend on its immutability. A binding subject to erasure obligations must use storage that can execute the exception without retaining covered content.
 3. **Item store with metadata.** Read and write distilled items keyed by a stable id, carrying the §9 fields (date, `kind`, `Status`, `Source`, `subject` for `state`, and `superseded_by` when superseded). `Confidence` is optional, but its scheme is mandatory when present. Updates to `Status` and `superseded_by` MUST be atomic with respect to autodream's supersede operation (§14.2).
 4. **Index / navigation surface.** Expose a navigable summary (the §10 index role) that returns ordered candidates for a given trigger or topic. May be a Markdown file, a tag table, an embedding-backed nearest-neighbour query — anything that satisfies the trigger semantics in §10.
-5. **Operation log.** Record lifecycle events (`archive`, `autodream`, `supersede`, `cool`, `merge`, `pending-cleanup`, `review`) with timestamps, sufficient for post-hoc audit. The log itself need not be Markdown; it must be replayable.
+5. **Operation log.** Record lifecycle events (`archive`, `autodream`, `supersede`, `cool`, `merge`, `pending-cleanup`, `withdraw`, `reinstate`, `erase`, `review`) with timestamps, sufficient for post-hoc audit. The log itself need not be Markdown; it must be replayable. `withdraw` and `reinstate` carry the §12.2 control record; `erase` carries only the allowed content-free tombstone and scope receipt from §12.3.
 
 A binding MAY add capabilities (search, embeddings, encryption, sync), but MUST NOT remove any of the five.
 
 ### 7.2 Required guarantees for `memory:L1+`
 
-- **Append-only archive.** Without this, recovery from autodream misjudgments (§14.2) is not possible, and `Source` anchors corrode.
+- **Append-only archive in ordinary operation.** Without this, recovery from autodream misjudgments (§14.2) is not possible, and `Source` anchors corrode. Authorized erasure follows §12.3 and preserves only allowed content-free lineage.
 - **Atomic supersede.** A `state` supersede that updates the prior row's `Status` and adds a new row MUST not leave the store in a state where both rows are simultaneously `active`. (For a filesystem binding, this is achieved by running the operation within a single autodream pass and committing the file atomically.)
 - **Stable item identity.** An item id, once assigned, MUST persist across autodream passes. `superseded_by` and walk discharge back-pointers (§13.1 of the walk protocol) rely on this.
 - **Single writer per binding.** This protocol does not specify a multi-writer model. A binding that crosses runtimes (e.g., a PVC shared between two pods) MUST elect a single writer per autodream pass, or define its own concurrency contract on top.
@@ -203,7 +205,7 @@ A common, fully-conforming filesystem binding looks like this:
     ├── memory.md          # capability 1 (inbox append)
     ├── log.md             # capability 5 (operation log)
     ├── index.md           # capability 4 (index/navigation)
-    ├── archive/           # capability 2 (durable, append-only)
+    ├── archive/           # capability 2 (durable, ordinary append-only)
     │   └── YYYY-MM-DD.md
     ├── topics/            # capability 3 (item store with metadata)
     │   ├── user-preferences.md
@@ -233,12 +235,13 @@ Other valid bindings: a PVC-backed setup that swaps `topics/` for a SQLite items
 
 ### Hot entry: `AGENTS.md` / `CLAUDE.md` / `GEMINI.md` / steering files
 
-The hot entry should only do four things:
+The hot entry should only do five things:
 
 1. Define identity and hard rules.
 2. Point to the memory root.
 3. Define when to read memory.
 4. Define when to write memory.
+5. Define how bounded withdrawal requests are routed before retrieval.
 
 It should not store short-term memory bodies or long historical explanations.
 
@@ -258,10 +261,15 @@ Write memory when:
 - The user explicitly says "remember", "don't forget", "from now on", or "this is my preference".
 - A reusable operational pitfall, decision, workflow lesson, or stable environment fact is confirmed.
 
+Withdraw memory influence when:
+- The user says "forget that exploration", "do not use that conclusion", or otherwise withdraws a bounded prior run, item, or source scope.
+- Treat this as the §12.2 reversible withdrawal path unless the user explicitly requests the §12.3 authorized erasure path.
+
 Retrieval order:
-1. Read `memory/index.md`.
-2. Read relevant `memory/topics/*.md`.
-3. Read `memory/archive/*.md` only for audit or source tracing.
+1. Resolve applicable withdrawal/reinstatement controls from the operation log or binding control store.
+2. Read the eligible scope in `memory/index.md`.
+3. Read relevant eligible scope in `memory/topics/*.md`.
+4. Read eligible `memory/archive/*.md` scope only for audit or source tracing.
 ```
 
 ### Conventions: `memory/conventions.md`
@@ -318,6 +326,9 @@ It records events such as:
 - review
 - cleanup
 - manual-correction
+- withdraw
+- reinstate
+- erase (content-free receipt only)
 
 ### Index: `memory/index.md`
 
@@ -396,7 +407,7 @@ Field notes:
   - `stale` — a *human reviewer* has judged the item no longer applicable but has not yet decided whether to merge, demote, or replace it. Autodream MUST NOT assign `stale` on its own (autodream uses `superseded` for `state` and `pending-cleanup` for `knowledge`); `stale` is the human-only intermediate state that arises during review (§16) when judgment is needed but the resolution is not yet known.
 - `inspired_by` (optional): when this item was created by a walk discharge (auto-walk §6.2.1), it carries the discharged hypothesis id here, and *only* here. Putting the hypothesis id into `Source` is forbidden — that would let a lateral artifact impersonate evidence (auto-walk §6.2 invariant).
 - `corroborating_refs` (optional): when `Source` names a non-corpus event (typically a user statement, see auto-walk §6.2.2), `corroborating_refs` MAY enumerate corpus items that corroborate the fact but did not by themselves justify it. This keeps the primary `Source` honest about what actually made the fact true.
-- `Source` (required): prefer the **smallest stable addressable unit**, and **prefer anchoring into an append-only layer** (e.g. `archive/YYYY-MM-DD.md`) over a mutable one (`topics/X.md#heading`). Mutable files get rewritten by later distillation, so any anchor into them — heading *or* line range — corrodes over time. The archive does not move. (This is why a rigid `#L<start>-<end>` requirement is *not* mandated: line numbers drift at least as often as headings; the durable fix is anchoring the immutable layer, not picking an addressing scheme.)
+- `Source` (required): prefer the **smallest stable addressable unit**, and **prefer anchoring into an append-only layer** (e.g. `archive/YYYY-MM-DD.md`) over a mutable one (`topics/X.md#heading`). Mutable files get rewritten by later distillation, so any anchor into them — heading *or* line range — corrodes over time. In ordinary operation the archive does not move; an authorized §12.3 erasure may deliberately invalidate an anchor and MUST leave only allowed content-free lineage plus a disclosure of the lost audit/recovery capability. (This is why a rigid `#L<start>-<end>` requirement is *not* mandated: line numbers drift at least as often as headings; the durable fix is anchoring the ordinary immutable layer, not picking an addressing scheme.)
 
 Examples:
 
@@ -527,6 +538,103 @@ Capture rules:
 8. Do not overwrite `knowledge` directly. `state` is updated by the autodream supersede protocol (§14), not by raw inbox overwrites.
 9. Prefer add-first; cleanup of `state` is owned by autodream (§14); cleanup of `knowledge` is reviewed by humans (§16).
 
+### 12.1 "Forget" is a routing request, not one destructive verb
+
+Natural-language requests such as "forget that exploration" cross three governance surfaces. Before claiming completion, the Agent MUST inspect and report each surface separately:
+
+| Surface | Default effect | Required disclosure |
+| --- | --- | --- |
+| Current conversation / Active Workspace | Stop relying on the bounded exploration, close or redirect the workspace, and emit no withdrawn conclusion into Memory. | This protocol does not provide selective model-context erasure. Unless the runtime exposes and the binding verifies such a capability, closing a workspace removes future task influence but does not remove tokens already present in the conversation. |
+| External and separately governed persistent effects | Inventory project files, commits, branches, pushes, services, any isolated temporary workspace or worktree, and any conclusion already promoted into Conventions, Steering, or another protocol artifact. Rollback, disposal, revision, or revocation follows each owning surface's authority and destructive-action rules. | Memory withdrawal does not undo code or silently revoke separately governed artifacts. Report the original project, temporary exploration location, and known promoted or derived artifacts separately. |
+| Durable Memory | Use non-admission when nothing was captured. If the scope already entered Memory, use §12.2 withdrawal. Use §12.3 only after an explicit erasure request and authorization. | Report `no capture`, the withdrawn item/source scope, or the authorized erasure scope. State whether retained content remains recoverable. |
+
+An isolated temporary workspace is still part of the external-execution surface, not Memory. Its exploratory code is normally discardable runtime/workspace state and MUST NOT be captured merely because it exists. Isolation must be verified: uncommitted files inside the temporary location, commits on a temporary branch, commits on an original-project branch, and pushed effects have different cleanup paths. If the temporary location contains unique uncommitted work, enumerate it and obtain the confirmation required for destructive disposal. A plain `forget` request from an authority over the bounded Memory scope authorizes removal of the exploration's future influence; otherwise it is a proposal for that authority. It never silently authorizes destruction of unique bytes.
+
+A rule already promoted from Memory into Conventions or Steering is no longer controlled solely by the Memory item. The Agent MUST surface that derived artifact and its source relationship, then apply the owning artifact's revision or revocation authority. Until that separate effect is resolved, the receipt must say that complete influence removal remains partial; Memory withdrawal alone MUST NOT be presented as revoking an authorized standing rule.
+
+The response to a forget request is a **surface receipt**, not the phrase "forgotten" by itself:
+
+```text
+Context / Workspace: <closed or redirected; no selective context erasure claimed without verified runtime support>
+Original project: <clean, or exact residual effects and separately authorized action>
+Temporary exploration workspace: <absent, retained, safely disposable, disposed, or awaiting destructive confirmation>
+Promoted / derived artifacts: <none found, exact governed artifacts and disposition, or unevaluated>
+Memory: <no capture, withdrawn scope, reinstated scope, or authorized erasure receipt>
+```
+
+### 12.2 Reversible withdrawal
+
+Withdrawal is an attributable control event that removes a bounded scope from ordinary retrieval, activation, distillation, surfacing, and action while preserving allowed history for audit and possible reinstatement. It does not declare the withdrawn content false, and it is not deletion. Use it for abandoned or confused exploration, an owner decision to stop using a conclusion, or another bounded influence-removal request.
+
+If the scope has not entered Memory, **non-admission is the complete Memory action**. A `WithdrawalRecord` is optional unless another residual influence path exists. Do not copy the failed exploration into Memory merely to say that it was withdrawn.
+
+If an item, archive segment, source scope, or derived artifact already entered Memory, append a content-minimal `WithdrawalRecord`:
+
+```yaml
+withdrawal_id: memwd-YYYY-MM-DD-NNN
+record_type: withdrawal-control-v1
+action: <withdraw | reinstate>
+scope:
+  memory_item_ids: []
+  archive_refs: []
+  source_or_run_refs: []
+reason: failed-exploration
+decided_by: <attributable owner or authority reference>
+decided_at: <timestamp>
+effect: <exclude-from-influence | restore-eligibility>
+supersedes: <required for reinstate; optional prior control event for withdraw>
+```
+
+The record MUST contain at least one scope selector and identify a bounded scope without restating withdrawn content. Selector arrays denote the union of their stable identifiers; order and duplicate identifiers are semantically irrelevant, and empty selector arrays are absent for normalization. Two records have the same exact scope only when their normalized selector categories and identifier sets are equal. `decided_by` MUST identify an actor authorized for the selected scope. `reason` is explanatory metadata, not a truth verdict. Bindings MAY define a closed reason vocabulary, but MUST NOT reinterpret withdrawal as `Confidence: unknown`, `Status: stale`, or `pending-cleanup`: those fields express different epistemic or review states. `action: withdraw` requires `effect: exclude-from-influence`. `action: reinstate` requires `effect: restore-eligibility`, the same exact normalized scope as its controlling withdrawal, and a `supersedes` reference to that withdrawal. Reinstatement removes that withdrawal gate; it does not make an item current, true, or otherwise exempt from its ordinary `Status`, `Confidence`, retrieval, and review rules. Control records are append-only; their causal supersession chain, not wall-clock last-writer-wins, determines the latest applicable effect. A new event for the same exact scope MUST reference the prior controlling event. When multiple scopes apply to an item or source, any applicable causally unresolved withdrawal keeps it excluded. Conflicting applicable events without one causal order therefore fail closed to exclusion and require attributable reconciliation.
+
+Before using dependent content, every Memory consumer MUST apply the latest applicable withdrawal or reinstatement event. In particular:
+
+- retrieval and Active Workspace activation exclude actively withdrawn items from factual, historical, analogy, and action-premise roles unless the user explicitly requests an audit of the withdrawal;
+- Autodream skips withdrawn archive/source scopes before extracting, merging, cooling, or updating index/topics;
+- review does not mistake a withdrawn archive segment for an undistilled segment;
+- Auto-Walk must not use a withdrawn item as seed, neighbor, support, or discharge target while the event is active;
+- backup, export, migration, and replication preserve the applicable control event with the affected content, so a target or returning replica applies it before exposure.
+
+This is the anti-resurrection rule. A copy, old archive, review pass, re-distillation, derived topic, generated index, import, or offline replica MUST NOT restore current influence merely because the underlying bytes still exist. A binding that cannot keep an applicable withdrawal event with retained content must exclude that content from transfer or fail closed.
+
+The protocol does not add `withdrawn` to the §9 item `Status` enum in `memory@0.2.0`. A future version MAY materialize the control event as an item status after a real durable-item withdrawal validates the need. Until then, `WithdrawalRecord` is the authoritative lifecycle effect and avoids overloading `stale` as a terminal state.
+
+### 12.3 Authorized erasure
+
+Erasure is the exceptional irreversible path for an explicit, scoped user, rights, or compliance requirement. It is not the default interpretation of `forget`, `withdraw`, `retire`, `revoke`, `supersede`, or ordinary cleanup. The Agent MUST obtain or cite attributable erasure authority and enumerate the affected scope before destructive execution.
+
+The scope analysis covers, as applicable:
+
+- inbox and item-store records;
+- index and topic projections;
+- source anchors and archive segments;
+- operation logs or findings that may quote the content;
+- Conventions, Steering, policy proposals, or other promoted/derived artifacts that quote or depend on the covered content;
+- generated caches, embeddings, and other rehydratable projections;
+- backups, exports, replicas, and offline holders.
+
+Every affected holder must remove content covered by the authorization, prevent re-distillation or other resurrection, and record only a permitted content-free `erasure_tombstone` or digest. The minimum tombstone/receipt shape is:
+
+```yaml
+erasure_id: memerase-YYYY-MM-DD-NNN
+record_type: erasure-tombstone-v1
+scope_refs: []                 # opaque ids or anchors; never erased content
+authority_ref: <attributable authorization>
+decided_at: <timestamp>
+executed_at: <timestamp>
+holders:
+  - holder_ref: <stable holder or path reference>
+    result: <completed | partially-completed | unevaluated>
+    limitation_ref: <optional content-free explanation or policy reference>
+sanitized_replacement_refs: []
+```
+
+The tombstone MUST select at least one bounded scope, enumerate every known holder, and MUST NOT reproduce erased content. A digest of erased content is retained only when the authorization and binding threat model permit it; a low-entropy or otherwise identifying digest is not automatically content-free. If one archive object mixes erased and retained scopes, the binding must use deletable storage or create a new sanitized identity that preserves allowed material and lineage without retaining erased bytes. Dependent records must replace covered quotations or anchors with an allowed content-free `source-erased` reference and disclose lost audit/recovery capability. A promoted rule whose authority remains independently valid may be revised to remove the covered source/content rather than silently revoked; if that cannot be completed, its holder remains `partially-completed` or `unevaluated`. Append-only is the ordinary Memory rule; authorized erasure is its only destructive exception.
+
+Backups and migrations follow the deletion-semantics requirement in the [Governed Artifact Portability and Recovery Guide](governed-artifact-portability-recovery.md#9-consistency-storage-and-recovery-evidence). Replicated surfaces follow the erasure, rejoin, suspension, and exit rules in the [Governed Artifact Replication and Exchange Guide](governed-artifact-replication-exchange.md#74-erasure-suspension-and-exit). A holder that cannot satisfy the declared erasure obligation must suspend the affected surface rather than claim success.
+
+An erasure receipt MUST distinguish `completed`, `partially-completed`, and `unevaluated` holders or paths. It must not claim that current model context was selectively erased or that external project mutations were rolled back unless those separate surfaces were actually verified.
+
 ## 13. Archive protocol
 
 Archive should be deterministic and should not require AI.
@@ -539,7 +647,7 @@ Steps:
 4. Append an archive entry to `log.md`.
 5. Rotate long logs if needed.
 
-Each `archive/YYYY-MM-DD.md` file is the protocol's `archive_snapshot` artifact: one durable, append-only capture of the inbox for that date.
+Each `archive/YYYY-MM-DD.md` file is the protocol's `archive_snapshot` artifact: one durable capture that is append-only in ordinary operation for that date.
 
 Possible schedulers:
 
@@ -555,7 +663,7 @@ Possible schedulers:
 The reason to archive before AI distillation is twofold:
 
 1. Raw memory must be preserved even if the agent fails, hallucinates, or produces a bad summary.
-2. The archive layer is **append-only**, which makes it the durable substrate for two later guarantees: it is the recovery floor for autodream's `state` supersede operations (§14), and it is the preferred anchor target for `Source` references (§9). Mutating the archive after the fact breaks both.
+2. The archive layer is **append-only in ordinary operation**, which makes it the durable substrate for two later guarantees: it is the recovery floor for autodream's `state` supersede operations (§14), and it is the preferred anchor target for `Source` references (§9). Uncontrolled mutation breaks both. The only destructive exception is an authorized erasure under §12.3; it replaces covered references with permitted content-free lineage and records the resulting degradation rather than pretending the original recovery path still exists.
 
 ## 14. Autodream protocol
 
@@ -566,6 +674,7 @@ Inputs:
 - Today's archive
 - Current `index.md`
 - Relevant topic pages
+- Applicable withdrawal/reinstatement control records
 - Memory protocol
 
 Outputs:
@@ -577,6 +686,7 @@ Outputs:
 ### 14.1 General rules
 
 - Preserve `Source` and source dates on every item touched.
+- Resolve applicable withdrawal/reinstatement control records before reading archive content or derived items; skip every scope whose latest control effect is `exclude-from-influence`.
 - Do not invent facts not present in the archive.
 - Do not promote a one-off incident into a universal rule unless explicitly confirmed.
 - Keep `index.md` concise.
@@ -587,7 +697,7 @@ Outputs:
 
 When today's archive contains a new value for an existing `state` `subject` (§9), autodream MAY supersede the prior value — under all four of the following constraints. Missing any one collapses this back to "blind rewrite," which is exactly what §4 warns against.
 
-1. **Non-destructive.** The prior row is not deleted. Its `Status` is updated to `superseded`, and a `superseded_by` pointer is added. The newer row appears as a fresh entry with its own date and `Source`. Recovery from a misjudgment is always possible — the archive (an immutable layer, §13) holds the original, and the prior row is still in `index.md`/`topics/*.md` as history. This is the SCD type-2 shape, not type-1.
+1. **Non-destructive in ordinary operation.** The prior row is not deleted. Its `Status` is updated to `superseded`, and a `superseded_by` pointer is added. The newer row appears as a fresh entry with its own date and `Source`. Recovery from an ordinary supersede misjudgment remains possible — the archive (§13) holds the original, and the prior row remains in `index.md`/`topics/*.md` as history. An authorized §12.3 erasure may intentionally remove that recovery path and MUST disclose the resulting loss. This is the SCD type-2 shape, not type-1.
 2. **When in doubt, do not supersede (疑則從加).** Misclassifying a `knowledge` lesson as a `state` value is irreversible in *interpretation*; the text survives, but the lesson loses its weight. Therefore the supersede classifier must be high-precision and tolerate false negatives — when ambiguous, leave both rows as additive entries. This is the same asymmetric-threshold pattern as Auto-Walk §12.2: a missed cleanup is recoverable; a wrong supersede is not.
 3. **Match on the formal `kind` field, not on text similarity.** Both rows must carry `kind: state`; supersede is forbidden between rows of unmatched kinds, and forbidden when `kind` is absent. Inferring `state`-ness from prose is the failure mode that turns this into "AI silently rewriting knowledge."
 4. **Match on `subject` deterministically.** Two `state` rows are subject to supersede iff their `subject` keys are equal as strings. No fuzzy matching, no embedding similarity, no LLM judgment. If the runner cannot find a `subject` key, it cannot supersede.
@@ -619,9 +729,11 @@ Read:
 - `memory/archive/{{date}}.md`   (today's raw input — your only source of new facts)
 - `memory/index.md`
 - relevant `memory/topics/*.md`
+- applicable withdrawal/reinstatement records
 
 Tasks:
-1. Extract long-term reusable items from the archive. Tag every new item's `kind` and `Source` (required, §9). Use `subject` for `state` items.
+0. Resolve withdrawal/reinstatement records and exclude every actively withdrawn item, archive segment, source, or run from all later tasks.
+1. Extract long-term reusable items from the eligible archive scope. Tag every new item's `kind` and `Source` (required, §9). Use `subject` for `state` items.
 2. For each new `state` item:
    a. Look for an existing item with the same `subject` AND `kind: state`.
    b. If found, mark the existing row `Status: superseded`, set `superseded_by` to the new row, and add the new row dated today.
@@ -631,7 +743,7 @@ Tasks:
 4. Cooling pass (optional, low-risk): identify `knowledge` items unused for a long span and demote their position. Do not delete; log each demotion.
 5. Resolve any `pending-cleanup` `state` items whose `superseded_by` is now known.
 6. Update `index.md` as a navigation index, not a content dump. Keep it concise.
-7. Append an autodream entry to `memory/log.md` summarizing supersedes, cools, merges, and additions.
+7. Append an autodream entry to `memory/log.md` summarizing exclusions, supersedes, cools, merges, and additions.
 ```
 
 ## 15. Retrieval protocol
@@ -644,9 +756,10 @@ Retrieval order:
 
 ```text
 1. Hot instruction file
-2. memory/index.md
-3. Relevant memory/topics/*.md
-4. memory/archive/*.md only for audit or source tracing
+2. Applicable withdrawal/reinstatement control records
+3. memory/index.md
+4. Relevant memory/topics/*.md
+5. memory/archive/*.md only for audit or source tracing
 ```
 
 Agents should not read all memory by default.
@@ -669,11 +782,12 @@ Do not read memory when:
 
 Read every retrieved item *as testimony, not fact*. The text is what was once captured; it is not automatically what is true now. The agent MUST apply the following discipline whenever it retrieves a memory item:
 
-1. **Read the metadata first.** `kind`, `Source`, `Status`, source date, and `Confidence` when present (§9) calibrate the item. An item missing required metadata — or with a very old date and no recent corroboration — is not automatically false, but it is not load-bearing. Down-weight it and queue schema repair.
-2. **Down-weight stale and superseded.** A row whose `Status` is `superseded`, `stale`, or `pending-cleanup` MUST not be used as a current factual basis. It MAY be cited as historical context if explicitly framed as such. For a `superseded` `state` row, follow the `superseded_by` pointer to the live row.
-3. **Prefer the most recent `state` row by `subject`.** When two `state` rows share a `subject` and have not been reconciled by autodream, treat the older one as `superseded` and surface the discrepancy to the user (Reconcile, §15.2.1).
-4. **Reconcile before acting.** If two retrieved items appear to contradict each other on the same subject — whether by `subject` collision in `state`, or by direct contradiction in `knowledge` — the agent MUST surface the conflict in its response, not silently pick one. Suppressing a conflict is the dominant blind-trust failure mode. Conflict resolution is a first-class step, not a fallback.
-5. **Honour the asymmetry between memory and walk.** Auto-Walk hypotheses are already read with explicit suspicion (zero-trust gating, §12 of the walk protocol). This protocol now applies the *same* suspicion to memory itself. The previous gap — walks doubt themselves, memory does not — is the exact unguarded seam in which blind-trust failures live.
+1. **Apply influence controls first.** Resolve the latest applicable withdrawal/reinstatement chain before exposing item text. An actively withdrawn scope is unavailable for ordinary retrieval or historical context; only an explicit audit of the withdrawal may inspect retained content under its audience and authority rules.
+2. **Read the metadata next.** `kind`, `Source`, `Status`, source date, and `Confidence` when present (§9) calibrate the item. An item missing required metadata — or with a very old date and no recent corroboration — is not automatically false, but it is not load-bearing. Down-weight it and queue schema repair.
+3. **Down-weight stale and superseded.** A row whose `Status` is `superseded`, `stale`, or `pending-cleanup` MUST not be used as a current factual basis. It MAY be cited as historical context if explicitly framed as such. For a `superseded` `state` row, follow the `superseded_by` pointer to the live row.
+4. **Prefer the most recent `state` row by `subject`.** When two `state` rows share a `subject` and have not been reconciled by autodream, treat the older one as `superseded` and surface the discrepancy to the user (Reconcile, §15.2.1).
+5. **Reconcile before acting.** If two retrieved items appear to contradict each other on the same subject — whether by `subject` collision in `state`, or by direct contradiction in `knowledge` — the agent MUST surface the conflict in its response, not silently pick one. Suppressing a conflict is the dominant blind-trust failure mode. Conflict resolution is a first-class step, not a fallback.
+6. **Honour the asymmetry between memory and walk.** Auto-Walk hypotheses are already read with explicit suspicion (zero-trust gating, §12 of the walk protocol). This protocol now applies the *same* suspicion to memory itself. The previous gap — walks doubt themselves, memory does not — is the exact unguarded seam in which blind-trust failures live.
 
 This is a Hot rule. It belongs in steering or conventions and SHOULD be loaded on every session, not derived per task.
 
@@ -708,11 +822,12 @@ A manual `review memory` workflow should:
 2. Inspect items whose `Status` is `pending-cleanup` (per §9 token enum), and any legacy free-form `[待清理]`/`[待确认]` markers awaiting migration.
 3. Find duplicate or conflicting topic entries; treat conflicts per §15.2 (Reconcile).
 4. Check steering/memory boundary violations.
-5. Check whether archive files were not distilled.
-6. Verify `Source` and source dates are present (both required by §9).
-7. Verify each item carries a `kind`; classify any legacy items missing it.
-8. Identify missing triggers for important topics.
-9. Propose cleanup before any destructive change.
+5. Resolve withdrawal/reinstatement chains and confirm that withdrawn scopes are absent from ordinary index, topic, Auto-Walk, and action paths.
+6. Check whether eligible archive files were not distilled; never treat an actively withdrawn segment as missing work.
+7. Verify `Source` and source dates are present (both required by §9).
+8. Verify each item carries a `kind`; classify any legacy items missing it.
+9. Identify missing triggers for important topics.
+10. Propose cleanup before any destructive change. For erasure, require the §12.3 authority, scope, holder, and receipt checks.
 
 Review should produce a plan before destructive changes. The default action on any ambiguous item is to retain it and lower its retrieval weight (cooling, §14.3), not to delete it.
 
@@ -783,6 +898,12 @@ Criteria:
 | **`knowledge` misclassified as `state`** | Hard-won lesson silently overwritten by a later "value" | High-precision classifier with false-negative tolerance (§4); supersede gated on formal `kind` field and exact `subject` match, never text similarity (§14.2) |
 | Unauthorized or premature promotion | One incident — or the Agent's own repeated observation — becomes a standing rule without an authorizing decision | §17 eligibility/authority separation; Agent paths emit §23.5 proposals |
 | Archive not distilled | Knowledge stays hidden | Log archive/autodream status |
+| Failed exploration is captured as durable knowledge | Confused conclusions survive task closure and influence later work | §12.1 non-admission; Active Workspace close/expiry and selective durable routing |
+| "Forgotten" is claimed across the wrong surface | The user believes model context was erased or project changes were rolled back | §12.1 surface inventory and receipt; keep workspace, external effects, and Memory actions separate |
+| Withdrawn content is re-distilled or re-imported | A review, Autodream pass, generated view, backup, migration, or replica silently restores influence | Apply the latest §12.2 control event before exposure and preserve it with retained content |
+| Withdrawal is encoded as falsity or cleanup | Owner choice silently changes epistemic status, or a terminal decision clogs the review queue | Keep `WithdrawalRecord`, `Status`, and `Confidence` separate; `stale` remains intermediate |
+| Retirement or withdrawal is encoded as erasure | Allowed history is destroyed and an ambiguous request becomes irreversible | Default to §12.2; require explicit authority and scope for §12.3 |
+| Erasure leaves quoted or derived copies | Covered content survives in archive, topics, logs, embeddings, backups, or replicas | Enumerate holders, remove covered content, retain only allowed content-free tombstones, and report incomplete paths |
 | Duplicate rules | Contradictions | Single source of truth; surface via Reconcile (§15.2) |
 | Secrets in memory | Security leak | Never store credentials or tokens |
 | Mutable-anchor `Source` corrosion | `Source` references break as mutable files get rewritten by later distillation | Prefer anchoring `Source` into the append-only archive layer (§9, §13) |
@@ -807,8 +928,8 @@ The mapping can vary. The invariant is the protocol: Hot entry, inbox capture, r
 
 | Level | Name | Capability |
 | --- | --- | --- |
-| `memory:L0` | Manual memory | Agent writes minimum-schema, source-aware items to `memory.md` when asked. |
-| `memory:L1` | Structured memory | Adds the structured item store guaranteeing stable-id persistence (§7.2), `index.md`, `topics/`, append-only `archive/`, and operation log. |
+| `memory:L0` | Manual memory | Agent writes minimum-schema, source-aware items to `memory.md` when asked and routes a bounded forget request through the §12.1 surfaces without false completion claims. |
+| `memory:L1` | Structured memory | Adds the structured item store guaranteeing stable-id persistence (§7.2), `index.md`, `topics/`, ordinary append-only `archive/`, operation log, and §12.2 withdrawal control records. |
 | `memory:L2` | Scheduled archive | Raw inbox is archived automatically. |
 | `memory:L3` | Autodream | AI distills archive into index/topics. |
 | `memory:L4` | Review + validation | Explicit audit, cleanup, and fresh-session tests. |
@@ -836,6 +957,11 @@ Verify the items applicable at the claimed level and under the conditions the bi
 14. (`memory:L5`) A single helpful or misleading outcome cannot automatically change the memory constitution.
 15. (`memory:L5`) Policy changes are emitted as reviewable proposals with supporting references.
 16. (`memory:L5`) Transient traces from other protocols, when present, are not persisted wholesale as Memory.
+17. A bounded `forget` request produces a §12.1 receipt that distinguishes current context/workspace, external effects, and durable Memory.
+18. A failed or abandoned exploration that never entered Memory remains non-admitted; the binding does not create a copy merely to withdraw it.
+19. (`memory:L1+`) A `WithdrawalRecord` excludes its bounded scope from retrieval, activation, Autodream, review re-distillation, and Auto-Walk until an attributable reinstatement event supersedes it.
+20. (`memory:L1+`) Backup, export, migration, and replication keep applicable withdrawal/reinstatement controls with retained content or fail closed.
+21. An authorized erasure distinguishes every covered holder and path as `completed`, `partially-completed`, or `unevaluated`; retained lineage contains no erased content.
 
 ## 22. Practical use cases
 
@@ -843,6 +969,7 @@ Concrete implementations of this architecture:
 
 - [Kiro Local Memory](../usecases/memory/kiro-local-memory.md)
 - [OpenAB + Codex + k3s Memory](../usecases/memory/openab-codex-k3s-memory.md)
+- [Failed Exploration Withdrawal](../usecases/memory/failed-exploration-withdrawal.md)
 
 ## 23. Memory evolution and metamemory feedback
 
@@ -1050,12 +1177,13 @@ Agent-first memory is not a file. It is a pipeline whose product is calibrated t
 Hot controls behavior.
 Conventions stabilize rules.
 Inbox captures, with kind.
-Archive preserves, append-only.
+Archive preserves, append-only except for authorized erasure.
+Withdrawal removes bounded influence without rewriting truth or external effects.
 Autodream distills — supersedes `state`, accumulates `knowledge`.
 Index navigates with trust signals visible.
 Topics retain knowledge.
 Retrieval reads skeptically, surfaces conflicts.
-Review corrects drift; humans hold the deletion key.
+Review corrects drift; humans hold the erasure key.
 ```
 
 The adversary is not forgetting. It is the agent's blind trust in its own past records. Every field on every item — `kind`, `Source`, `Status`, source date — exists to keep that trust honestly calibrated. Lose the calibration and `additive-only` is no longer a memory system; it is a hoard.

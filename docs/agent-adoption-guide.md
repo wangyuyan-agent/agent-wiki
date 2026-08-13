@@ -1,9 +1,9 @@
 # Agent Adoption Guide
 
 - Document ID: `adoption`
-- Version: `0.1.0`
+- Version: `0.2.0`
 - Maturity: `design-only`
-- Last updated: 2026-08-10
+- Last updated: 2026-08-13
 
 ## 1. Purpose
 
@@ -28,6 +28,7 @@ Before claiming conformance, read the selected protocol document completely. The
 | Current problem | Start with | Minimum level | First artifact/action |
 | --- | --- | --- | --- |
 | Useful context must survive sessions | [Memory](agent-first-memory.md) | `memory:L0` | Capture one concise, source-aware memory item in a small inbox/store. |
+| A user wants a failed run or prior conclusion to stop influencing future work | [Memory](agent-first-memory.md#121-forget-is-a-routing-request-not-one-destructive-verb) | `memory:L0` | Separate current context, external execution effects, and durable Memory; use non-admission or a bounded withdrawal before considering erasure. |
 | A corpus needs weak lateral exploration | [Auto-Walk](agent-first-auto-walk.md) | `auto-walk:L0` | Run one manual walk and write hypotheses outside Memory. |
 | Imported or relationship-formed procedures need governed adoption and evolution | [Skill Lifecycle](agent-first-skill-lifecycle.md) | `skill:L0` | Record one candidate's provenance, version, surfaces, authority decision, and rollback target. |
 | The wrong information is active during a task | [Active Workspace](agent-first-active-workspace.md) | `active-workspace:L0` | Maintain one bounded in-context goal/evidence/assumption/action snapshot. |
@@ -54,6 +55,7 @@ Minimum:
 3. Record stable `id`, `kind`, `Source`, and date; add `subject` for `state`.
 4. When confidence is recorded, use `epistemic-status-v1` and its closed values.
 5. Retrieve skeptically; do not treat stored text as truth.
+6. Route a natural-language forget request across current context/workspace, external effects, and durable Memory; never imply that Memory withdrawal erased context or rolled back code.
 
 A single `memory.md` is valid at `memory:L0`. Do not create archive, topics, scheduling, or Autodream until the simpler binding has value.
 

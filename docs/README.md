@@ -20,7 +20,7 @@ Start here:
 
 Practiced protocols:
 
-- [Agent-first Memory Architecture](agent-first-memory.md) — `practiced`; portable memory mechanism and implementation protocol for LLM agents.
+- [Agent-first Memory Architecture](agent-first-memory.md) — `practiced`; portable memory lifecycle with trust calibration, reversible withdrawal, and explicitly authorized erasure.
 - [Agent-first Auto-Walk Architecture](agent-first-auto-walk.md) — `practiced`; exploratory association over consolidated memory or any structured corpus.
 - [Agent-first Skill Lifecycle Architecture](agent-first-skill-lifecycle.md) — `practiced`; imported and relationship-formed procedural artifacts share evidence-, authority-, version-, and rollback-aware lifecycle rules.
 - [Agent-first Council Architecture](agent-first-council.md) — `practiced`; single-agent and multi-agent deliberation, revision, evaluation, and termination.

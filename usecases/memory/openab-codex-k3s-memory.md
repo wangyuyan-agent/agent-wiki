@@ -3,11 +3,11 @@
 - Use case ID: `memory.openab-codex-k3s`
 - Protocol: `memory@0.1.0`
 - Evidence: `field-tested`
-- Conformance: `mapped` — lifecycle evidence maps through `memory:L4`; the current item schema was not revalidated
-- Validation scope: deployment-derived architecture, scheduling checks, and operational pitfalls; live cluster was not rechecked during the 2026-07-17 metadata review
+- Conformance: `mapped` — historical lifecycle evidence maps through `memory:L4` against `memory@0.1.0`; the `memory@0.2.0` withdrawal/erasure contract and current item schema were not revalidated
+- Validation scope: deployment-derived architecture, scheduling checks, and operational pitfalls; live cluster was not rechecked during the 2026-08-13 withdrawal-protocol alignment review
 - Reproducibility: `partial` — the binding is environment-specific and requires an equivalent cluster/runtime
 - Level namespace: `memory`
-- Last reviewed: 2026-07-17
+- Last reviewed: 2026-08-13
 
 ## 1. Context
 
@@ -25,7 +25,7 @@ The design is a practical implementation of [Agent-first Memory Architecture](..
 
 ### Protocol alignment note
 
-This deployment predates `memory@0.1.0`. Its persistence, scheduling, archive-first workflow, distillation, and operational failures are real evidence, but the documented binding still permits direct topic writes and legacy `[待清理]` markers. Before claiming `memory@0.1.0` conformance, route captures through the inbox, add stable `id`, `kind`, `Source`, and `subject` for `state`, adopt the closed `Status` vocabulary, and validate exact-subject non-destructive supersede. The evidence label does not certify the current schema.
+This deployment predates `memory@0.1.0`. Its persistence, scheduling, archive-first workflow, distillation, and operational failures are real evidence, but the documented binding still permits direct topic writes and legacy `[待清理]` markers. Before claiming current `memory@0.2.0` conformance, route captures through the inbox, add stable `id`, `kind`, `Source`, and `subject` for `state`, adopt the closed `Status` vocabulary, validate exact-subject non-destructive supersede, and implement withdrawal routing, control records, anti-resurrection, and authorized-erasure receipts. The evidence label does not certify the current schema.
 
 ## 2. Design philosophy
 
@@ -173,7 +173,7 @@ They should not be loaded first in normal work.
 
 ## 6. Memory write rules
 
-The following records the historical binding. Step 3 is a declared deviation from `memory@0.1.0`, whose current capture path writes the inbox first and lets the governed distillation path update topics.
+The following records the historical binding. Step 3 is a declared deviation from current `memory@0.2.0`, whose capture path writes the inbox first and lets the governed distillation path update topics.
 
 When the user explicitly says:
 
@@ -340,7 +340,7 @@ If it becomes the final knowledge base, the system loses the hot/warm/cold separ
 
 ### What it does not support
 
-- End-to-end conformance with the current `memory@0.1.0` item and status schema.
+- End-to-end conformance with the current `memory@0.2.0` item, withdrawal, and erasure contract.
 - Current cluster health; the live environment was not rechecked during this review.
 - A claim that ConfigMap, PVC, CronJob, or OpenAB is required by the general protocol.
 

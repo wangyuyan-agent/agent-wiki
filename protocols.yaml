@@ -1,5 +1,5 @@
 manifest_version: 1
-updated: "2026-08-10"
+updated: "2026-08-13"
 purpose: "Machine-readable routing index for agent-wiki protocols and guides."
 level_policy: "Ranges are protocol-local cumulative conformance ladders; isolated higher-level capability tests do not establish that level without lower requirements."
 
@@ -53,9 +53,9 @@ evaluation_schemes:
 protocols:
   - id: memory
     name: "Agent-first Memory"
-    version: "0.1.0"
+    version: "0.2.0"
     maturity: practiced
-    evidence_scope: "Real-environment evidence informs the lifecycle through memory:L4; the memory@0.1.0 item schema and memory:L5 are not end-to-end revalidated."
+    evidence_scope: "Real-environment evidence informs the lifecycle through memory:L4. One private run report exposed a failed-exploration withdrawal boundary and informed memory@0.2.0, but no WithdrawalRecord, erasure path, current item schema, or memory:L5 path has been end-to-end validated."
     document: docs/agent-first-memory.md
     level_namespace: memory
     level_range: ["memory:L0", "memory:L5"]
@@ -71,17 +71,24 @@ protocols:
       - retrieval_record
       - metamemory_feedback
       - policy_proposal
+      - withdrawal_record
+      - erasure_tombstone
     usecases:
       - id: memory.kiro-local
         evidence: field-tested
         conformance: mapped
-        conformance_scope: "Lifecycle mapping through memory:L4; current item schema not revalidated."
+        conformance_scope: "Historical lifecycle mapping through memory:L4 against memory@0.1.0; the memory@0.2.0 withdrawal and erasure contract and current item schema are not revalidated."
         document: usecases/memory/kiro-local-memory.md
       - id: memory.openab-codex-k3s
         evidence: field-tested
         conformance: mapped
-        conformance_scope: "Lifecycle mapping through memory:L4; current item schema not revalidated."
+        conformance_scope: "Historical lifecycle mapping through memory:L4 against memory@0.1.0; the memory@0.2.0 withdrawal and erasure contract and current item schema are not revalidated."
         document: usecases/memory/openab-codex-k3s-memory.md
+      - id: memory.failed-exploration-withdrawal
+        evidence: run-reported
+        conformance: mapped
+        conformance_scope: "A private interrupted-exploration report is mapped to the memory@0.2.0 withdrawal boundary; no durable Memory capture, WithdrawalRecord, workspace disposal, rollback, erasure, or conformance level was independently verified."
+        document: usecases/memory/failed-exploration-withdrawal.md
 
   - id: auto-walk
     name: "Agent-first Auto-Walk"
@@ -256,7 +263,7 @@ protocols:
 
 guides:
   - id: adoption
-    version: "0.1.0"
+    version: "0.2.0"
     maturity: design-only
     document: docs/agent-adoption-guide.md
     read_when: "Selecting or bootstrapping a protocol."

@@ -65,7 +65,7 @@ A use case MUST NOT claim a verified level merely because its behavior resembles
 
 ## Current groups
 
-- [memory/](memory/README.md) — Real implementations of agent memory systems.
+- [memory/](memory/README.md) — Real implementations and evidence-calibrated reports that inform agent memory systems.
 - [auto-walk/](auto-walk/README.md) — Field-tested and design-example bindings of Auto-Walk over consolidated memory or other structured corpora.
 - [skill/](skill/README.md) — Imported and relationship-formed procedural artifacts with explicit lifecycle evidence and governance gaps.
 - [council/](council/README.md) — Same-runtime role-diverse and heterogeneous-model Council bindings at explicitly labeled evidence levels.
