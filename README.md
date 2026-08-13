@@ -29,6 +29,7 @@ Design work MUST declare `design-only` maturity and MUST NOT present proposed be
 3. Read the selected protocol completely before claiming conformance.
 4. Read one matching use case and respect its evidence label.
 5. Read [Composable Agent Cognition Protocols](docs/composable-agent-cognition.md) only when two or more protocols need to exchange artifacts.
+6. For long, multi-dependent, irreversible, high-risk, repeatedly failing, or completion-ambiguous work, read Active Workspace's optional [audited task completion profile](docs/agent-first-active-workspace.md#151-optional-profile-audited-task-completion) before treating an execution report as evidence of completion.
 
 Protocol maturity:
 
@@ -120,7 +121,7 @@ Practiced protocols:
 
 Design-only protocols:
 
-- [Agent-first Active Workspace Architecture](docs/agent-first-active-workspace.md)
+- [Agent-first Active Workspace Architecture](docs/agent-first-active-workspace.md) — bounded task state with an optional audited-completion profile; enabling the profile does not raise maturity, level, or conformance.
 - [Agent-first Inner Speech Architecture](docs/agent-first-inner-speech.md)
 
 Advanced guides:
