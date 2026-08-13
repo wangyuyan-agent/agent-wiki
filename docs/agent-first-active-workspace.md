@@ -1,11 +1,11 @@
 # Agent-first Active Workspace Architecture
 
 - Protocol ID: `active-workspace`
-- Version: `0.1.0`
+- Version: `0.2.0`
 - Maturity: `design-only`
-- Evidence scope: No documented binding yet.
+- Evidence scope: No documented binding yet. One public study provides run-reported design evidence for the optional audited-completion profile; no `active-workspace@0.2.0` conformance or profile behavior has been validated.
 - Level namespace: `active-workspace:L0`–`active-workspace:L4`
-- Last updated: 2026-08-03
+- Last updated: 2026-08-13
 
 ## 1. Purpose
 
@@ -42,6 +42,8 @@ Agent-first Active Workspace:
 
 The analogy is useful only while this distinction remains explicit.
 
+Externally, one public run-reported study ([LongHorizon-Harness, arXiv:2608.01964](https://arxiv.org/abs/2608.01964)) describes an implementation that keeps task state outside execution and gates persistent state updates on environment-grounded audit findings. This protocol adopts only the transferable boundary between a completion claim and completion evidence, as the optional §15.1 profile. It does not adopt the study's benchmark claims, and it does not require distinct manager, executor, or auditor roles.
+
 ## 3. Design goals
 
 1. Keep the active task state small enough to guide action.
@@ -52,6 +54,7 @@ The analogy is useful only while this distinction remains explicit.
 6. Expire transient state instead of polluting long-term Memory.
 7. Support replay and debugging without requiring private chain-of-thought.
 8. Degrade to an in-memory checklist when no persistent runtime exists.
+9. Optionally gate completion on criterion-appropriate verification without making audit universal.
 
 ## 4. Non-goals
 
@@ -62,6 +65,7 @@ Active Workspace is not:
 - A hidden chain-of-thought store.
 - The final user-facing answer.
 - A task scheduler for all agents and tools.
+- A mandatory verifier, multi-agent topology, or independent model.
 - An autonomous source of truth.
 - A place where every retrieved item becomes active.
 - A requirement to serialize every intermediate cognition.
@@ -417,6 +421,8 @@ At task completion:
 5. Produce a concise run summary if replay is useful.
 6. Mark the workspace `closed`; expire transient items.
 
+Steps 1–6 are the baseline close path and remain valid without any profile. When the optional §15.1 profile is enabled for the task, step 2 and any transition of an in-scope action to `completed` follow the §15.1 verification rules. The profile adds no top-level workspace status: the workspace still uses `active | paused | closing | closed | expired`.
+
 Routing rules:
 
 | Workspace content | Destination |
@@ -427,6 +433,76 @@ Routing rules:
 | Weak cross-domain possibility | Auto-Walk candidate, not Memory |
 | Council decision and dissent | Council RunRecord; Memory only if reusable |
 | Inner Speech cue | Normally expires; capture only its independently reusable result |
+
+### 15.1 Optional profile: audited task completion
+
+This profile is optional and off by default. The baseline close path remains valid without it, enabling it changes nothing in §18, and using it does not raise any level, maturity, or conformance claim.
+
+**When to enable.** A binding MUST enable the profile when the user or task contract explicitly requires audited completion. It SHOULD enable the profile per task when one or more hold: the task is long or has many dependent steps; its effects are irreversible or persist outside the workspace; failure cost or risk is high; the task has repeatedly failed; or completion is ambiguous from the outputs alone. Short, low-risk, easily repeated tasks SHOULD NOT be audited by default.
+
+Enablement is explicit and scoped. Before verification begins, the workspace records an attributable `decision_log[]` entry naming the trigger and `scope_refs`; those references MUST identify every action whose state may advance and the criteria and constraints used to judge it. A binding MAY enable the profile before execution or after an ambiguous completion claim. This declaration activates only the rules for that scope and creates no new authority. The completed verification records the mode actually used.
+
+**Work contract.** The profile adds no contract fields. `goal.statement`, `goal.success_criteria`, `constraints[]`, and the in-scope committed `actions[]` are the work contract, and `evidence[]` carries its observations. Within this profile, an in-scope `requirement` is a success criterion, a constraint, or an action statement that itself supplies an observable completion condition. Success criteria SHOULD be stated observably before execution starts. Profile metadata refers to these existing fields by stable item id or by a revision-bound pointer such as `goal.success_criteria[0]`; it does not create a parallel GoalContract.
+
+**Completion claims are unverified.** An executor's report that work is done — including this agent's own belief in a single-agent binding — is a completion claim. A completion claim is not evidence: it MUST NOT enter `evidence[]` and MUST NOT by itself advance an in-scope action to `completed` or record a success criterion as satisfied. It MAY be recorded in `decision_log[]` or a patch as a claim awaiting verification.
+
+**Verification.** Verification re-observes the task environment and maps current evidence to the contract:
+
+1. It reads the goal, success criteria, constraints, and declared outputs. It MAY use a concise completion claim to locate outputs, but it MUST NOT treat that claim, the raw interaction trajectory, or private reasoning as completion evidence.
+2. It gathers fresh, source-referenced observations appropriate to each requirement: files, runtime state, logs, test output, external systems, or an attributable user or authority response when the criterion is an approval, choice, or permission.
+3. It records one finding per in-scope requirement, each with evidence references.
+4. It MUST NOT mutate task-relevant state. If an observation step changed the result under inspection or exceeded the declared constraints, `integrity_status` is `violation`, and that verification cannot support `completed`.
+
+**Independence.** Independence means the verification's evidence and verification steps are separate from the completion claim — not necessarily a distinct actor or model. Declared modes express increasing minimum isolation:
+
+- `same-agent-separated-phase` — the same agent verifies in a distinct phase; valid at `active-workspace:L0`. Findings MUST come from fresh environment observations, not from rereading its own report.
+- `fresh-context` — a verifier that does not carry the execution conversation state or raw trajectory.
+- `heterogeneous-verifier` — a different agent, model, or toolchain operating from a fresh or otherwise bounded verification context that excludes the raw trajectory.
+
+Modes are binding declarations. Provider or model labels do not prove independence; a binding discloses the actual context and evidence boundary. No mode strengthens a conformance claim.
+
+**Verification metadata.** Findings travel in existing artifacts: a `decision_log[]` entry plus sourced `evidence[]` items in a single-agent binding; a §13.2 patch whose operations add evidence and propose status in a shared workspace; or one entry in the `verification[]` field of a [Steward](agent-first-steward.md#106-resultenvelope) ResultEnvelope when the task ran under delegation. The canonical embedded record is the mapping below, without an implied enclosing field. A single-agent decision entry or patch operation MAY carry it under a `verification` member; a Steward binding appends the mapping itself to `ResultEnvelope.verification[]`.
+
+```yaml
+profile: active-workspace/audited-completion
+workspace_id: ws-2026-07-15-001
+base_revision: 7                  # required at active-workspace:L1+ unless supplied by the carrier
+scope_refs: ["goal.success_criteria[0]", c-001, act-001]
+findings:
+  - requirement_ref: "goal.success_criteria[0]"
+    result: <met | not-met | undetermined>
+    evidence_refs: [e-007, e-008]
+completion_status: <complete | incomplete | blocked>
+integrity_status: <clean | suspect | violation>
+remaining_gaps: []
+verifier: <role or agent>
+observed_at: <timestamp>
+verification_mode: <same-agent-separated-phase | fresh-context | heterogeneous-verifier>
+```
+
+At `active-workspace:L0`, an in-context equivalent MAY omit `workspace_id` and `base_revision` while preserving every semantic distinction. At `active-workspace:L1+`, both values are required either in `verification` or in its enclosing carrier; duplicated values MUST match. `base_revision` identifies the contract and task-relevant workspace state that verification observed at `observed_at`. After validating that base, the owner MAY commit the new evidence, verification record, and permitted status transition as one revisioned update; the resulting revision does not make its own verification stale. A stale patch follows §13.2, and findings MUST be re-observed rather than carried through a rebase when task-relevant state may have changed.
+
+The profile-local closed tokens mean:
+
+| Register | Token | Meaning |
+| --- | --- | --- |
+| Finding | `met` | Current criterion-appropriate evidence supports the referenced requirement. |
+| Finding | `not-met` | Current criterion-appropriate evidence shows that the referenced requirement is unsatisfied. |
+| Finding | `undetermined` | Available evidence cannot decide the referenced requirement. |
+| Completion | `complete` | Every in-scope requirement has a `met` finding. |
+| Completion | `incomplete` | At least one in-scope requirement has a `not-met` finding; this result takes precedence if other findings are `undetermined`. |
+| Completion | `blocked` | No finding is `not-met`, and at least one is `undetermined` because a named evidence, access, authority, dependency, or environment gap prevents `complete`. |
+| Integrity | `clean` | No task-relevant verifier mutation, boundary breach, or unresolved integrity concern was found. |
+| Integrity | `suspect` | A possible contamination or boundary problem could not be resolved. |
+| Integrity | `violation` | Verification changed task-relevant state or crossed a declared boundary. |
+
+These are protocol-local vocabularies, not confidence schemes. `completion_status` and `integrity_status` are distinct registers, and both are distinct from item `status` and `confidence`: an action's `completed` token records lifecycle, `confidence` records epistemic strength, `completion_status` records whether the contract is satisfied, and `integrity_status` records whether the verification itself stayed clean and inside its boundaries. `completion_status: complete` with an `integrity_status` other than `clean` MUST NOT advance the canonical `completed` state.
+
+`remaining_gaps` MUST reference every `not-met` or `undetermined` requirement and every unresolved integrity concern that affects the verdict. It is empty for a successful verification: all in-scope requirements are `met`, `completion_status` is `complete`, and `integrity_status` is `clean`.
+
+**Authority.** The workspace owner remains the only canonical writer (§13.1). A verifier proposes evidence and status deltas and gains no new authority. One actor MAY hold executor, verifier, and owner roles in `same-agent-separated-phase`, but it MUST record the verification result before applying the owner transition; these operations MAY share the atomic revisioned update described above, but their logical order remains fixed, and role co-location does not merge the completion claim with the evidence record. With the profile enabled, the owner advances an in-scope action to `completed` or records a successful criterion outcome only when `completion_status` is `complete`, every in-scope finding is `met` with criterion-appropriate sourced evidence, and `integrity_status` is `clean`. The workspace MAY still enter its ordinary `closed` status while its decision log records an `incomplete`, `blocked`, or unverified outcome; the Agent MUST disclose that outcome and MUST NOT claim completion.
+
+**Profile non-goals.** The profile does not: audit every task; require a distinct model or agent; define a verifier implementation; create a new authority; retain hidden reasoning or raw trajectories; accept consensus or self-report as evidence (§8.3); or claim that auditing supplies a capability the underlying model lacks.
 
 ## 16. Observability and privacy
 
@@ -463,6 +539,10 @@ public-rationale: concise explanation appropriate for the user
 | Thought dump | Workspace becomes verbose private narration | Store structured state, not chain-of-thought |
 | Permanent scratchpad | Transient state leaks into Memory | Close/expiry and explicit routing |
 | False objectivity | Workspace is treated as the world itself | Sources, confidence, conflicts, external verification |
+| False completion | An executor claim advances `completed` without criterion-appropriate sourced evidence | §15.1: claims stay unverified; only clean, criterion-appropriate verification supports `completed` |
+| Audit theatre | The verifier treats the report or trajectory as evidence instead of re-observing the environment | §15.1 separates the claim from evidence; fresh-context modes exclude the raw trajectory |
+| Completion/integrity collapse | "Complete but suspect" is treated as done | Separate `completion_status` and `integrity_status`; non-`clean` cannot advance `completed` |
+| Audit cost inversion | Every short, low-risk task pays full verification | §15.1 risk gate; the baseline close path remains valid |
 
 ## 18. Implementation levels
 
@@ -492,6 +572,10 @@ Verify the items applicable at the claimed level and under the conditions the bi
 10. Transient cues and weak signals expire.
 11. Replay does not require hidden chain-of-thought.
 12. The protocol works in a single-agent, in-context-only binding.
+13. (when the §15.1 profile is enabled) A completion claim alone cannot enter `evidence[]` or advance `completed`.
+14. (when the §15.1 profile is enabled) `completed` is supported by `completion_status: complete`, `integrity_status: clean`, and a `met` finding with criterion-appropriate sourced evidence for every in-scope requirement.
+15. (when the §15.1 profile is enabled) A verification that mutated task-relevant state is recorded as a `violation` and does not support `completed`.
+16. (when the §15.1 profile is enabled at `active-workspace:L1+`) Verification records the workspace id, base revision, observation time, and declared mode; stale findings are re-observed when task-relevant state may have changed.
 
 ## 20. Final rule
 

@@ -157,9 +157,9 @@ protocols:
 
   - id: active-workspace
     name: "Agent-first Active Workspace"
-    version: "0.1.0"
+    version: "0.2.0"
     maturity: design-only
-    evidence_scope: "No documented binding yet."
+    evidence_scope: "No documented binding yet. One public study provides run-reported design evidence for the optional audited-completion profile; no `active-workspace@0.2.0` conformance or profile behavior has been validated."
     document: docs/agent-first-active-workspace.md
     level_namespace: active-workspace
     level_range: ["active-workspace:L0", "active-workspace:L4"]

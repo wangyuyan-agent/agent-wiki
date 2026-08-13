@@ -101,6 +101,8 @@ actions: []
 
 Keep this in current context if persistence is unnecessary. Separate evidence from assumptions and close/expire it when the task ends.
 
+For a long, multi-dependent, irreversible, high-risk, repeatedly failing, or explicitly verification-scoped task, enable the optional [audited-completion profile](agent-first-active-workspace.md#151-optional-profile-audited-task-completion): completion claims stay unverified, and `completed` advances only on clean, criterion-appropriate verification of current task-relevant state.
+
 ### 4.5 Inner Speech
 
 Minimum:
