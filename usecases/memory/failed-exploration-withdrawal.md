@@ -74,7 +74,7 @@ It does not repeat the incorrect conclusions or exploratory code. When nothing e
 
 ## 5. Required receipt
 
-A future binding handling the same request should report four lines rather than saying only "forgotten":
+A future binding handling the same request should report five lines rather than saying only "forgotten":
 
 ```text
 Context / Workspace: closed or redirected; no selective context erasure claimed without verified runtime support.
