@@ -48,6 +48,9 @@ ASSET_FILES = (
 BASE_URL = "https://agentwiki.iceaka.com/"
 REPO_URL = "https://github.com/wangyuyan-agent/agent-wiki"
 LICENSE_URL = "https://creativecommons.org/licenses/by/4.0/"
+REPOSITORY_README = PurePosixPath("README.md")
+DOCS_INDEX = PurePosixPath("docs/README.md")
+USECASES_INDEX = PurePosixPath("usecases/README.md")
 SITE_DESCRIPTION = (
     "Agent-first protocols for memory, active workspace, skill lifecycle, "
     "councils, and stewardship—with explicit maturity, evidence, and "
@@ -129,6 +132,7 @@ class HtmlInspection:
     ids: set[str]
     duplicate_ids: set[str]
     hrefs: list[str]
+    anchor_hrefs: list[str]
     canonicals: list[str]
     describedby: list[str]
     markdown_alternates: list[str]
@@ -143,6 +147,7 @@ class PageInspector(HTMLParser):
         self.ids: set[str] = set()
         self.duplicate_ids: set[str] = set()
         self.hrefs: list[str] = []
+        self.anchor_hrefs: list[str] = []
         self.canonicals: list[str] = []
         self.describedby: list[str] = []
         self.markdown_alternates: list[str] = []
@@ -161,6 +166,8 @@ class PageInspector(HTMLParser):
         href = values.get("href")
         if href:
             self.hrefs.append(href)
+            if tag == "a":
+                self.anchor_hrefs.append(href)
         if tag != "link" or not href:
             return
         rels = set(values.get("rel", "").lower().split())
@@ -177,6 +184,7 @@ class PageInspector(HTMLParser):
             ids=self.ids,
             duplicate_ids=self.duplicate_ids,
             hrefs=self.hrefs,
+            anchor_hrefs=self.anchor_hrefs,
             canonicals=self.canonicals,
             describedby=self.describedby,
             markdown_alternates=self.markdown_alternates,
@@ -641,6 +649,7 @@ def footer(revision: str) -> str:
     <p class="footer-authority"><strong>Authority stays with the source.</strong> <code>protocols.yaml</code> is the routing and vocabulary authority; each protocol document is authoritative for its own semantics. This website is a generated reading surface.</p>
     <div class="footer-meta">
       <div class="footer-links">
+        <a href="{html_url_for_markdown(REPOSITORY_README)}">Project README</a>
         <a href="{BASE_URL}index.md">Markdown index</a>
         <a href="{BASE_URL}llms.txt">llms.txt</a>
         <a href="{BASE_URL}sitemap.xml">Sitemap</a>
@@ -940,8 +949,8 @@ def render_landing(
     <div class="shell">
       <ul class="fact-list" aria-label="Manifest snapshot">
         <li>{len(protocols)} protocols</li>
-        <li>{len(guides)} guides</li>
-        <li>{len(usecases)} documented use cases</li>
+        <li><a href="{html_url_for_markdown(DOCS_INDEX)}">{len(guides)} guides</a></li>
+        <li><a href="{html_url_for_markdown(USECASES_INDEX)}">{len(usecases)} documented use cases</a></li>
         <li>CC BY 4.0</li>
       </ul>
     </div>
@@ -1330,6 +1339,37 @@ def resolve_internal_output_link(
     return PurePosixPath(path), unquote(parsed.fragment)
 
 
+def verify_click_reachability(
+    inspections: Mapping[PurePosixPath, HtmlInspection],
+    html_paths: Sequence[PurePosixPath],
+) -> None:
+    """Require every published content page to be reachable via HTML anchors."""
+    excluded = {PurePosixPath("404.html")}
+    expected = set(html_paths) - excluded
+    start = PurePosixPath("index.html")
+    if start not in expected:
+        fail("click-reachability graph has no index.html entry point")
+
+    reachable: set[PurePosixPath] = set()
+    pending = [start]
+    while pending:
+        page = pending.pop()
+        if page in reachable:
+            continue
+        reachable.add(page)
+        for href in inspections[page].anchor_hrefs:
+            resolved = resolve_internal_output_link(page, href)
+            if resolved is None:
+                continue
+            target, _ = resolved
+            if target in expected and target not in reachable:
+                pending.append(target)
+
+    if reachable != expected:
+        missing = ", ".join(path.as_posix() for path in sorted(expected - reachable))
+        fail(f"HTML pages are not reachable from index.html anchors: {missing}")
+
+
 def verify_html_pages(html_paths: Sequence[PurePosixPath]) -> None:
     inspections: dict[PurePosixPath, HtmlInspection] = {}
     for relative in html_paths:
@@ -1384,6 +1424,8 @@ def verify_html_pages(html_paths: Sequence[PurePosixPath]) -> None:
                         f"broken internal anchor: {page} -> {href} "
                         f"(#{fragment} absent in {target})"
                     )
+
+    verify_click_reachability(inspections, html_paths)
 
 
 def verify_source_identity(source_bytes: Mapping[PurePosixPath, bytes]) -> None:
