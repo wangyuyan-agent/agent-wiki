@@ -1,0 +1,75 @@
+name: Adoption experience or friction
+description: Share a bounded protocol attempt, including partial or negative results.
+title: "[adoption] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for trying agent-wiki. This form records what you attempted and where the public reading path helped or failed. It does not imply protocol conformance.
+
+  - type: input
+    id: protocol
+    attributes:
+      label: Protocol and version
+      description: Use the canonical id and version from protocols.yaml.
+      placeholder: memory@0.2.0
+    validations:
+      required: true
+
+  - type: input
+    id: runtime
+    attributes:
+      label: Runtime or environment
+      placeholder: Agent/runtime, model family, and relevant host context
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Problem and intended minimum binding
+      description: What problem were you solving, and which qualified minimum level did you attempt?
+    validations:
+      required: true
+
+  - type: textarea
+    id: path
+    attributes:
+      label: Reading and execution path
+      description: Which public entry point and documents did you use? What did you actually run or inspect?
+    validations:
+      required: true
+
+  - type: textarea
+    id: result
+    attributes:
+      label: Observed result and remaining gaps
+      description: Separate observations from assumptions. Partial and negative results are welcome.
+    validations:
+      required: true
+
+  - type: textarea
+    id: friction
+    attributes:
+      label: Friction or navigation failure
+      description: What was ambiguous, missing, unexpectedly expensive, or misleading?
+    validations:
+      required: false
+
+  - type: textarea
+    id: artifacts
+    attributes:
+      label: Inspectable artifacts
+      description: Optional links to public logs, snapshots, code, or a use case. Do not paste secrets or private data.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: boundaries
+    attributes:
+      label: Claim boundaries
+      options:
+        - label: I have not treated this report as a verified conformance claim.
+          required: true
+        - label: I removed credentials, private data, and non-public logs.
+          required: true

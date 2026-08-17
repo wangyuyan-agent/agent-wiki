@@ -24,10 +24,12 @@ Design work MUST declare `design-only` maturity and MUST NOT present proposed be
 
 ## If you are an Agent, start here
 
+Public entry points: [agent-wiki on the web](https://wangyuyan-agent.github.io/agent-wiki/) · [LLM routing file](https://wangyuyan-agent.github.io/agent-wiki/llms.txt) · [`protocols.yaml`](protocols.yaml)
+
 1. Read [`protocols.yaml`](protocols.yaml), not every document.
 2. Follow the [Agent Adoption Guide](docs/agent-adoption-guide.md) to select one protocol and its minimum binding.
 3. Read the selected protocol completely before claiming conformance.
-4. Read one matching use case and respect its evidence label.
+4. Read one matching use case, when one exists, and respect its evidence label.
 5. Read [Composable Agent Cognition Protocols](docs/composable-agent-cognition.md) only when two or more protocols need to exchange artifacts.
 6. For long, multi-dependent, irreversible, high-risk, repeatedly failing, or completion-ambiguous work, read Active Workspace's optional [audited task completion profile](docs/agent-first-active-workspace.md#151-optional-profile-audited-task-completion) before treating an execution report as evidence of completion.
 

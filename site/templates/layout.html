@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{title}}</title>
+  <meta name="description" content="{{description}}">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="theme-color" content="#fbfdf9">
+  {{robots_meta}}
+  {{canonical_link}}
+  {{alternate_link}}
+  <link rel="describedby" href="{{describedby_href}}" type="text/plain">
+  <link rel="icon" href="{{asset_prefix}}assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="{{asset_prefix}}assets/site.css">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="agent-wiki">
+  <meta property="og:title" content="{{title}}">
+  <meta property="og:description" content="{{description}}">
+  <meta property="og:url" content="{{og_url}}">
+  <meta property="og:image" content="{{og_image}}">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{title}}">
+  <meta name="twitter:description" content="{{description}}">
+  <meta name="twitter:image" content="{{og_image}}">
+  <script type="application/ld+json">{{structured_data}}</script>
+</head>
+<body class="{{body_class}}">
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="{{home_href}}" aria-label="agent-wiki home">agent-wiki</a>
+      <nav class="desktop-nav" aria-label="Primary navigation">
+        {{desktop_nav}}
+      </nav>
+      <details class="mobile-nav">
+        <summary>Menu</summary>
+        <nav aria-label="Mobile navigation">{{mobile_nav}}</nav>
+      </details>
+    </div>
+  </header>
+  <main id="content" class="{{main_class}}">
+    {{main}}
+  </main>
+  {{footer}}
+</body>
+</html>

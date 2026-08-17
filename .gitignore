@@ -4,3 +4,7 @@
 *.secret
 *.key
 *.pem
+_site/
+site/design-concepts/
+__pycache__/
+*.pyc

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">agent-wiki routing mark</title>
+  <rect width="64" height="64" rx="12" fill="#19261d"/>
+  <path d="M14 32h36" stroke="#fbfdf9" stroke-width="3" stroke-linecap="round"/>
+  <rect x="11" y="27" width="10" height="10" rx="1.5" fill="#fbfdf9"/>
+  <rect x="27" y="27" width="10" height="10" rx="1.5" fill="#9ccfae"/>
+  <rect x="43" y="27" width="10" height="10" rx="1.5" fill="#fbfdf9"/>
+</svg>
