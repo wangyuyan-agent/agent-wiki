@@ -24,7 +24,7 @@ Design work MUST declare `design-only` maturity and MUST NOT present proposed be
 
 ## If you are an Agent, start here
 
-Public entry points: [agent-wiki on the web](https://wangyuyan-agent.github.io/agent-wiki/) · [LLM routing file](https://wangyuyan-agent.github.io/agent-wiki/llms.txt) · [`protocols.yaml`](protocols.yaml)
+Public entry points: [agent-wiki on the web](https://agentwiki.iceaka.com/) · [LLM routing file](https://agentwiki.iceaka.com/llms.txt) · [`protocols.yaml`](protocols.yaml)
 
 1. Read [`protocols.yaml`](protocols.yaml), not every document.
 2. Follow the [Agent Adoption Guide](docs/agent-adoption-guide.md) to select one protocol and its minimum binding.

@@ -45,7 +45,7 @@ ASSET_FILES = (
     PurePosixPath("social-card.png"),
 )
 
-BASE_URL = "https://wangyuyan-agent.github.io/agent-wiki/"
+BASE_URL = "https://agentwiki.iceaka.com/"
 REPO_URL = "https://github.com/wangyuyan-agent/agent-wiki"
 LICENSE_URL = "https://creativecommons.org/licenses/by/4.0/"
 SITE_DESCRIPTION = (
@@ -1222,6 +1222,10 @@ def generate_sitemap(html_paths: Iterable[PurePosixPath]) -> str:
     ) + "\n"
 
 
+def generate_robots_txt() -> str:
+    return f"User-agent: *\nAllow: /\nSitemap: {BASE_URL}sitemap.xml\n"
+
+
 def render_404(template: str, revision: str) -> str:
     main = f"""
 <div class="not-found-inner">
@@ -1413,6 +1417,17 @@ def verify_sitemap(html_paths: Sequence[PurePosixPath]) -> None:
         fail("sitemap.xml must not publish a lastmod without per-page modification data")
 
 
+def verify_robots_txt() -> None:
+    robots_path = output_path("robots.txt")
+    try:
+        actual = robots_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as exc:
+        raise BuildError(f"cannot read robots.txt: {exc}") from exc
+    expected = generate_robots_txt()
+    if actual != expected:
+        fail("robots.txt does not match the generated crawl policy")
+
+
 def verify_llms(
     linked: set[str], source_markdown: Sequence[PurePosixPath], manifest: Mapping[str, Any]
 ) -> None:
@@ -1536,12 +1551,14 @@ def build() -> None:
 
     html_paths = [PurePosixPath("index.html"), *rendered_source_paths, PurePosixPath("404.html")]
     write_text("sitemap.xml", generate_sitemap(html_paths))
+    write_text("robots.txt", generate_robots_txt())
     write_text(".nojekyll", "")
 
     verify_no_symlinks()
     verify_source_identity(source_bytes)
     verify_html_pages(html_paths)
     verify_sitemap(html_paths)
+    verify_robots_txt()
     verify_llms(llms_linked, source_markdown, manifest)
     verify_counts(manifest, routes)
 
