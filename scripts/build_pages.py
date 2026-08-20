@@ -60,6 +60,23 @@ SITE_DESCRIPTION = (
 PLACEHOLDER_RE = re.compile(r"\{\{([a-z_]+)\}\}")
 WHITESPACE_RE = re.compile(r"\s+")
 TABLE_RE = re.compile(r"<table>(.*?)</table>", flags=re.DOTALL)
+SENTENCE_BOUNDARY_RE = re.compile(r'''[.!?][\"'’”\)\]]*(?=\s|$)''')
+NONTERMINAL_ABBREVIATIONS = frozenset(
+    {
+        "dr.",
+        "e.g.",
+        "i.e.",
+        "mr.",
+        "mrs.",
+        "ms.",
+        "prof.",
+        "vs.",
+    }
+)
+CONTEXTUAL_ABBREVIATIONS = frozenset({"etc.", "jr.", "sr."})
+# Short opening lines are often source labels rather than useful search context;
+# below this generic threshold, evaluate every complete sentence that fits.
+MIN_CONTEXT_SENTENCE_LENGTH = 70
 
 
 class BuildError(RuntimeError):
@@ -136,6 +153,20 @@ class HtmlInspection:
     canonicals: list[str]
     describedby: list[str]
     markdown_alternates: list[str]
+    descriptions: list[str]
+    open_graph_descriptions: list[str]
+    twitter_descriptions: list[str]
+    glance_protocols: list[tuple[str, str, str, str]]
+    glance_problem_texts: list[str]
+    glance_minimum_texts: list[str]
+    glance_start_hrefs: list[str]
+    glance_maturity_texts: list[str]
+    glance_usecases: list[tuple[str, str, str, str]]
+    glance_usecase_labels: list[str]
+    glance_evidence_texts: list[str]
+    glance_conformance_texts: list[str]
+    protocol_backlinks: list[tuple[str, str]]
+    structured_descriptions: list[str]
 
 
 class PageInspector(HTMLParser):
@@ -151,6 +182,21 @@ class PageInspector(HTMLParser):
         self.canonicals: list[str] = []
         self.describedby: list[str] = []
         self.markdown_alternates: list[str] = []
+        self.descriptions: list[str] = []
+        self.open_graph_descriptions: list[str] = []
+        self.twitter_descriptions: list[str] = []
+        self.glance_protocols: list[tuple[str, str, str, str]] = []
+        self.glance_problem_texts: list[str] = []
+        self.glance_minimum_texts: list[str] = []
+        self.glance_start_hrefs: list[str] = []
+        self.glance_maturity_texts: list[str] = []
+        self.glance_usecases: list[tuple[str, str, str, str]] = []
+        self.glance_usecase_labels: list[str] = []
+        self.glance_evidence_texts: list[str] = []
+        self.glance_conformance_texts: list[str] = []
+        self.protocol_backlinks: list[tuple[str, str]] = []
+        self.structured_descriptions: list[str] = []
+        self._text_captures: list[tuple[str, str, list[str]]] = []
 
     def handle_starttag(
         self, tag: str, attrs: list[tuple[str, str | None]]
@@ -168,6 +214,45 @@ class PageInspector(HTMLParser):
             self.hrefs.append(href)
             if tag == "a":
                 self.anchor_hrefs.append(href)
+        if tag == "meta":
+            name = values.get("name", "").lower()
+            property_name = values.get("property", "").lower()
+            content = values.get("content", "")
+            if name == "description":
+                self.descriptions.append(content)
+            elif property_name == "og:description":
+                self.open_graph_descriptions.append(content)
+            elif name == "twitter:description":
+                self.twitter_descriptions.append(content)
+        if tag == "aside" and "doc-glance" in values.get("class", "").split():
+            self.glance_protocols.append(
+                (
+                    values.get("data-protocol-id", ""),
+                    values.get("data-maturity", ""),
+                    values.get("data-usecase-count", ""),
+                    values.get("data-problem-count", ""),
+                )
+            )
+        if tag == "a" and values.get("data-usecase-id"):
+            self.glance_usecases.append(
+                (
+                    values["data-usecase-id"],
+                    values.get("data-evidence", ""),
+                    values.get("data-conformance", ""),
+                    href or "",
+                )
+            )
+        role = values.get("data-visible-role", "")
+        if role:
+            self._text_captures.append((tag, role, []))
+            if role == "minimum" and href:
+                self.glance_start_hrefs.append(href)
+        if tag == "script" and values.get("type", "").lower() == "application/ld+json":
+            self._text_captures.append((tag, "structured-data", []))
+        if tag == "a" and values.get("data-parent-protocol-id"):
+            self.protocol_backlinks.append(
+                (values["data-parent-protocol-id"], href or "")
+            )
         if tag != "link" or not href:
             return
         rels = set(values.get("rel", "").lower().split())
@@ -177,6 +262,39 @@ class PageInspector(HTMLParser):
             self.describedby.append(href)
         if "alternate" in rels and values.get("type", "").lower() == "text/markdown":
             self.markdown_alternates.append(href)
+
+    def handle_data(self, data: str) -> None:
+        for _, _, pieces in self._text_captures:
+            pieces.append(data)
+
+    def handle_endtag(self, tag: str) -> None:
+        matching = [
+            index for index, (capture_tag, _, _) in enumerate(self._text_captures)
+            if capture_tag == tag
+        ]
+        if not matching:
+            return
+        capture_tag, role, pieces = self._text_captures.pop(matching[-1])
+        if capture_tag != tag:
+            return
+        value = WHITESPACE_RE.sub(" ", "".join(pieces)).strip()
+        destinations = {
+            "problem": self.glance_problem_texts,
+            "minimum": self.glance_minimum_texts,
+            "maturity": self.glance_maturity_texts,
+            "usecase-label": self.glance_usecase_labels,
+            "evidence": self.glance_evidence_texts,
+            "conformance": self.glance_conformance_texts,
+        }
+        if role in destinations:
+            destinations[role].append(value)
+        elif role == "structured-data":
+            try:
+                structured = json.loads("".join(pieces))
+            except json.JSONDecodeError as exc:
+                raise BuildError(f"invalid JSON-LD in generated page: {exc}") from exc
+            if isinstance(structured, dict) and "description" in structured:
+                self.structured_descriptions.append(str(structured["description"]))
 
     def result(self) -> HtmlInspection:
         return HtmlInspection(
@@ -188,6 +306,20 @@ class PageInspector(HTMLParser):
             canonicals=self.canonicals,
             describedby=self.describedby,
             markdown_alternates=self.markdown_alternates,
+            descriptions=self.descriptions,
+            open_graph_descriptions=self.open_graph_descriptions,
+            twitter_descriptions=self.twitter_descriptions,
+            glance_protocols=self.glance_protocols,
+            glance_problem_texts=self.glance_problem_texts,
+            glance_minimum_texts=self.glance_minimum_texts,
+            glance_start_hrefs=self.glance_start_hrefs,
+            glance_maturity_texts=self.glance_maturity_texts,
+            glance_usecases=self.glance_usecases,
+            glance_usecase_labels=self.glance_usecase_labels,
+            glance_evidence_texts=self.glance_evidence_texts,
+            glance_conformance_texts=self.glance_conformance_texts,
+            protocol_backlinks=self.protocol_backlinks,
+            structured_descriptions=self.structured_descriptions,
         )
 
 
@@ -488,6 +620,39 @@ def extract_adoption_steps(markdown: str, parser: MarkdownIt) -> list[str]:
     return steps
 
 
+def extract_minimal_binding_anchors(
+    markdown: str,
+    parser: MarkdownIt,
+) -> dict[str, str]:
+    """Map each section-4 protocol label to its generated Adoption Guide anchor."""
+    tokens = parser.parse(markdown)
+    add_heading_ids(tokens)
+    in_minimal_bindings = False
+    anchors: dict[str, str] = {}
+    for index, token in enumerate(tokens):
+        if token.type == "heading_open" and token.tag == "h2":
+            heading = inline_plain_text(tokens[index + 1])
+            if in_minimal_bindings:
+                break
+            in_minimal_bindings = heading.startswith("4. Minimal bindings")
+            continue
+        if in_minimal_bindings and token.type == "heading_open" and token.tag == "h3":
+            heading = inline_plain_text(tokens[index + 1])
+            match = re.match(r"^4\.\d+\s+(.+)$", heading)
+            anchor = token.attrGet("id")
+            if not match or not anchor:
+                fail(f"Agent Adoption Guide has an invalid minimal-binding heading: {heading!r}")
+            label = match.group(1)
+            if label in anchors:
+                fail(f"Agent Adoption Guide repeats minimal-binding label {label!r}")
+            anchors[label] = BASE_URL + "docs/agent-adoption-guide.html#" + quote(
+                anchor, safe="-._~"
+            )
+    if not anchors:
+        fail("Agent Adoption Guide has no section-4 minimal-binding anchors")
+    return anchors
+
+
 def resolved_repo_path(source: PurePosixPath, href: str) -> tuple[PurePosixPath, str]:
     parsed = urlsplit(href)
     if parsed.scheme or parsed.netloc:
@@ -578,21 +743,292 @@ def add_heading_ids(tokens: Sequence[Token]) -> None:
 
 def markdown_title_and_description(tokens: Sequence[Token]) -> tuple[str, str]:
     title = ""
-    description = ""
+    paragraphs: list[str] = []
+    list_depth = 0
     for index, token in enumerate(tokens):
         if token.type == "heading_open" and token.tag == "h1" and not title:
             title = inline_plain_text(tokens[index + 1])
-        if token.type == "paragraph_open" and index + 1 < len(tokens):
+        if token.type in {"bullet_list_open", "ordered_list_open"}:
+            list_depth += 1
+        elif token.type in {"bullet_list_close", "ordered_list_close"}:
+            list_depth = max(0, list_depth - 1)
+        elif token.type == "paragraph_open" and list_depth == 0 and index + 1 < len(tokens):
             candidate = inline_plain_text(tokens[index + 1])
-            if candidate and not candidate.startswith(("Document ID:", "Protocol ID:")):
-                description = candidate
-                break
+            if candidate:
+                paragraphs.append(WHITESPACE_RE.sub(" ", candidate).strip())
     if not title:
         fail("Markdown document has no H1")
-    description = WHITESPACE_RE.sub(" ", description).strip() or SITE_DESCRIPTION
-    if len(description) > 157:
-        description = description[:154].rstrip(" ,;:-") + "…"
+    description = ""
+    for paragraph in paragraphs:
+        remainder = paragraph
+        while remainder:
+            candidate = first_sentence(remainder)
+            if is_complete_sentence(candidate) and 40 <= len(candidate) <= 157:
+                description = candidate
+                break
+            if candidate == remainder:
+                break
+            remainder = remainder[len(candidate):].lstrip()
+        if description:
+            break
+    if not description:
+        fail(f"Markdown document {title!r} has no complete 40..157 character description")
     return title, description
+
+
+def first_sentence_end(value: str) -> int | None:
+    for match in SENTENCE_BOUNDARY_RE.finditer(value):
+        candidate = value[: match.end()]
+        without_closers = re.sub(r'''[\"'’”\)\]]+$''', "", candidate)
+        last_token = without_closers.rsplit(" ", 1)[-1].lower().lstrip("([{\"'‘“")
+        remainder = value[match.end():].lstrip()
+        if not remainder:
+            return match.end()
+        if last_token in NONTERMINAL_ABBREVIATIONS:
+            continue
+        # An initialism or contextual abbreviation followed by more prose is
+        # ambiguous without a language model ("U.S. Kiro runtime" versus
+        # "U.S. Next sentence"). Keep scanning instead of risking a fragment;
+        # returning two complete sentences is safer than returning half of one.
+        if last_token in CONTEXTUAL_ABBREVIATIONS or re.fullmatch(
+            r"(?:[a-z]\.){2,}", last_token
+        ):
+            continue
+        return match.end()
+    return None
+
+
+def first_sentence(value: str) -> str:
+    value = WHITESPACE_RE.sub(" ", value).strip()
+    sentence_end = first_sentence_end(value)
+    if sentence_end is not None:
+        return value[:sentence_end]
+    return value
+
+
+def is_complete_sentence(value: str) -> bool:
+    value = WHITESPACE_RE.sub(" ", value).strip()
+    return bool(value) and first_sentence_end(value) == len(value)
+
+
+def section_one_sentences(
+    source: str,
+    parser: MarkdownIt,
+    context: str,
+    *,
+    require_purpose: bool = False,
+) -> list[str]:
+    """Extract complete prose sentences from section 1, excluding list metadata."""
+    tokens = parser.parse(source)
+    in_section_one = False
+    list_depth = 0
+    heading = ""
+    sentences: list[str] = []
+    for index, token in enumerate(tokens):
+        if token.type == "heading_open" and token.tag == "h2":
+            heading = inline_plain_text(tokens[index + 1])
+            if in_section_one:
+                break
+            in_section_one = bool(re.match(r"^1\.\s+", heading))
+            if in_section_one and require_purpose and not heading.startswith("1. Purpose"):
+                fail(f"{context} section 1 must be Purpose, found {heading!r}")
+            continue
+        if token.type in {"bullet_list_open", "ordered_list_open"}:
+            list_depth += 1
+            continue
+        if token.type in {"bullet_list_close", "ordered_list_close"}:
+            list_depth = max(0, list_depth - 1)
+            continue
+        if (
+            in_section_one
+            and list_depth == 0
+            and token.type == "paragraph_open"
+            and index + 1 < len(tokens)
+        ):
+            paragraph = WHITESPACE_RE.sub(" ", inline_plain_text(tokens[index + 1])).strip()
+            while paragraph:
+                sentence = first_sentence(paragraph)
+                if (
+                    sentence
+                    and is_complete_sentence(sentence)
+                    and (not require_purpose or not sentence.endswith(":"))
+                ):
+                    sentences.append(sentence)
+                if sentence == paragraph:
+                    break
+                paragraph = paragraph[len(sentence):].lstrip()
+    if not sentences:
+        fail(f"{context} has no prose sentence in section 1")
+    return sentences
+
+
+def extract_section_one_sentence(
+    source: str,
+    parser: MarkdownIt,
+    context: str,
+    *,
+    require_purpose: bool = False,
+) -> str:
+    return section_one_sentences(
+        source,
+        parser,
+        context,
+        require_purpose=require_purpose,
+    )[0]
+
+
+def select_protocol_purpose(
+    source: str,
+    parser: MarkdownIt,
+    protocol: Mapping[str, Any],
+) -> str:
+    """Select the strongest source sentence without maintaining separate SEO copy."""
+    sentences = section_one_sentences(
+        source,
+        parser,
+        f"protocol {protocol['id']}",
+        require_purpose=True,
+    )
+    short_name = str(protocol["name"]).removeprefix("Agent-first ")
+    direct_name = re.compile(rf"\b(?:a|an|the)?\s*{re.escape(short_name)}\s+is\b", re.I)
+
+    product_sentences = [
+        sentence
+        for sentence in sentences
+        if re.search(r"\b(?:the|its) product\b.{0,55}\bis\b", sentence, re.I)
+    ]
+    if product_sentences:
+        return product_sentences[0]
+    direct_definitions = [sentence for sentence in sentences if direct_name.search(sentence)]
+    if direct_definitions:
+        return direct_definitions[0]
+    return sentences[0]
+
+
+def select_usecase_context(
+    source: str,
+    parser: MarkdownIt,
+    case: Mapping[str, Any],
+    max_length: int,
+) -> str:
+    """Select a complete, source-derived case sentence that fits before its suffix."""
+    sentences = section_one_sentences(source, parser, f"usecase {case['id']}")
+    opening = sentences[0]
+    if (
+        len(opening) >= MIN_CONTEXT_SENTENCE_LENGTH
+        and len(opening) <= max_length
+        and is_complete_sentence(opening)
+    ):
+        return opening
+
+    tokens = parser.parse(source)
+    title = ""
+    for index, token in enumerate(tokens):
+        if token.type == "heading_open" and token.tag == "h1":
+            title = inline_plain_text(tokens[index + 1])
+            break
+    if not title:
+        fail(f"usecase {case['id']} has no H1 for description fallback")
+    title_sentence = title.rstrip(" .!?") + "."
+
+    complete = [
+        (index, sentence)
+        for index, sentence in enumerate(sentences)
+        if len(sentence) <= max_length
+        and is_complete_sentence(sentence)
+    ]
+    if complete:
+        # Prefer the most informative sentence that fits the fixed suffix budget;
+        # preserve source order when two candidates have the same length.
+        context = max(complete, key=lambda item: (len(item[1]), -item[0]))[1]
+        contextualized = f"{title} — {context}"
+        if len(contextualized) <= max_length:
+            return contextualized
+        return context
+    if len(title_sentence) <= max_length:
+        return title_sentence
+    fail(f"usecase {case['id']} has no complete source-derived description within budget")
+
+
+def verify_text_extractors(parser: MarkdownIt) -> None:
+    """Guard the punctuation and list boundaries used by generated descriptions."""
+    quoted = 'It is complete.” Next sentence.'
+    if first_sentence(quoted) != 'It is complete.”':
+        fail("sentence extraction must retain closing quotation marks")
+    abbreviation_cases = {
+        "This use case uses e.g. examples. Next sentence.": "This use case uses e.g. examples.",
+        "This ran on the U.S. runtime. Next sentence.": "This ran on the U.S. runtime.",
+        "This ran on the U.S. Next sentence.": "This ran on the U.S. Next sentence.",
+        "This ran on the U.S. Kiro runtime. Next sentence.": "This ran on the U.S. Kiro runtime.",
+        "The U.S. Department published it. Next sentence.": "The U.S. Department published it.",
+        "This ran in the U.S. “runtime profile” mode. Next sentence.": "This ran in the U.S. “runtime profile” mode.",
+        "Dr. Smith reviewed it. Next sentence.": "Dr. Smith reviewed it.",
+        "Use examples (e.g. local cache). Next sentence.": "Use examples (e.g. local cache).",
+        "Use examples (e.g. Local cache). Next sentence.": "Use examples (e.g. Local cache).",
+        "Use examples, etc. Next sentence.": "Use examples, etc. Next sentence.",
+    }
+    for value, expected in abbreviation_cases.items():
+        if first_sentence(value) != expected:
+            fail(f"sentence extraction split an abbreviation in {value!r}")
+    if is_complete_sentence("This paragraph has no terminal punctuation"):
+        fail("sentence extraction accepted prose without terminal punctuation")
+    if is_complete_sentence("This paragraph uses e.g. examples without a terminator"):
+        fail("sentence extraction mistook an abbreviation for terminal punctuation")
+    if not is_complete_sentence("This ran on the U.S."):
+        fail("sentence extraction rejected a sentence ending in an initialism")
+    sample = """# Synthetic\n\n## 1. Context\n\n- Metadata-like first list item.\n\nActual prose sentence. Follow-up.\n\n## 2. Boundary\n"""
+    extracted = section_one_sentences(sample, parser, "synthetic extraction check")
+    if extracted != ["Actual prose sentence.", "Follow-up."]:
+        fail("section-1 extraction must ignore list items and preserve prose sentences")
+    incomplete = parser.parse(
+        "# Synthetic\n\n"
+        "This deliberately long source fragment has enough characters for metadata "
+        "but no terminal punctuation"
+    )
+    try:
+        markdown_title_and_description(incomplete)
+    except BuildError:
+        pass
+    else:
+        fail("generic Markdown descriptions must fail closed on incomplete prose")
+    incomplete_section = (
+        "# Synthetic\n\n"
+        "## 1. Purpose\n\n"
+        "This deliberately long purpose paragraph has no terminal punctuation\n\n"
+        "## 2. Boundary\n\n"
+        "A complete sentence outside the selected section.\n"
+    )
+    try:
+        section_one_sentences(
+            incomplete_section,
+            parser,
+            "synthetic incomplete-purpose check",
+            require_purpose=True,
+        )
+    except BuildError:
+        pass
+    else:
+        fail("section-1 descriptions must fail closed on incomplete prose")
+
+
+def truncate_description(value: str, suffix: str = "") -> str:
+    """Fit a snippet to 157 characters without cutting a Latin word or suffix."""
+    value = WHITESPACE_RE.sub(" ", value).strip()
+    suffix = WHITESPACE_RE.sub(" ", suffix).strip()
+    combined = f"{value} {suffix}".strip()
+    if len(combined) <= 157:
+        return combined
+
+    prefix_limit = 157 if not suffix else 156 - len(suffix)
+    if prefix_limit < 2:
+        fail("description suffix leaves no room for a meaningful prefix")
+    candidate = value[: prefix_limit - 1].rstrip(" ,;:-")
+    if len(value) > len(candidate):
+        boundary = candidate.rfind(" ")
+        if boundary > 0:
+            candidate = candidate[:boundary].rstrip(" ,;:-")
+        candidate += "…"
+    return f"{candidate} {suffix}".strip()
 
 
 def render_markdown_document(
@@ -717,62 +1153,250 @@ def manifest_collections(
     return protocols, guides, usecases
 
 
-def document_metadata(manifest: Mapping[str, Any]) -> dict[PurePosixPath, DocumentMeta]:
+def routes_by_document(
+    routes: Sequence[AdoptionRoute],
+) -> dict[PurePosixPath, list[AdoptionRoute]]:
+    grouped: dict[PurePosixPath, list[AdoptionRoute]] = {}
+    for route in routes:
+        grouped.setdefault(route_target_document(route), []).append(route)
+    return grouped
+
+
+def document_metadata(
+    manifest: Mapping[str, Any],
+    routes: Sequence[AdoptionRoute],
+    source_texts: Mapping[PurePosixPath, str],
+    parser: MarkdownIt,
+) -> dict[PurePosixPath, DocumentMeta]:
     protocols, guides, usecases = manifest_collections(manifest)
+    route_groups = routes_by_document(routes)
     metadata: dict[PurePosixPath, DocumentMeta] = {}
     for protocol in protocols:
-        description = (
-            f"{protocol['name']} {protocol['version']} — {protocol['maturity']}. "
-            f"{protocol.get('evidence_scope', '')}"
-        ).strip()
-        metadata[PurePosixPath(protocol["document"])] = DocumentMeta(
+        document = PurePosixPath(str(protocol["document"]))
+        document_routes = route_groups.get(document, [])
+        if not document_routes:
+            fail(f"protocol {protocol['id']} has no Agent Adoption Guide problem route")
+        for route in document_routes:
+            if route.minimum != protocol["minimal_level"]:
+                fail(
+                    f"protocol {protocol['id']} route minimum {route.minimum!r} does not "
+                    f"match manifest minimal_level {protocol['minimal_level']!r}"
+                )
+        source = source_texts.get(document)
+        if source is None:
+            fail(f"protocol source was not loaded: {document}")
+        if len(document_routes) > 1:
+            description = truncate_description(" — ".join(route.problem for route in document_routes) + ".")
+        else:
+            purpose = select_protocol_purpose(source, parser, protocol)
+            description = truncate_description(f"{document_routes[0].problem} — {purpose}")
+        metadata[document] = DocumentMeta(
             title=protocol["name"],
             description=description,
             kind="protocol",
             version=protocol["version"],
         )
     for guide in guides:
-        metadata[PurePosixPath(guide["document"])] = DocumentMeta(
+        document = PurePosixPath(str(guide["document"]))
+        read_when = str(guide["read_when"]).strip()
+        description = f"{guide['maturity']} guide — Read when: {read_when}"
+        if description[-1] not in ".!?":
+            description += "."
+        if len(description) > 157:
+            source = source_texts.get(document)
+            if source is None:
+                fail(f"guide source was not loaded: {document}")
+            candidates = section_one_sentences(
+                source,
+                parser,
+                f"guide {guide['id']}",
+                require_purpose=True,
+            )
+            contextualized = [
+                f"{guide['maturity']} guide — {candidate}"
+                for candidate in candidates
+                if 40 <= len(f"{guide['maturity']} guide — {candidate}") <= 157
+                and is_complete_sentence(candidate)
+            ]
+            if contextualized:
+                description = contextualized[0]
+            else:
+                fail(
+                    f"guide {guide['id']} has no complete source-derived description "
+                    "that preserves maturity"
+                )
+        metadata[document] = DocumentMeta(
             title=f"{guide['id']} guide",
-            description=f"Read when: {guide['read_when']}",
+            description=description,
             kind="guide",
             version=guide["version"],
         )
     for case in usecases:
-        scope = case.get("conformance_scope", "")
-        description = (
-            f"{case['id']} — evidence {case['evidence']}; conformance "
-            f"{case['conformance']}. {scope}"
-        ).strip()
-        metadata[PurePosixPath(case["document"])] = DocumentMeta(
+        document = PurePosixPath(str(case["document"]))
+        source = source_texts.get(document)
+        if source is None:
+            fail(f"usecase source was not loaded: {document}")
+        suffix = f"Evidence: {case['evidence']}; conformance: {case['conformance']}."
+        context = select_usecase_context(
+            source,
+            parser,
+            case,
+            max_length=156 - len(suffix),
+        )
+        description = truncate_description(context, suffix)
+        if "…" in description:
+            fail(f"usecase {case['id']} description must preserve a complete source sentence")
+        metadata[document] = DocumentMeta(
             title=case["id"],
             description=description,
             kind="usecase",
         )
+    usecase_index_owners: dict[PurePosixPath, str] = {}
+    for protocol in protocols:
+        protocol_cases = [
+            case
+            for case in usecases
+            if str(case["protocol_id"]) == str(protocol["id"])
+        ]
+        if not protocol_cases:
+            continue
+        parents = {
+            PurePosixPath(str(case["document"])).parent
+            for case in protocol_cases
+        }
+        if len(parents) != 1:
+            fail(f"protocol {protocol['id']} use cases span multiple index directories")
+        index_document = next(iter(parents)) / "README.md"
+        owner = usecase_index_owners.get(index_document)
+        if owner is not None:
+            fail(
+                f"use-case index {index_document} is shared by protocols "
+                f"{owner} and {protocol['id']}"
+            )
+        usecase_index_owners[index_document] = str(protocol["id"])
+        if index_document not in source_texts:
+            fail(f"protocol {protocol['id']} has no use-case index at {index_document}")
+        evidence = list(dict.fromkeys(str(case["evidence"]) for case in protocol_cases))
+        conformance = list(
+            dict.fromkeys(str(case["conformance"]) for case in protocol_cases)
+        )
+        count = len(protocol_cases)
+        case_label = "use case" if count == 1 else "use cases"
+        description = (
+            f"{protocol['id']} use cases — {count} documented {case_label}; "
+            f"evidence: {', '.join(evidence)}; "
+            f"conformance: {', '.join(conformance)}."
+        )
+        if not 40 <= len(description) <= 157:
+            fail(
+                f"protocol {protocol['id']} use-case index description length is "
+                f"{len(description)}; expected 40..157"
+            )
+        metadata[index_document] = DocumentMeta(
+            title=f"{protocol['id']} use cases",
+            description=description,
+            kind="usecase-index",
+        )
     return metadata
 
 
-def truncate_description(value: str) -> str:
-    value = WHITESPACE_RE.sub(" ", value).strip()
-    return value if len(value) <= 157 else value[:154].rstrip(" ,;:-") + "…"
+def render_protocol_glance(
+    protocol: Mapping[str, Any],
+    routes: Sequence[AdoptionRoute],
+    manifest: Mapping[str, Any],
+    adoption_minimum: str,
+) -> str:
+    maturity = str(protocol["maturity"])
+    maturity_definition = str(manifest["maturity_vocabulary"][maturity])
+    usecases = [
+        as_mapping(item, f"protocol {protocol['id']}.usecases")
+        for item in as_list(protocol["usecases"], f"protocol {protocol['id']}.usecases")
+    ]
+    if usecases:
+        usecase_items: list[str] = []
+        for case in usecases:
+            evidence = str(case["evidence"])
+            evidence_definition = str(manifest["evidence_vocabulary"][evidence])
+            conformance = str(case["conformance"])
+            conformance_definition = str(
+                manifest["conformance_vocabulary"][conformance]
+            )
+            case_id = str(case["id"])
+            case_url = html_url_for_markdown(PurePosixPath(str(case["document"])))
+            usecase_items.append(
+                "<li>"
+                f'<a data-usecase-id="{html.escape(case_id, quote=True)}" '
+                f'data-evidence="{html.escape(evidence, quote=True)}" '
+                f'data-conformance="{html.escape(conformance, quote=True)}" '
+                f'data-visible-role="usecase-label" href="{case_url}">'
+                f"{html.escape(case_id)}</a>"
+                '<span class="doc-glance-usecase-meta">'
+                f'<abbr data-visible-role="evidence" '
+                f'title="Evidence — {html.escape(evidence_definition, quote=True)}">'
+                f"{html.escape(evidence)}</abbr>"
+                '<span aria-hidden="true"> · </span>'
+                f'<abbr data-visible-role="conformance" '
+                f'title="Conformance — {html.escape(conformance_definition, quote=True)}">'
+                f"{html.escape(conformance)}</abbr></span></li>"
+            )
+        usecase_html = f'<ul class="doc-glance-usecases">{"".join(usecase_items)}</ul>'
+    else:
+        usecase_html = '<span class="doc-glance-empty">None documented yet</span>'
+
+    problem_html = '<span aria-hidden="true"> · </span>'.join(
+        f'<span data-visible-role="problem">{html.escape(route.problem)}</span>'
+        for route in routes
+    )
+    return (
+        f'<aside class="doc-glance" aria-label="{html.escape(str(protocol["name"]), quote=True)} at a glance" '
+        f'data-protocol-id="{html.escape(str(protocol["id"]), quote=True)}" '
+        f'data-maturity="{html.escape(maturity, quote=True)}" '
+        f'data-usecase-count="{len(usecases)}" '
+        f'data-problem-count="{len(routes)}">'
+        '<p class="doc-glance-title">At a glance</p>'
+        '<dl>'
+        '<div class="doc-glance-item doc-glance-problem"><dt>Problem</dt>'
+        f'<dd class="doc-glance-problems">{problem_html}</dd></div>'
+        '<div class="doc-glance-item"><dt>Start at</dt>'
+        f'<dd><a data-visible-role="minimum" href="{adoption_minimum}">'
+        f'<code>{html.escape(str(protocol["minimal_level"]))}</code></a></dd></div>'
+        '<div class="doc-glance-item"><dt>Maturity</dt>'
+        f'<dd><abbr data-visible-role="maturity" '
+        f'title="{html.escape(maturity_definition, quote=True)}">'
+        f"{html.escape(maturity)}</abbr></dd></div>"
+        '<div class="doc-glance-item doc-glance-related"><dt>Use cases</dt>'
+        f"<dd>{usecase_html}</dd></div>"
+        "</dl></aside>"
+    )
 
 
 def render_source_pages(
     *,
     source_markdown: Sequence[PurePosixPath],
-    source_bytes: Mapping[PurePosixPath, bytes],
+    source_texts: Mapping[PurePosixPath, str],
     parser: MarkdownIt,
     template: str,
     manifest: Mapping[str, Any],
+    metadata: Mapping[PurePosixPath, DocumentMeta],
+    routes: Sequence[AdoptionRoute],
     revision: str,
 ) -> list[PurePosixPath]:
-    metadata = document_metadata(manifest)
+    protocols, _, usecases = manifest_collections(manifest)
+    protocols_by_document = {
+        PurePosixPath(str(protocol["document"])): protocol for protocol in protocols
+    }
+    protocols_by_id = {str(protocol["id"]): protocol for protocol in protocols}
+    usecases_by_document = {
+        PurePosixPath(str(case["document"])): case for case in usecases
+    }
+    route_groups = routes_by_document(routes)
+    adoption_source = source_texts.get(PurePosixPath("docs/agent-adoption-guide.md"))
+    if adoption_source is None:
+        fail("Agent Adoption Guide source was not loaded for minimal-binding anchors")
+    minimal_anchors = extract_minimal_binding_anchors(adoption_source, parser)
     rendered_paths: list[PurePosixPath] = []
     for relative in source_markdown:
-        try:
-            source = source_bytes[relative].decode("utf-8")
-        except UnicodeDecodeError as exc:
-            raise BuildError(f"source Markdown is not UTF-8: {relative}") from exc
+        source = source_texts[relative]
         title, extracted_description, rendered = render_markdown_document(relative, source, parser)
         declared = metadata.get(relative)
         description = truncate_description(
@@ -780,14 +1404,55 @@ def render_source_pages(
         )
         canonical = html_url_for_markdown(relative)
         markdown_alternate = source_url(relative)
+        source_links: list[str] = []
+        case = usecases_by_document.get(relative)
+        if case:
+            parent = protocols_by_id[str(case["protocol_id"])]
+            parent_id = str(parent["id"])
+            parent_url = html_url_for_markdown(PurePosixPath(str(parent["document"])))
+            source_links.append(
+                f'Protocol: <a data-parent-protocol-id="{html.escape(parent_id, quote=True)}" '
+                f'href="{parent_url}">{html.escape(str(parent["name"]))}</a>'
+            )
+        source_links.extend(
+            (
+                f'<a href="{markdown_alternate}">Markdown</a>',
+                f'<a class="external-link" href="{repo_blob_url(relative, revision)}">GitHub source</a>',
+            )
+        )
         sourcebar = (
             '<div class="doc-sourcebar">'
             f'<span>Source · {html.escape(relative.as_posix())}</span>'
-            '<span>'
-            f'<a href="{markdown_alternate}">Markdown</a> · '
-            f'<a class="external-link" href="{repo_blob_url(relative, revision)}">GitHub source</a>'
+            f'<span>{" · ".join(source_links)}'
             "</span></div>"
         )
+        glance = ""
+        protocol = protocols_by_document.get(relative)
+        if protocol:
+            protocol_routes = route_groups.get(relative, [])
+            if not protocol_routes:
+                fail(f"protocol {protocol['id']} has no route for its At a glance block")
+            route_labels = {route.label for route in protocol_routes}
+            if len(route_labels) != 1:
+                fail(f"protocol {protocol['id']} routes disagree on their Adoption Guide label")
+            route_label = next(iter(route_labels))
+            adoption_minimum = minimal_anchors.get(route_label)
+            if not adoption_minimum:
+                fail(
+                    f"protocol {protocol['id']} has no section-4 minimal-binding anchor "
+                    f"for {route_label!r}"
+                )
+            glance = render_protocol_glance(
+                protocol,
+                protocol_routes,
+                manifest,
+                adoption_minimum,
+            )
+            h1_end = rendered.find("</h1>")
+            if h1_end < 0:
+                fail(f"protocol {protocol['id']} rendered without an H1")
+            insertion = h1_end + len("</h1>")
+            rendered = rendered[:insertion] + glance + rendered[insertion:]
         main = f'<div class="doc-shell">{sourcebar}<article class="doc">{rendered}</article></div>'
         structured: dict[str, Any] = {
             "@context": "https://schema.org",
@@ -799,9 +1464,10 @@ def render_source_pages(
             "license": LICENSE_URL,
             "codeRepository": REPO_URL,
         }
-        if declared and declared.version:
-            structured["version"] = declared.version
+        if declared:
             structured["articleSection"] = declared.kind
+            if declared.version:
+                structured["version"] = declared.version
         output_relative = relative.with_suffix(".html")
         asset_prefix = "../" * len(output_relative.parent.parts)
         values = page_values(
@@ -877,9 +1543,7 @@ def render_landing(
             "</a></li>"
         )
 
-    problems_by_document: dict[PurePosixPath, list[str]] = {}
-    for route in routes:
-        problems_by_document.setdefault(route_target_document(route), []).append(route.problem)
+    route_groups = routes_by_document(routes)
 
     protocol_rows = []
     for protocol in protocols:
@@ -894,7 +1558,10 @@ def render_landing(
             )
         else:
             case_summary = "0 documented"
-        problem = problems_by_document.get(document, [str(protocol.get("evidence_scope", ""))])[0]
+        document_routes = route_groups.get(document, [])
+        if not document_routes:
+            fail(f"protocol {protocol['id']} has no Agent Adoption Guide problem route")
+        problem = document_routes[0].problem
         maturity = str(protocol["maturity"])
         protocol_rows.append(
             "<tr>"
@@ -1393,6 +2060,27 @@ def verify_html_pages(html_paths: Sequence[PurePosixPath]) -> None:
                 f"{relative} Markdown alternate is {inspection.markdown_alternates!r}; "
                 f"expected [{alternate!r}]"
             )
+        description_sets = (
+            inspection.descriptions,
+            inspection.open_graph_descriptions,
+            inspection.twitter_descriptions,
+        )
+        if any(len(values) != 1 for values in description_sets):
+            fail(f"{relative} must have exactly one HTML, Open Graph, and Twitter description")
+        descriptions = [values[0] for values in description_sets]
+        if len(set(descriptions)) != 1:
+            fail(f"{relative} publishes inconsistent description metadata")
+        if (
+            relative != PurePosixPath("404.html")
+            and inspection.structured_descriptions != [descriptions[0]]
+        ):
+            fail(f"{relative} JSON-LD description does not match its visible metadata")
+        if not 40 <= len(descriptions[0]) <= 157:
+            fail(
+                f"{relative} description length is {len(descriptions[0])}; expected 40..157"
+            )
+        if "…" in descriptions[0]:
+            fail(f"{relative} description must preserve complete source-derived prose")
         if relative == PurePosixPath("404.html"):
             required_assets = {
                 BASE_URL + "assets/favicon.svg",
@@ -1426,6 +2114,162 @@ def verify_html_pages(html_paths: Sequence[PurePosixPath]) -> None:
                     )
 
     verify_click_reachability(inspections, html_paths)
+
+
+def verify_seo_surfaces(
+    manifest: Mapping[str, Any],
+    routes: Sequence[AdoptionRoute],
+    metadata: Mapping[PurePosixPath, DocumentMeta],
+    adoption_source: str,
+    parser: MarkdownIt,
+) -> None:
+    protocols, guides, usecases = manifest_collections(manifest)
+    protocols_by_id = {str(protocol["id"]): protocol for protocol in protocols}
+    route_groups = routes_by_document(routes)
+    minimal_anchors = extract_minimal_binding_anchors(adoption_source, parser)
+    total_glances = 0
+    total_glance_usecases = 0
+    total_backlinks = 0
+    verified_usecase_indexes: dict[PurePosixPath, str] = {}
+
+    for protocol in protocols:
+        document = PurePosixPath(str(protocol["document"]))
+        inspection = inspect_html(output_path(document.with_suffix(".html")))
+        expected_description = metadata[document].description
+        if inspection.descriptions != [expected_description]:
+            fail(f"protocol {protocol['id']} description drifted from its derived source")
+        document_routes = route_groups.get(document, [])
+        if not document_routes:
+            fail(f"protocol {protocol['id']} has no route for SEO verification")
+        cases = [
+            as_mapping(item, f"protocol {protocol['id']}.usecases")
+            for item in as_list(protocol["usecases"], f"protocol {protocol['id']}.usecases")
+        ]
+        expected_glance = [
+            (
+                str(protocol["id"]),
+                str(protocol["maturity"]),
+                str(len(cases)),
+                str(len(document_routes)),
+            )
+        ]
+        if inspection.glance_protocols != expected_glance:
+            fail(f"protocol {protocol['id']} At a glance metadata does not match its sources")
+        if inspection.glance_problem_texts != [route.problem for route in document_routes]:
+            fail(f"protocol {protocol['id']} visible problems do not match the Adoption Guide")
+        if inspection.glance_minimum_texts != [str(protocol["minimal_level"])]:
+            fail(f"protocol {protocol['id']} visible minimum does not match the manifest")
+        route_labels = {route.label for route in document_routes}
+        expected_start_hrefs = (
+            [minimal_anchors[next(iter(route_labels))]] if len(route_labels) == 1 else []
+        )
+        if inspection.glance_start_hrefs != expected_start_hrefs:
+            fail(f"protocol {protocol['id']} Start at link does not match section 4")
+        if inspection.glance_maturity_texts != [str(protocol["maturity"])]:
+            fail(f"protocol {protocol['id']} visible maturity does not match the manifest")
+        expected_usecases = [
+            (
+                str(case["id"]),
+                str(case["evidence"]),
+                str(case["conformance"]),
+                html_url_for_markdown(PurePosixPath(str(case["document"]))),
+            )
+            for case in cases
+        ]
+        if inspection.glance_usecases != expected_usecases:
+            fail(f"protocol {protocol['id']} At a glance usecases do not match the manifest")
+        if inspection.glance_usecase_labels != [str(case["id"]) for case in cases]:
+            fail(f"protocol {protocol['id']} visible usecase labels do not match the manifest")
+        if inspection.glance_evidence_texts != [str(case["evidence"]) for case in cases]:
+            fail(f"protocol {protocol['id']} visible evidence tokens do not match the manifest")
+        if inspection.glance_conformance_texts != [
+            str(case["conformance"]) for case in cases
+        ]:
+            fail(
+                f"protocol {protocol['id']} visible conformance tokens do not match the manifest"
+            )
+        if inspection.protocol_backlinks:
+            fail(f"protocol {protocol['id']} unexpectedly contains a parent-protocol backlink")
+        if cases:
+            index_parents = {
+                PurePosixPath(str(case["document"])).parent
+                for case in cases
+            }
+            if len(index_parents) != 1:
+                fail(f"protocol {protocol['id']} use cases span multiple index directories")
+            index_document = next(iter(index_parents)) / "README.md"
+            owner = verified_usecase_indexes.get(index_document)
+            if owner is not None:
+                fail(
+                    f"use-case index {index_document} is shared by protocols "
+                    f"{owner} and {protocol['id']}"
+                )
+            verified_usecase_indexes[index_document] = str(protocol["id"])
+            index_inspection = inspect_html(
+                output_path(index_document.with_suffix(".html"))
+            )
+            if index_inspection.descriptions != [metadata[index_document].description]:
+                fail(
+                    f"protocol {protocol['id']} use-case index description "
+                    "drifted from the manifest"
+                )
+        total_glances += len(inspection.glance_protocols)
+        total_glance_usecases += len(inspection.glance_usecases)
+
+    expected_index_count = sum(
+        bool(as_list(protocol["usecases"], f"protocol {protocol['id']}.usecases"))
+        for protocol in protocols
+    )
+    if len(verified_usecase_indexes) != expected_index_count:
+        fail(
+            f"verified {len(verified_usecase_indexes)} use-case indexes; "
+            f"expected {expected_index_count}"
+        )
+
+    for guide in guides:
+        document = PurePosixPath(str(guide["document"]))
+        inspection = inspect_html(output_path(document.with_suffix(".html")))
+        if inspection.descriptions != [metadata[document].description]:
+            fail(f"guide {guide['id']} description drifted from its derived source")
+        if (
+            inspection.glance_protocols
+            or inspection.glance_problem_texts
+            or inspection.glance_usecases
+            or inspection.protocol_backlinks
+        ):
+            fail(f"guide {guide['id']} unexpectedly contains protocol relationship UI")
+
+    for case in usecases:
+        document = PurePosixPath(str(case["document"]))
+        inspection = inspect_html(output_path(document.with_suffix(".html")))
+        if inspection.descriptions != [metadata[document].description]:
+            fail(f"usecase {case['id']} description drifted from its derived source")
+        parent = protocols_by_id[str(case["protocol_id"])]
+        expected_backlink = [
+            (
+                str(parent["id"]),
+                html_url_for_markdown(PurePosixPath(str(parent["document"]))),
+            )
+        ]
+        if inspection.protocol_backlinks != expected_backlink:
+            fail(f"usecase {case['id']} parent-protocol backlink does not match the manifest")
+        if (
+            inspection.glance_protocols
+            or inspection.glance_problem_texts
+            or inspection.glance_usecases
+        ):
+            fail(f"usecase {case['id']} unexpectedly contains a protocol At a glance block")
+        total_backlinks += len(inspection.protocol_backlinks)
+
+    if total_glances != len(protocols):
+        fail(f"expected {len(protocols)} protocol At a glance blocks, found {total_glances}")
+    if total_glance_usecases != len(usecases):
+        fail(
+            f"expected {len(usecases)} manifest usecases in At a glance blocks, "
+            f"found {total_glance_usecases}"
+        )
+    if total_backlinks != len(usecases):
+        fail(f"expected {len(usecases)} usecase protocol backlinks, found {total_backlinks}")
 
 
 def verify_source_identity(source_bytes: Mapping[PurePosixPath, bytes]) -> None:
@@ -1533,6 +2377,7 @@ def verify_no_symlinks() -> None:
 def build() -> None:
     manifest = load_manifest()
     parser = make_markdown_parser()
+    verify_text_extractors(parser)
     source_markdown = discover_source_markdown()
     source_paths = [*source_markdown, PurePosixPath("protocols.yaml"), PurePosixPath("LICENSE")]
     source_bytes: dict[PurePosixPath, bytes] = {}
@@ -1543,14 +2388,16 @@ def build() -> None:
         source_bytes[relative] = source.read_bytes()
 
     try:
-        adoption_source = source_bytes[PurePosixPath("docs/agent-adoption-guide.md")].decode(
-            "utf-8"
-        )
+        source_texts = {
+            relative: source_bytes[relative].decode("utf-8") for relative in source_markdown
+        }
+        adoption_source = source_texts[PurePosixPath("docs/agent-adoption-guide.md")]
         template = TEMPLATE_PATH.read_text(encoding="utf-8")
     except (OSError, UnicodeError, KeyError) as exc:
         raise BuildError(f"cannot read site inputs: {exc}") from exc
     routes = extract_adoption_routes(adoption_source, parser)
     adoption_steps = extract_adoption_steps(adoption_source, parser)
+    metadata = document_metadata(manifest, routes, source_texts, parser)
     revision = git_revision()
 
     if OUT.is_symlink():
@@ -1571,10 +2418,12 @@ def build() -> None:
 
     rendered_source_paths = render_source_pages(
         source_markdown=source_markdown,
-        source_bytes=source_bytes,
+        source_texts=source_texts,
         parser=parser,
         template=template,
         manifest=manifest,
+        metadata=metadata,
+        routes=routes,
         revision=revision,
     )
     index_markdown = generate_index_markdown(manifest, routes)
@@ -1599,6 +2448,7 @@ def build() -> None:
     verify_no_symlinks()
     verify_source_identity(source_bytes)
     verify_html_pages(html_paths)
+    verify_seo_surfaces(manifest, routes, metadata, adoption_source, parser)
     verify_sitemap(html_paths)
     verify_robots_txt()
     verify_llms(llms_linked, source_markdown, manifest)
