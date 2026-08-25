@@ -1,11 +1,11 @@
 # Composable Agent Cognition Protocols
 
 - Document ID: `composition`
-- Version: `0.1.0`
+- Version: `0.2.0`
 - Maturity: `design-only`
 - Evidence scope: component protocols have independent evidence; the full composition has no documented conformance run
 - Level namespace: `composition:C0`–`composition:C5`
-- Last updated: 2026-08-06
+- Last updated: 2026-08-26
 
 ## 1. Purpose
 
@@ -129,6 +129,8 @@ producer: <agent/model/runtime or role id>
 task_id: <task/run id when applicable>
 source_refs:
   - <smallest stable source reference>
+derived_from:
+  - <optional; smallest source reference that uniquely resolves in the receiving scope to the consumed artifact and its exact version, revision, or content identity; include source producer protocol/version and run or store scope when needed; required when a materialized rendering or transformation has its own artifact identity>
 confidence_scheme: <optional; epistemic-status-v1 | ordinal-confidence-v1 | documented protocol-defined scheme>
 confidence: <optional; closed token from confidence_scheme>
 status: <optional; protocol-specific closed token when the artifact has a lifecycle>
@@ -169,6 +171,24 @@ Memory activation, Inner Speech intervention feedback, and Skill activation obse
 | `unknown` | Outcome or causal contribution cannot yet be judged. |
 
 Cross-protocol feedback artifacts MUST carry `verdict_scheme: intervention-outcome-v1`. Protocol-local outcomes such as Auto-Walk's `engaged | ignored | rejected` are different events and MUST NOT be mapped into this scheme without an explicit attribution step.
+
+### 6.3 Derived representations
+
+`source_refs` identifies source, evidence, or authority context that supports or constrains an artifact's content or effect. `derived_from` states a different relation: transformation lineage from materialized content to its immediate source artifacts. The two are not interchangeable.
+
+The envelope member `derived_from` is reserved for that transformation-lineage meaning. A homonymous field inside a producer schema retains its protocol-local meaning — for example, Steward's `AuthorityGrant.derived_from` names an authority source, not content lineage. Before such an artifact crosses a protocol boundary, the binding MUST namespace or rename the protocol-local homonym so a receiver cannot confuse the two relations. This disambiguation changes only the boundary transport encoding: the owning protocol evaluates artifact and content identity over its protocol-local schema, and a faithful transport re-encoding that preserves semantics, producer, lineage, and disclosure scope is identity-preserving propagation rather than a new derived artifact.
+
+For a materialized rendering or transformation that receives its own artifact identity, `derived_from` MUST resolve uniquely in the receiving scope to the exact source artifact version, revision, or content identity consumed. When the source `artifact_id` is not globally unique, the reference also carries the source producer protocol/version and run or store scope needed to disambiguate it. Every material immediate source MUST have an entry, unless one referenced aggregate snapshot closes the exact source set consumed. For artifacts known to have been produced under `composition@0.2.0` or later, omitting `derived_from` from a new-identity derived artifact is nonconformance; absence on a legacy or contract-unknown artifact proves neither original production nor identity-preserving propagation.
+
+A transformation that changes semantics or disclosure scope MUST mint a new artifact identity and therefore MUST carry `derived_from`. A verified identity-preserving propagation MAY preserve the owning protocol's artifact or content identity only when wording, semantics, producer, source lineage, and disclosure scope are unchanged; otherwise it is a new derived artifact, consistent with [Governed Shared Memory §4.3](governed-shared-memory-profile.md#43-rendering-and-lineage). Only that verified identity-preserving propagation MAY satisfy an exact-source resolution through the representation; a new-identity, lossy, or unverified derivation cannot.
+
+A derived artifact MUST NOT silently inherit or upgrade its source's authority, standing, evidence state, confidence, or status. The receiver makes any local admission or classification explicitly; when producer and receiver status vocabularies differ, the `origin_status` rule in §6.1 applies.
+
+A transformation MUST be treated as lossy for an intended use unless the owning protocol or binding cites applicable, re-checkable evidence or validation that establishes fidelity for that use. Fidelity does not itself create authority, standing, evidence, confidence, or independent corroboration. Currentness is evaluated against the complete set of material sources required for the intended use: each must resolve to the identity and version required by that use. Age alone neither preserves nor invalidates a derivation.
+
+When later resolution fails, the `access-restricted`, `source-unavailable`, and `source-erased` distinctions in [Governed Shared Memory §5–§6](governed-shared-memory-profile.md#5-lifecycle-and-read-discipline) apply. The recorded source identity remains the lineage object only while retaining it is authorized. If erasure covers that identity or reference, a permitted content-free tombstone or sanitized replacement carries only the lineage that may remain and cannot satisfy exact-source resolution. Live resolvability and permitted use are evaluated separately. A decision whose correctness depends on the exact wording or structure of any source — such as authority text, closed-vocabulary tokens, triggers, or validation criteria — MUST resolve every source version required by that decision and MUST NOT rely on an unresolved or new-identity derived representation alone. Derived representations MAY guide attention or selection.
+
+Regenerable internal state that materially affects retrieval, routing, or action remains binding-owned, but the binding MUST make its source boundary, currentness basis, and material limitations recoverable. If those are insufficient for the intended effect, the binding MUST rehydrate the state, resolve the source through an authorized path, narrow the effect, or fail closed. Internal state that neither crosses a protocol boundary nor materially affects retrieval, routing, or action remains binding-defined under the [Portability and Recovery four-plane classification](governed-artifact-portability-recovery.md#4-four-plane-classification).
 
 ## 7. One agent or many
 
@@ -369,6 +389,8 @@ Failure of an optional protocol MUST NOT make an unrelated basic task impossible
 
 Start at `composition:C0`. Do not add orchestration merely to claim a higher level.
 
+Component evidence does not compose by itself. A protocol-local or single-edge result establishes only that named scope, even when every component passes separately. A `composition:C5` claim additionally MUST declare its composed scope and observable acceptance criteria. For every path included in that scope, a cited end-to-end check MUST execute the composed path, observe every material cross-protocol boundary invariant and the final decision, artifact, or authority effect the composition exists to produce, and meet all declared criteria. The check MAY be manual or automated. Failed, undetermined, or uncovered criteria prevent a C5 claim for that scope. Untested paths and unobserved invariants on tested paths remain explicit gaps: they do not erase narrower evidence, but narrower evidence MUST NOT be reported as composed conformance.
+
 ## 15. Composition checklist
 
 Before claiming that protocols compose safely, verify:
@@ -385,6 +407,8 @@ Before claiming that protocols compose safely, verify:
 10. No component requires full chain-of-thought persistence.
 11. Steward delegation preserves Principal intent, bounded authority, participant provenance, and takeover paths.
 12. Skill candidates cannot activate themselves, rewrite their evidence, or widen their own adoption authority.
+13. Cross-protocol derived representations carry an unambiguous `derived_from` for every material immediate source when required; source resolution and currentness cover the complete load-bearing set, and derivation does not silently inherit authority, evidence state, confidence, or status.
+14. A composed-conformance claim cites component-local checks and scoped end-to-end checks that observe every material boundary invariant and final effect on each claimed path; failed, undetermined, uncovered, or merely component-local evidence is reported only for its actual scope.
 
 ## 16. Final rule
 

@@ -1,5 +1,5 @@
 manifest_version: 1
-updated: "2026-08-25"
+updated: "2026-08-26"
 purpose: "Machine-readable routing index for agent-wiki protocols and guides."
 level_policy: "Ranges are protocol-local cumulative conformance ladders; isolated higher-level capability tests do not establish that level without lower requirements."
 
@@ -129,9 +129,9 @@ protocols:
 
   - id: skill
     name: "Agent-first Skill Lifecycle"
-    version: "0.1.0"
+    version: "0.2.0"
     maturity: practiced
-    evidence_scope: "One field-tested imported-skill binding contributes repeated real-environment activation evidence, a runtime-fallback lesson, and unrecorded version drift mapped to skill@0.1.0; no CandidateRecord, EvidenceRecord, AdoptionDecision, rollback record, or skill:L0+ conformance was validated."
+    evidence_scope: "One field-tested imported-skill binding contributes repeated real-environment activation evidence, a runtime-fallback lesson, and unrecorded version drift mapped to skill@0.1.0; no CandidateRecord, EvidenceRecord, AdoptionDecision, rollback record, or skill:L0+ conformance was validated. No run informs the formation-input eligibility contract added in skill@0.2.0."
     document: docs/agent-first-skill-lifecycle.md
     level_namespace: skill
     level_range: ["skill:L0", "skill:L4"]
@@ -152,7 +152,7 @@ protocols:
       - id: skill.kiro-taobao-native
         evidence: field-tested
         conformance: mapped
-        conformance_scope: "Historical retired local binding: repeated private real-environment activations, runtime fallback, and unrecorded version drift are mapped to protocol concepts; lifecycle governance records and all skill:L0+ requirements remain unvalidated."
+        conformance_scope: "Historical retired local binding mapped against skill@0.1.0: repeated private real-environment activations, runtime fallback, and unrecorded version drift are mapped to protocol concepts; lifecycle governance records and all skill:L0+ requirements remain unvalidated."
         document: usecases/skill/kiro-taobao-native.md
 
   - id: active-workspace
@@ -274,7 +274,7 @@ guides:
     read_when: "Selecting or bootstrapping a protocol."
 
   - id: composition
-    version: "0.1.0"
+    version: "0.2.0"
     maturity: design-only
     document: docs/composable-agent-cognition.md
     level_namespace: composition

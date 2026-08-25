@@ -1,11 +1,11 @@
 # Agent-first Skill Lifecycle Architecture
 
 - Protocol ID: `skill`
-- Version: `0.1.0`
+- Version: `0.2.0`
 - Maturity: `practiced`
-- Evidence scope: One field-tested imported-skill binding contributes repeated real-environment activation evidence, a runtime-fallback lesson, and unrecorded version drift mapped to `skill@0.1.0`; no `CandidateRecord`, `EvidenceRecord`, `AdoptionDecision`, rollback record, or `skill:L0+` conformance was validated.
+- Evidence scope: One field-tested imported-skill binding contributes repeated real-environment activation evidence, a runtime-fallback lesson, and unrecorded version drift mapped to `skill@0.1.0`; no `CandidateRecord`, `EvidenceRecord`, `AdoptionDecision`, rollback record, or `skill:L0+` conformance was validated. No run informs the formation-input eligibility contract added in `skill@0.2.0`.
 - Level namespace: `skill:L0`–`skill:L4`
-- Last updated: 2026-08-25
+- Last updated: 2026-08-26
 
 ## 1. Purpose
 
@@ -277,7 +277,7 @@ Records one proposed artifact version and SHOULD identify:
 - candidate id, artifact id, proposed version, and base version;
 - acquisition mode and contribution lineage;
 - changed surfaces and `privileged_delta`;
-- source and formation-context references;
+- source and formation-context references; for formed candidates, these references make the attributable basis, covered formation purpose and source scope, and any applicable source-use constraints required by §15 recoverable;
 - intended activation boundary and expected benefit;
 - status: `candidate` or `staged`.
 
@@ -376,7 +376,8 @@ Agent-initiated or automatic adoption additionally requires:
 - one or more supporting EvidenceRecords whose scopes cover the target execution context;
 - a standing grant that explicitly authorizes this class of adoption;
 - an empty `privileged_delta` and no constitutional content;
-- the required independent security admission.
+- the required independent security admission; and
+- no unresolved §13.2 impact review affecting the candidate.
 
 A candidate with a privileged change uses its own attributable authority/security decision and does not re-enter this standing automatic-adoption path merely because that decision resolves the privilege review.
 
@@ -488,6 +489,10 @@ When A is retired or found unsafe, the binding SHOULD inspect active descendants
 
 Rollback can restore A's artifact version. It cannot automatically remove A's influence from B, historical data, or user habits.
 
+Withdrawal or authorized erasure of a formation source, or revocation or material narrowing of its authorized basis, triggers a scoped, lineage-aware impact review. Expiry or supersession of that basis also triggers the review when its declared effect reaches an existing holder or activation eligibility. The review inventories all known holders and lineage-resolvable descendants regardless of lifecycle state, including candidates, evidence and evaluation materials, artifact versions, and known distributions that carry the affected source, context, or basis reference. It acts only within the binding's governed reach and records every known out-of-reach path as unresolved or unevaluated. Within that reach, each holder applies its own authority and retention or erasure rules. The change does not automatically falsify historical evidence or authorize descendant deletion, retirement, or rollback; conversely, reject, retire, and rollback lifecycle events MUST NOT be recorded as, or substituted for, authorized erasure.
+
+After authorized erasure, any surviving reference resolves only to an attributable, content-free erasure record; it MUST NOT preserve or reconstruct erased content, and the tombstone does not establish current formation eligibility. Any newly excluded formation use stops within its declared scope. While the impact review is pending, an affected staged candidate MUST NOT enter the active set through any adoption path. An AdoptionDecision may defer or reject it, and an active affected artifact may be retired or rolled back under its own authority. Adoption may be reconsidered only after the authority governing the affected source use or erasure obligation resolves the review in a way that permits activation.
+
 ## 14. Imported candidate protocol
 
 An imported candidate enters the same lifecycle but has a distinct intake threat model.
@@ -517,10 +522,13 @@ The candidate-formation path MUST:
 
 1. Distinguish a reusable procedure from a one-time task, unresolved failure, or temporary preference.
 2. At `skill:L4`, record source trajectories and their execution contexts; at lower levels, preserve available source references. No level requires unrestricted private reasoning.
-3. Remove secrets and minimize personal data before staging.
-4. State whether the candidate is local specialization or intended to be portable.
-5. Avoid turning one incident into a universal procedure.
-6. Produce a CandidateRecord, not an active skill.
+3. Confirm formation-input eligibility before each use of a trajectory or other material. Access, possession, contributor identity, or admission to a shared space does not by itself make material usable for formation. Formation MUST rely only on material whose use for the declared formation purpose and source scope is covered by an attributable instruction, policy, standing grant, or decision issued or established by an authority that governs both that source scope and formation use, outside the formation path. Before each use, the binding MUST resolve the current validity of that basis and applicable controls, including expiry, supersession, withdrawal or reinstatement, revocation or narrowing, access or audience, and erasure. Historical authorization alone does not establish current eligibility, and reinstatement permits reassessment rather than automatic reuse.
+4. Make the attributable basis, covered formation purpose and source scope, and any applicable audience, retention, consent, or approval constraints recoverable through the CandidateRecord's existing source and formation-context references, subject to the content-free erasure handling in §13.2. This protocol creates no universal consent rule. The binding preserves every source-use constraint imposed by the governing basis; an unresolved applicable constraint keeps the input ineligible.
+5. Never create, widen, or reinterpret the instruction, policy, standing grant, or authority used to establish the formation path's own input eligibility. Formation-source authorization, adoption authority (§11.1), and publication authority (§11.4) are distinct decisions; none substitutes for another.
+6. Remove secrets and minimize personal data before staging.
+7. State whether the candidate is local specialization or intended to be portable.
+8. Avoid turning one incident into a universal procedure.
+9. Produce a CandidateRecord, not an active skill.
 
 User corrections are strong formation signals but not automatically proof that a generalized candidate improves every task. They may support an explicitly scoped, provisional adoption.
 
@@ -538,7 +546,7 @@ Observation may support, contradict, or limit later use.
 
 A binding may use an optimizer model, deterministic mutation, human editing, or another method. The optimizer does not own adoption authority.
 
-Offline or "sleep" processing may harvest eligible task records, cluster recurring work, construct replay jobs, and stage candidates. It MUST NOT activate them by bypassing `skill:L0`–`skill:L3` requirements.
+Offline or "sleep" processing may harvest only task records that satisfy §15 formation-input eligibility at the time of use, cluster recurring work, construct replay jobs, and stage candidates. Availability alone does not establish eligibility. Offline processing MUST NOT activate candidates by bypassing `skill:L0`–`skill:L3` requirements.
 
 ## 17. Catalog and routing boundary
 
@@ -697,12 +705,14 @@ Before claiming a Skill Lifecycle level, verify:
 22. (`skill:L4`) Autonomous formation produces staged candidates and cannot directly activate them.
 23. No conformance claim depends on raw private chain-of-thought persistence.
 24. The binding remains usable without a marketplace, hosted service, or separate optimizer model.
+25. For each formed candidate, current formation-input eligibility resolves to an attributable basis issued or established outside the formation path by an authority governing the source scope and formation use, with current validity, covered purpose and scope, and applicable source-use constraints resolved; availability, historical authorization, adoption authority, and publication authority do not substitute for that check.
+26. Formation-source withdrawal or erasure, basis revocation or material narrowing, and basis expiry or supersession whose declared effect reaches an existing holder or activation eligibility trigger the scoped impact review in §13.2 across known holders and lineage-resolvable descendants; out-of-reach paths remain explicit, pending affected candidates cannot enter any adoption path, and lifecycle events are neither authorized erasure nor automatic descendant deletion.
 
 ## 25. Practical use cases
 
 - [Kiro Taobao Native](../usecases/skill/kiro-taobao-native.md) — Evidence: `field-tested`; Conformance: `mapped`. A historical retired pre-protocol imported-skill operation maps real activation observations, a runtime-fallback lesson, and unrecorded version drift to this protocol's concepts. No lifecycle governance record was operated, and no `skill:L0+` level is claimed.
 
-No conformance-validated binding is documented yet. The public systems in §2 motivate the problem and design, but they are not use cases of `skill@0.1.0`. The first conformance-oriented use case should still manually walk one imported skill and one relationship-formed skill through the same lifecycle, then state exactly which checks were reproduced and which remain proposed.
+No conformance-validated binding is documented yet. The public systems in §2 motivate the problem and design, but they are not use cases of `skill@0.2.0`. Historical local evidence remains mapped to `skill@0.1.0`; it does not validate the formation-input eligibility contract added in `skill@0.2.0`. The first conformance-oriented use case should still manually walk one imported skill and one relationship-formed skill through the same lifecycle, then state exactly which checks were reproduced and which remain proposed.
 
 ## 26. Final rule
 
