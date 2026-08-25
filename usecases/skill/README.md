@@ -6,6 +6,6 @@ A product-specific skill may be useful evidence without becoming a dependency or
 
 ## Current use cases
 
-- [Kiro Taobao Native](kiro-taobao-native.md) — evidence `field-tested`, conformance `mapped`; a pre-protocol imported commerce skill with repeated private real-environment activations, a runtime fallback lesson, and unrecorded version drift, but no recorded adoption, evaluation, or rollback lifecycle.
+- [Kiro Taobao Native](kiro-taobao-native.md) — evidence `field-tested`, conformance `mapped`; a historical retired pre-protocol imported commerce-skill binding with repeated private activations, a runtime fallback lesson, and unrecorded version drift, but no recorded adoption, evaluation, or rollback lifecycle.
 
 This is the first documented binding evidence for the Skill Lifecycle protocol. It does not define the protocol by itself and does not establish any `skill:L0+` conformance.

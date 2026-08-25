@@ -8,7 +8,7 @@ Use this directory for concrete walk runners, hypothesis pools, surfacing wiring
 
 ## Current use cases
 
-- [Kiro Local Walk](kiro-local-walk.md) — evidence `field-tested`, conformance `partially-verified`; Auto-Walk layered on a local `.kiro/memories` setup.
+- [Kiro Local Walk](kiro-local-walk.md) — evidence `field-tested`, conformance `partially-verified`; historical retired Auto-Walk binding with one calendar-aligned scheduled firing observed and `auto-walk:L4` still unverified.
 - [Obsidian Notes Walk](obsidian-notes-walk.md) — evidence `design-example`, conformance `proposed`; standalone Auto-Walk over a Markdown notes vault.
 - [Reading Queue Walk](reading-queue-walk.md) — evidence `design-example`, conformance `proposed`; standalone Auto-Walk over a daily digest of articles.
 - [Research Corpus Walk](research-corpus-walk.md) — evidence `design-example`, conformance `proposed`; standalone Auto-Walk over a mixed research corpus.

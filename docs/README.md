@@ -23,12 +23,12 @@ Practiced protocols:
 - [Agent-first Memory Architecture](agent-first-memory.md) — `practiced`; portable memory lifecycle with trust calibration, reversible withdrawal, and explicitly authorized erasure.
 - [Agent-first Auto-Walk Architecture](agent-first-auto-walk.md) — `practiced`; exploratory association over consolidated memory or any structured corpus.
 - [Agent-first Skill Lifecycle Architecture](agent-first-skill-lifecycle.md) — `practiced`; imported and relationship-formed procedural artifacts share evidence-, authority-, version-, and rollback-aware lifecycle rules.
+- [Agent-first Active Workspace Architecture](agent-first-active-workspace.md) — `practiced`; short-lived, source-aware task state for calibrating current attention, with an optional audited-completion profile and a historical ordinary-work binding.
 - [Agent-first Council Architecture](agent-first-council.md) — `practiced`; single-agent and multi-agent deliberation, revision, evaluation, and termination.
 - [Agent-first Steward Architecture](agent-first-steward.md) — `practiced`; the `1:1:N` relationship and coordination protocol.
 
 Design-only protocols:
 
-- [Agent-first Active Workspace Architecture](agent-first-active-workspace.md) — `design-only`; short-lived, source-aware task state for calibrating current attention, with an optional audited-completion profile.
 - [Agent-first Inner Speech Architecture](agent-first-inner-speech.md) — `design-only`; bounded runtime self-guidance, including the Inside-Outsider stance.
 
 Advanced:
@@ -43,5 +43,6 @@ Advanced:
 - [Memory use cases](../usecases/memory/README.md) — Practical implementations of the memory architecture.
 - [Auto-Walk use cases](../usecases/auto-walk/README.md) — Practical implementations of Auto-Walk.
 - [Skill Lifecycle use cases](../usecases/skill/README.md) — Imported and relationship-formed procedures with explicit lifecycle evidence and gaps.
+- [Active Workspace use cases](../usecases/active-workspace/README.md) — Durable task-state bindings with explicit schema and validation gaps.
 - [Council use cases](../usecases/council/README.md) — Same-runtime sub-agent and heterogeneous-model Council bindings.
 - [Steward use cases](../usecases/steward/README.md) — Real `1:1:N` Steward bindings coordinating participants and managed resources.

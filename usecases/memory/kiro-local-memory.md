@@ -4,16 +4,17 @@
 - Protocol: `memory@0.1.0`
 - Evidence: `field-tested`
 - Conformance: `mapped` — historical lifecycle evidence maps through `memory:L4` against `memory@0.1.0`; the `memory@0.2.0` withdrawal/erasure contract and current item schema were not revalidated
-- Validation scope: deployed local archive/autodream workflow and review path; not re-executed during the 2026-08-13 withdrawal-protocol alignment review
+- Validation scope: historical local archive/autodream workflow, review path, final runner wiring, and a retirement-time semantic-failure audit; not re-executed as a current-protocol conformance run
 - Reproducibility: `partial` — architecture and procedures are documented; exact local scripts are not included here
 - Level namespace: `memory`
-- Last reviewed: 2026-08-13
+- Deployment status: `retired` — the local Kiro binding was retired on 2026-08-25; this page preserves historical evidence only
+- Last reviewed: 2026-08-25
 
 ## 1. Context
 
-This use case describes a local `.kiro/memories` memory system for cross-session persistent agent memory on macOS.
+This use case describes a historical local `.kiro/memories` system that provided cross-session persistent agent memory on macOS.
 
-The goal is to let an AI agent keep useful memory across sessions while automatically maintaining that memory without requiring the human to manually curate files every day.
+The goal was to let an AI agent keep useful memory across sessions while automatically maintaining that memory without requiring the human to manually curate files every day.
 
 The design is a practical implementation of [Agent-first Memory Architecture](../../docs/agent-first-memory.md).
 
@@ -43,7 +44,7 @@ The core idea:
 ├── memory.md          # daily inbox / hot working memory, written during sessions
 ├── log.md             # operation timeline for archive/dream/review events
 ├── index.md           -> symlink -> automation repository wiki index
-├── archive/           -> symlink -> automation repository daily archives
+├── archive/           # local-only daily archives, ignored by the automation repository
 │   ├── 2026-05-02.md
 │   ├── 2026-05-03.md
 │   └── ...
@@ -61,7 +62,7 @@ The core idea:
 | Hot inbox | `memory.md` | Daily real-time notes written during sessions | **Hot**: agent resource, auto-loaded | Not versioned |
 | Hot index | `index.md` | Small wiki-style navigation surface updated by AI distillation | **Hot**: agent resource, auto-loaded | Managed by an automation repository |
 | Timeline | `log.md` | Operation log; keeps recent archive/dream/review entries | Cold | Not versioned |
-| Cold archive | `archive/` | Daily raw memory snapshots | Cold | Managed by an automation repository |
+| Cold archive | `archive/` | Daily raw memory snapshots | Cold | Local-only and ignored; not versioned |
 | Warm topics | `topics/` | Deep topic pages split out after enough accumulated material | **Warm**: loaded on demand | Managed by an automation repository |
 
 ### Why conventions is Hot (not Warm)
@@ -78,21 +79,21 @@ Therefore conventions must be loaded via agent resource (same mechanism as steer
 
 ## 5. Version-control strategy
 
-Structural memory files are symlinked into a separate automation repository:
+The stable structural memory files were symlinked into a separate automation repository:
 
 - `conventions.md`
 - `index.md`
-- `archive/`
 - `topics/`
 
-These files are useful across machines and should be synchronized.
+These files were useful across machines and synchronized by that binding.
 
-High-frequency local files stay local:
+High-frequency or raw local files stayed local:
 
 - `memory.md`
 - `log.md`
+- `archive/`
 
-They are temporary, noisy, and change often. Keeping them out of version control avoids churn and prevents the repo from becoming a raw session dump.
+They are noisy, may contain private raw material, and change often. The archive directory was explicitly ignored rather than versioned. This means archive durability depended on the local host or a separately declared backup; the automation repository never supplied archive durability by itself.
 
 ## 6. AutoDream mechanism
 
@@ -122,11 +123,13 @@ This stage invokes AI to distill memory.
 
 The steps below describe the deployed legacy behavior. The `add or revise` wording and free-form `[待清理]` marker are evidence of the earlier binding, not recommendations for current `memory@0.2.0`; use the migration requirements in the Protocol alignment note before adopting them.
 
-Execution mode:
+The earliest deployed revision used a compatibility wrapper:
 
 ```text
 kiro-wrap chat --no-interactive --trust-all-tools
 ```
+
+After the local compatibility migration, the final pre-retirement runner invoked the installed `kiro-cli` executable directly with equivalent non-interactive and tool-trust flags. The wrapper form is historical evidence, not the final runtime wiring.
 
 Steps:
 
@@ -143,13 +146,27 @@ Steps:
    - Update a “recent activity” section, keeping about the latest 10 items.
 4. Append a dream record to `log.md`.
 
+### 6.1 False-health incident observed at retirement
+
+During the final week before retirement, scheduled AutoDream attempts repeatedly failed at the semantic invocation layer while the launch supervisor continued to report a successful process exit. The shell path recorded or absorbed the invocation failure instead of propagating a non-zero result, so `last exit = 0` described only supervisor/process completion. It did not establish that the archive was read, the index changed, or any topic was distilled.
+
+The same audit found that a raw archive could exist while the hot index remained stale. Archive preservation and distillation freshness are therefore independent health dimensions:
+
+```text
+archive present  != archive independently durable
+process exit 0   != semantic completion
+index unchanged  != no new raw input
+```
+
+A robust binding needs separate observations for runner exit, semantic outcome, archive durability, and index/topic freshness. This incident is negative field evidence; AutoDream was not repaired or rerun before retirement.
+
 ## 7. Flow
 
 ```text
 Daytime usage                    07:30                07:40
 ────────────────────────────────────────────────────────────
 sessions write memory.md   →   archive moves it   →   AI distills index/topics
-                              (shell)                 (kiro-wrap)
+                              (shell)                 (final runner: direct CLI)
 ```
 
 Output:
@@ -208,7 +225,7 @@ If Kiro's sandbox profile changes `HOME`, auto-dream should explicitly set:
 HOME="$REAL_HOME"
 ```
 
-before invoking `kiro-wrap`.
+before invoking the selected CLI executable. Early revisions routed through `kiro-wrap`; the final pre-retirement revision called `kiro-cli` directly.
 
 ## 9. Review entry point
 
@@ -233,12 +250,13 @@ A review should inspect:
 
 - A real macOS binding used separate inbox, archive, index, topics, and operation log surfaces.
 - Separating mechanical archive from AI distillation exposed reusable launchd and environment lessons.
+- A supervisor-success/semantic-failure split exposed why process exit, semantic completion, archive durability, and index freshness require separate checks.
 - A manual review entry point remained necessary even with scheduled maintenance.
 
 ### What it does not support
 
 - End-to-end conformance with the current `memory@0.2.0` item, withdrawal, and erasure contract.
-- Current runtime health; the deployment was not re-executed during this review.
+- Current runtime health or continued deployment; the local binding is retired.
 - Reproduction from this page alone; exact scripts and private environment assets are omitted.
 
 ## 11. Essence

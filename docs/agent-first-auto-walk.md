@@ -3,9 +3,9 @@
 - Protocol ID: `auto-walk`
 - Version: `0.1.0`
 - Maturity: `practiced`
-- Evidence scope: real-environment runs cover manual generation, runner execution, and semantic-trigger surfacing through parts of `auto-walk:L3`; natural calendar firing and `auto-walk:L4` remain unverified
+- Evidence scope: real-environment runs cover manual generation, runner execution, semantic-trigger surfacing through parts of `auto-walk:L3`, and one observed natural calendar firing; repeated calendar operation and `auto-walk:L4` remain unverified
 - Level namespace: `auto-walk:L0`–`auto-walk:L4`
-- Last updated: 2026-08-03
+- Last updated: 2026-08-25
 
 ## 1. Purpose
 
@@ -708,7 +708,7 @@ Verify the items applicable at the claimed level and under the conditions the bi
 
 ## 19. Practical use cases
 
-- [Kiro Local Walk](../usecases/auto-walk/kiro-local-walk.md) — Auto-Walk over a local `.kiro/memories` setup. The canonical memory-coupled binding.
+- [Kiro Local Walk](../usecases/auto-walk/kiro-local-walk.md) — Historical retired Auto-Walk over a local `.kiro/memories` setup. One calendar-aligned firing was observed; repeated schedule reliability and `auto-walk:L4` remain unverified.
 - [Obsidian Notes Walk](../usecases/auto-walk/obsidian-notes-walk.md) — Standalone Auto-Walk over a Markdown notes vault.
 - [Reading Queue Walk](../usecases/auto-walk/reading-queue-walk.md) — Standalone Auto-Walk over a daily digest of articles.
 - [Research Corpus Walk](../usecases/auto-walk/research-corpus-walk.md) — Standalone Auto-Walk over a mixed research corpus.

@@ -3,9 +3,9 @@
 - Protocol ID: `steward`
 - Version: `0.1.0`
 - Maturity: `practiced`
-- Evidence scope: one field-tested single-agent binding operates the `1:1:N` topology at `steward:S1` with substantial `steward:S2` coverage and partial `steward:S3`/`steward:S4` elements; the `steward@0.1.0` artifact schema, a field-tested durable canonical task record in ordinary Steward work, per-order revocable grants, heterogeneous-participant operation within the binding, and formal takeover remain unvalidated (see [Kiro Local Steward](../usecases/steward/kiro-local-steward.md))
+- Evidence scope: one historical field-tested single-agent binding operated the `1:1:N` topology at `steward:S1` with substantial `steward:S2` coverage and partial `steward:S3`/`steward:S4` elements. Two ordinary-work durable workspace records were closed, but the complete `steward@0.1.0` WorkOrder/result artifact path and `steward:S2` checklist, per-order revocable grants, heterogeneous-participant operation within the binding, and formal takeover remain unvalidated (see [Kiro Local Steward](../usecases/steward/kiro-local-steward.md))
 - Level namespace: `steward:S0`–`steward:S5`
-- Last updated: 2026-08-03
+- Last updated: 2026-08-25
 - Origin: maintainer design discussion captured on 2026-07-15; raw private conversations are intentionally omitted
 
 ## 1. Purpose
@@ -652,7 +652,7 @@ Before calling a binding a Steward architecture, verify the items applicable at 
 
 ## 21. Practical use cases
 
-- [Kiro Local Steward](../usecases/steward/kiro-local-steward.md) — `Evidence: field-tested`; `Conformance: partially-verified`. A local `steward:S1` binding with substantial `steward:S2` coverage and explicit higher-level gaps.
+- [Kiro Local Steward](../usecases/steward/kiro-local-steward.md) — `Evidence: field-tested`; `Conformance: partially-verified`. A historical retired local `steward:S1` binding with substantial `steward:S2` coverage, two ordinary-work durable records, and explicit artifact/checklist gaps.
 
 ## 22. Final rule
 

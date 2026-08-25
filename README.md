@@ -80,6 +80,9 @@ agent-wiki/
     ├── skill/
     │   ├── README.md
     │   └── kiro-taobao-native.md
+    ├── active-workspace/
+    │   ├── README.md
+    │   └── kiro-local-active-workspace.md
     ├── council/
     │   ├── README.md
     │   ├── multi-agent-roundtable.md
@@ -99,12 +102,13 @@ agent-wiki/
 - `usecases/memory/` — Real memory-system implementations that correspond to [Agent-first Memory Architecture](docs/agent-first-memory.md).
 - `usecases/auto-walk/` — Real Auto-Walk implementations that correspond to [Agent-first Auto-Walk Architecture](docs/agent-first-auto-walk.md).
 - `usecases/skill/` — Real imported or relationship-formed procedures mapped to [Agent-first Skill Lifecycle Architecture](docs/agent-first-skill-lifecycle.md).
+- `usecases/active-workspace/` — Durable and in-context task-state bindings mapped to [Agent-first Active Workspace Architecture](docs/agent-first-active-workspace.md).
 - `usecases/council/` — Same-runtime role-diverse and heterogeneous-model bindings that correspond to [Agent-first Council Architecture](docs/agent-first-council.md).
 - `usecases/steward/` — Real Steward `1:1:N` bindings that correspond to [Agent-first Steward Architecture](docs/agent-first-steward.md).
 
 `docs/` starts flat on purpose. Add subdirectories only when a topic grows enough to justify structure.
 
-`usecases/` may use small topic folders when multiple practical cases clearly belong together, such as `usecases/memory/`, `usecases/auto-walk/`, `usecases/skill/`, `usecases/council/`, and `usecases/steward/`.
+`usecases/` may use small topic folders when practical cases clearly belong together, such as `usecases/memory/`, `usecases/auto-walk/`, `usecases/skill/`, `usecases/active-workspace/`, `usecases/council/`, and `usecases/steward/`.
 
 ## Current entry points
 
@@ -118,12 +122,12 @@ Practiced protocols:
 - [Agent-first Memory Architecture](docs/agent-first-memory.md) and [Memory use cases](usecases/memory/README.md)
 - [Agent-first Auto-Walk Architecture](docs/agent-first-auto-walk.md) and [Auto-Walk use cases](usecases/auto-walk/README.md)
 - [Agent-first Skill Lifecycle Architecture](docs/agent-first-skill-lifecycle.md) and [Skill Lifecycle use cases](usecases/skill/README.md)
+- [Agent-first Active Workspace Architecture](docs/agent-first-active-workspace.md) and [Active Workspace use cases](usecases/active-workspace/README.md)
 - [Agent-first Council Architecture](docs/agent-first-council.md) and [Council use cases](usecases/council/README.md)
 - [Agent-first Steward Architecture](docs/agent-first-steward.md) and [Steward use cases](usecases/steward/README.md)
 
 Design-only protocols:
 
-- [Agent-first Active Workspace Architecture](docs/agent-first-active-workspace.md) — bounded task state with an optional audited-completion profile; enabling the profile does not raise maturity, level, or conformance.
 - [Agent-first Inner Speech Architecture](docs/agent-first-inner-speech.md)
 
 Advanced guides:

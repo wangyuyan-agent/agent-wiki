@@ -3,15 +3,16 @@
 - Use case ID: `steward.kiro-local`
 - Protocol: `steward@0.1.0`
 - Evidence: `field-tested`
-- Conformance: `partially-verified` — `steward:S1` explicit delegation, the participant and managed-resource registries, and standing-authority gates were operated and source-inspected over months of daily use; a field-tested `steward:S2` durable canonical task record in ordinary Steward work, `steward:S3` per-order revocable `AuthorityGrant` artifacts, and `steward:S4` heterogeneous-participant operation within this binding plus formal takeover/handoff remain declared gaps
-- Validation scope: the deployed `1:1:N` relationship (one Principal, one primary Steward agent, five local role-specialized sub-agent participants, six managed resources) was operated in ordinary daily work; agent bots hosted on some managed resources are outside this binding's participant count and conformance assessment; the binding was not re-executed as a formal per-level conformance run during this write-up
+- Conformance: `partially-verified` — `steward:S1` explicit delegation, participant and managed-resource registries, standing-authority gates, and two ordinary-work durable workspace records were observed; complete `steward:S2` WorkOrder/result artifacts and checklist coverage, `steward:S3` per-order revocable `AuthorityGrant` artifacts, and `steward:S4` heterogeneous-participant operation within this binding plus formal takeover/handoff remain declared gaps
+- Validation scope: the historical `1:1:N` relationship (one Principal, one primary Steward agent, five local role-specialized sub-agent participants, six managed resources) operated in ordinary daily work; two ordinary multi-step tasks later used durable workspace records through closure; the binding was not re-executed as a formal per-level conformance run
 - Reproducibility: `partial` — architecture, registry shape, delegation primitive, and authority model are documented; exact agent definitions, skill files, credentials, and private environment assets are intentionally omitted
 - Level namespace: `steward`
-- Last reviewed: 2026-08-03
+- Deployment status: `retired` — the local Kiro binding was retired on 2026-08-25; this page preserves historical evidence only
+- Last reviewed: 2026-08-25
 
 ## 1. Context
 
-This use case describes a local Steward binding running on the Kiro CLI on macOS. A single human (the Principal) interacts with one primary control agent (the Steward). Behind that one relationship surface, the Steward dispatches five local role-specialized sub-agents and operates six managed remote resources. Agent bots hosted on some of those resources are separate bindings and are not counted among these five participants.
+This use case describes a historical local Steward binding that ran on the Kiro CLI on macOS. A single human (the Principal) interacted with one primary control agent (the Steward). Behind that one relationship surface, the Steward dispatched five local role-specialized sub-agents and operated six managed remote resources. Agent bots hosted on some of those resources are separate bindings and are not counted among these five participants.
 
 It is the first documented binding of [Agent-first Steward Architecture](../../docs/agent-first-steward.md).
 
@@ -24,9 +25,9 @@ This deployment nonetheless **predates** the `steward@0.1.0` artifact schema and
 - Delegation is expressed as a natural-language task prompt to a sub-agent spawner, not as a serialized `WorkOrder` document.
 - Authority is expressed as a standing, reviewable risk policy plus confirmation gates, not as per-order `AuthorityGrant` records with explicit `expires_at`.
 - Result integration is performed by the Steward in-context, not through a serialized `ResultEnvelope` with a fixed `claims`/`evidence_refs`/`unresolved_dissent` shape.
-- During the field-tested period documented here, coordination state lived in the Steward's live context plus an ephemeral task list, not in a durable, independently inspectable canonical task record.
+- During the earlier field-tested period, coordination state lived in the Steward's live context plus an ephemeral task list rather than a durable, independently inspectable canonical task record.
 
-A local Active Workspace candidate was added after that observed period and passed a bounded cross-session lifecycle probe. That is `reproduced` prototype evidence, not ordinary Steward field use: it has not yet carried a real multi-step Steward task through handoff and recovery, so it does not close this use case's `steward:S2` gap or create an Active Workspace use case by itself.
+A local Active Workspace candidate was added after that earlier period and first passed a bounded cross-session lifecycle probe. It later carried two ordinary multi-step tasks through durable revisioned records and closure. This closes the absolute "no durable ordinary-work record" gap and supplies a separate [Active Workspace use case](../active-workspace/kiro-local-active-workspace.md). It does **not** make the Steward binding `steward:S2`-complete: the tasks did not materialize or validate the complete `WorkOrder` → progress → `ResultEnvelope` artifact path, and the applicable `steward:S2` checklist was not executed end to end.
 
 Before this binding can claim conformance above `steward:S1`, those artifacts must be materialized. The `field-tested` label describes real operation of the topology, not certification of the artifact schema. See §11 for the level-by-level assessment and §13 for protocol feedback the deployment produced.
 
@@ -123,16 +124,16 @@ This is the practical substrate the deployment uses to satisfy authority-awarene
 - A standing risk-tiered authority policy plus confirmation gates is a workable authority substrate for a single-writer, human-in-the-loop environment.
 - A sub-agent spawner with a dependency DAG and a review-loop edge already provides a work graph and independent-verification cycle.
 - Git-versioned relationship/registry/memory state provides real exportability and inspectability.
-- Operating the observed topology without a field-tested durable canonical task record exposed the protocol's `information monopoly` (§16.4) and `single point of failure` (§16.9) risks as concrete, not theoretical.
+- The earlier absence of a durable canonical record exposed the protocol's `information monopoly` (§16.4) and `single point of failure` (§16.9) risks; later ordinary-work records showed that durable closure is practical without proving complete `steward:S2` artifacts.
 
 ## 10. What it does not establish
 
 - Conformance with the `steward@0.1.0` artifact schema (`WorkOrder`, `AuthorityGrant`, `ProgressEvent`, `ResultEnvelope`, `StewardDigest` are not serialized).
-- `steward:S2` completeness: the observed binding has no field-tested durable, independently inspectable canonical task record in ordinary work; the later Active Workspace candidate has only a bounded reproduced probe, while field-tested coordination state remains the Steward's live context plus an ephemeral task list.
+- `steward:S2` completeness: two ordinary-work durable workspace records exist, but they are not serialized `WorkOrder`, `ProgressEvent`, and `ResultEnvelope` chains, and the complete `steward:S2` checklist was not validated.
 - `steward:S3` completeness: authority is a standing policy, not per-order revocable grants with expiry and a dedicated audit log.
 - `steward:S4` completeness: review-loop verification and git-exportable state exist, but heterogeneous-participant operation within this binding and a rehearsed Steward takeover/handoff procedure remain unvalidated.
 - `steward:S5`: the persistent agent bots on managed resources are independent bindings, not one unified hosted Steward service.
-- Current runtime health; this deployment was not re-executed as a conformance run during this review.
+- Current runtime health or continued deployment; the local Kiro binding is retired.
 
 ## 11. Conformance level assessment
 
@@ -140,7 +141,7 @@ This is the practical substrate the deployment uses to satisfy authority-awarene
 | --- | --- | --- |
 | `steward:S0` | met | One Principal, one accountable Steward interface. |
 | `steward:S1` | met | Bounded delegation via the sub-agent spawner; participant registry drives routing; results integrated by the Steward. |
-| `steward:S2` | partial | Participant registry ✅, managed-resource registry ✅, result integration ✅. **Gap:** no field-tested durable canonical task record in ordinary Steward work; a later Active Workspace candidate has only a bounded reproduced lifecycle probe. |
+| `steward:S2` | partial | Participant registry ✅, managed-resource registry ✅, result integration ✅, two ordinary-work durable workspace records ✅. **Gap:** complete `WorkOrder`/progress/`ResultEnvelope` artifacts and the applicable end-to-end checklist were not validated. |
 | `steward:S3` | partial | Standing risk-tiered policy ✅, always-confirm gates ✅, credential references kept outside artifacts ✅. **Gap:** no per-order revocable `AuthorityGrant` with `expires_at`; audit is partial (session/shell/git history). |
 | `steward:S4` | partial | Review-loop independent verification ✅, git-exportable state ✅. **Gaps:** heterogeneous-participant operation within this binding was not validated; no rehearsed takeover/handoff; failure recovery is ad hoc. |
 | `steward:S5` | not claimed | Persistent bots are separate bindings, not one unified Steward service. |
@@ -210,6 +211,7 @@ protocol: steward
 protocol_version: 0.1.0
 level: steward:S1
 storage_or_runtime: single Kiro CLI agent (no external Steward service)
+deployment_status: retired
 artifact_locations:
   - version-controlled relationship rules and conventions
   - version-controlled participant dispatch guide
@@ -218,7 +220,7 @@ artifact_locations:
 deviations:
   - delegation is a natural-language task prompt, not a serialized WorkOrder
   - authority is a standing policy, not per-order AuthorityGrant records
-  - no field-tested durable canonical task record in ordinary Steward work (the later Active Workspace candidate has only a bounded reproduced probe)
+  - ordinary-work durable workspace records exist, but not as complete serialized WorkOrder-to-ResultEnvelope chains
   - result integration is in-context, not a serialized ResultEnvelope
 validation:
   checklist_completed:
@@ -231,9 +233,9 @@ validation:
   evidence: field-tested
   conformance: partially-verified
   gaps:
-    - field-tested durable inspectable canonical task record in ordinary Steward work (steward:S2)
+    - complete serialized WorkOrder, progress, and ResultEnvelope path plus end-to-end steward:S2 checklist
     - per-order revocable AuthorityGrant with expiry + audit log (steward:S3)
     - heterogeneous-participant operation within this binding (steward:S4)
     - rehearsed takeover/handoff procedure (steward:S4)
-last_reviewed: 2026-07-20
+last_reviewed: 2026-08-25
 ```

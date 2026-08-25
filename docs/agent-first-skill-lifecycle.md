@@ -5,7 +5,7 @@
 - Maturity: `practiced`
 - Evidence scope: One field-tested imported-skill binding contributes repeated real-environment activation evidence, a runtime-fallback lesson, and unrecorded version drift mapped to `skill@0.1.0`; no `CandidateRecord`, `EvidenceRecord`, `AdoptionDecision`, rollback record, or `skill:L0+` conformance was validated.
 - Level namespace: `skill:L0`–`skill:L4`
-- Last updated: 2026-08-03
+- Last updated: 2026-08-25
 
 ## 1. Purpose
 
@@ -700,7 +700,7 @@ Before claiming a Skill Lifecycle level, verify:
 
 ## 25. Practical use cases
 
-- [Kiro Taobao Native](../usecases/skill/kiro-taobao-native.md) — Evidence: `field-tested`; Conformance: `mapped`. A pre-protocol imported-skill operation maps real activation observations, a runtime-fallback lesson, and unrecorded version drift to this protocol's concepts. No lifecycle governance record was operated, and no `skill:L0+` level is claimed.
+- [Kiro Taobao Native](../usecases/skill/kiro-taobao-native.md) — Evidence: `field-tested`; Conformance: `mapped`. A historical retired pre-protocol imported-skill operation maps real activation observations, a runtime-fallback lesson, and unrecorded version drift to this protocol's concepts. No lifecycle governance record was operated, and no `skill:L0+` level is claimed.
 
 No conformance-validated binding is documented yet. The public systems in §2 motivate the problem and design, but they are not use cases of `skill@0.1.0`. The first conformance-oriented use case should still manually walk one imported skill and one relationship-formed skill through the same lifecycle, then state exactly which checks were reproduced and which remain proposed.
 

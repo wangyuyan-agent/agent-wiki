@@ -5,7 +5,7 @@
 - Maturity: `practiced`
 - Evidence scope: Real-environment evidence informs the lifecycle through `memory:L4`. One private run report exposed a failed-exploration withdrawal boundary and informed `memory@0.2.0`, but no `WithdrawalRecord`, erasure path, current item schema, or `memory:L5` path has been end-to-end validated
 - Level namespace: `memory:L0`–`memory:L5`
-- Last updated: 2026-08-13
+- Last updated: 2026-08-25
 
 ## 1. Purpose
 
@@ -967,7 +967,7 @@ Verify the items applicable at the claimed level and under the conditions the bi
 
 Concrete implementations of this architecture:
 
-- [Kiro Local Memory](../usecases/memory/kiro-local-memory.md)
+- [Kiro Local Memory](../usecases/memory/kiro-local-memory.md) — historical retired local binding; evidence remains field-tested and mapped.
 - [OpenAB + Codex + k3s Memory](../usecases/memory/openab-codex-k3s-memory.md)
 - [Failed Exploration Withdrawal](../usecases/memory/failed-exploration-withdrawal.md)
 

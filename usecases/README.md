@@ -68,5 +68,6 @@ A use case MUST NOT claim a verified level merely because its behavior resembles
 - [memory/](memory/README.md) — Real implementations and evidence-calibrated reports that inform agent memory systems.
 - [auto-walk/](auto-walk/README.md) — Field-tested and design-example bindings of Auto-Walk over consolidated memory or other structured corpora.
 - [skill/](skill/README.md) — Imported and relationship-formed procedural artifacts with explicit lifecycle evidence and governance gaps.
+- [active-workspace/](active-workspace/README.md) — Durable task-state bindings with explicit lifecycle, schema, and conformance boundaries.
 - [council/](council/README.md) — Same-runtime role-diverse and heterogeneous-model Council bindings at explicitly labeled evidence levels.
 - [steward/](steward/README.md) — Real `1:1:N` Steward bindings at explicitly labeled evidence and conformance levels.

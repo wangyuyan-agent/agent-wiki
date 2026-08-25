@@ -7,11 +7,12 @@
 - Validation scope: one documented role-diverse independent review over a real protocol-level design decision was operated by the Steward; independent CandidateArtifacts, blind review, a deterministic controller, contextual capability estimation, and delayed outcome feedback were not implemented
 - Reproducibility: `partial` — topology, role contracts, and lifecycle are documented; exact agent definitions and dispatch prompts are omitted
 - Level namespace: `council`
-- Last reviewed: 2026-07-20
+- Deployment status: `retired` — the local Kiro binding was retired on 2026-08-25; this page preserves historical evidence only
+- Last reviewed: 2026-08-25
 
 ## 1. Context
 
-This use case records a local Council binding on the Kiro CLI on macOS, invoked by the [Kiro Local Steward](../steward/kiro-local-steward.md) when a **design decision** (not merely execution) needs plural, role-diverse review.
+This use case records a historical local Council binding on the Kiro CLI on macOS, invoked by the [Kiro Local Steward](../steward/kiro-local-steward.md) when a **design decision** (not merely execution) needed plural, role-diverse review. The runtime is retired; the observed decision evidence and declared protocol gaps remain historical.
 
 It is distinct from the two existing council bindings:
 

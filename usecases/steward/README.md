@@ -6,6 +6,6 @@ Use this directory for real Steward deployments: how the relationship, participa
 
 ## Current use cases
 
-- [Kiro Local Steward](kiro-local-steward.md) — evidence `field-tested`, conformance `partially-verified`; a single Kiro CLI agent operating one Principal, five role-specialized sub-agent participants, and six managed remote resources at `steward:S1` with substantial `steward:S2` coverage and a declared field-tested canonical-task-record gap.
+- [Kiro Local Steward](kiro-local-steward.md) — evidence `field-tested`, conformance `partially-verified`; historical retired local binding at `steward:S1` with substantial `steward:S2` coverage and two ordinary-work durable records, but without a validated complete `WorkOrder`-to-`ResultEnvelope` path.
 
 This is the first documented binding of the Steward protocol. It does not define the protocol by itself.

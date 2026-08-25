@@ -7,11 +7,12 @@
 - Validation scope: four private local Kiro CLI session archives dated 2026-03-30 were structurally inspected for skill reads, executable commands, and tool results; the current installed version metadata was inspected separately; private task content and raw transcripts were excluded
 - Reproducibility: `partial` — the artifact class, observed behavior categories, lifecycle gaps, and reusable lessons are documented; the regional desktop application, account-bound environment, exact skill bodies, and private session archives are not published
 - Level namespace: `skill`
-- Last reviewed: 2026-08-03
+- Deployment status: `retired` — the local Kiro binding was retired on 2026-08-25; this page preserves historical evidence only
+- Last reviewed: 2026-08-25
 
 ## 1. Context
 
-This use case records a local Kiro CLI binding of the imported `taobao-native` skill on macOS. The skill routes bounded commerce tasks into a desktop-application command surface for product search, product-option inspection, cart operations, page interaction, and merchant chat.
+This use case records a historical local Kiro CLI binding of the imported `taobao-native` skill on macOS. The skill routed bounded commerce tasks into a desktop-application command surface for product search, product-option inspection, cart operations, page interaction, and merchant chat. The runtime is retired; this page does not imply a current installation or deployment.
 
 This page is evidence, not an endorsement of or dependency on Taobao or any commerce platform. The named regional artifact preserves auditability; the reusable value is the region-independent lifecycle problem it exposed: an external procedure can become operational before provenance, version, authority, update, and rollback records exist.
 
@@ -123,5 +124,6 @@ validation:
     - every requirement for skill:L0 and above
     - independent content and security review
     - recorded update and rollback decisions
-last_reviewed: 2026-08-03
+deployment_status: retired
+last_reviewed: 2026-08-25
 ```

@@ -1,5 +1,5 @@
 manifest_version: 1
-updated: "2026-08-13"
+updated: "2026-08-25"
 purpose: "Machine-readable routing index for agent-wiki protocols and guides."
 level_policy: "Ranges are protocol-local cumulative conformance ladders; isolated higher-level capability tests do not establish that level without lower requirements."
 
@@ -77,7 +77,7 @@ protocols:
       - id: memory.kiro-local
         evidence: field-tested
         conformance: mapped
-        conformance_scope: "Historical lifecycle mapping through memory:L4 against memory@0.1.0; the memory@0.2.0 withdrawal and erasure contract and current item schema are not revalidated."
+        conformance_scope: "Historical retired local binding mapped through memory:L4 against memory@0.1.0; the memory@0.2.0 withdrawal and erasure contract and current item schema are not revalidated."
         document: usecases/memory/kiro-local-memory.md
       - id: memory.openab-codex-k3s
         evidence: field-tested
@@ -94,7 +94,7 @@ protocols:
     name: "Agent-first Auto-Walk"
     version: "0.1.0"
     maturity: practiced
-    evidence_scope: "Real-environment runs cover manual generation, runner execution, and semantic-trigger surfacing through parts of auto-walk:L3; natural calendar firing and auto-walk:L4 are unverified."
+    evidence_scope: "Real-environment runs cover manual generation, runner execution, semantic-trigger surfacing through parts of auto-walk:L3, and one observed natural calendar firing; repeated calendar operation and auto-walk:L4 remain unverified."
     document: docs/agent-first-auto-walk.md
     level_namespace: auto-walk
     level_range: ["auto-walk:L0", "auto-walk:L4"]
@@ -112,7 +112,7 @@ protocols:
       - id: auto-walk.kiro-local
         evidence: field-tested
         conformance: partially-verified
-        conformance_scope: "Observed generation and semantic-trigger surfacing through parts of auto-walk:L3; current hypothesis status/discharge fields, natural scheduled firing, and auto-walk:L4 are unverified."
+        conformance_scope: "Historical retired local binding with observed generation and semantic-trigger surfacing through parts of auto-walk:L3 plus one calendar-aligned scheduled firing; current hypothesis status/discharge fields, repeated calendar operation, and auto-walk:L4 are unverified."
         document: usecases/auto-walk/kiro-local-walk.md
       - id: auto-walk.obsidian-notes
         evidence: design-example
@@ -152,14 +152,14 @@ protocols:
       - id: skill.kiro-taobao-native
         evidence: field-tested
         conformance: mapped
-        conformance_scope: "Repeated private real-environment activations, runtime fallback, and unrecorded version drift are mapped to protocol concepts; lifecycle governance records and all skill:L0+ requirements remain unvalidated."
+        conformance_scope: "Historical retired local binding: repeated private real-environment activations, runtime fallback, and unrecorded version drift are mapped to protocol concepts; lifecycle governance records and all skill:L0+ requirements remain unvalidated."
         document: usecases/skill/kiro-taobao-native.md
 
   - id: active-workspace
     name: "Agent-first Active Workspace"
     version: "0.2.0"
-    maturity: design-only
-    evidence_scope: "No documented binding yet. One public study provides run-reported design evidence for the optional audited-completion profile; no `active-workspace@0.2.0` conformance or profile behavior has been validated."
+    maturity: practiced
+    evidence_scope: "One historical local binding used durable revisioned workspace records in two ordinary multi-step tasks and an earlier bounded lifecycle canary. The records exposed schema-vocabulary and audited-completion gaps; no active-workspace:L1 or higher conformance and no complete audited-completion profile behavior are claimed. One public study separately provides run-reported design evidence for the optional profile."
     document: docs/agent-first-active-workspace.md
     level_namespace: active-workspace
     level_range: ["active-workspace:L0", "active-workspace:L4"]
@@ -173,7 +173,12 @@ protocols:
       - workspace_item
       - workspace_patch
       - interrupt
-    usecases: []
+    usecases:
+      - id: active-workspace.kiro-local
+        evidence: field-tested
+        conformance: mapped
+        conformance_scope: "Historical retired local binding mapped from two ordinary-work durable closed records and an earlier bounded lifecycle canary; invalid confidence/status tokens, incomplete audited-completion coverage, and unvalidated checklist requirements prevent an active-workspace:L1 or higher claim."
+        document: usecases/active-workspace/kiro-local-active-workspace.md
 
   - id: inner-speech
     name: "Agent-first Inner Speech"
@@ -229,14 +234,14 @@ protocols:
       - id: council.kiro-local
         evidence: field-tested
         conformance: mapped
-        conformance_scope: "Same-runtime, same-model-family role-diverse review maps to selected council:L0 mechanisms: isolated role outputs, conflict extraction, and synthesis. Complete council:L0 is not claimed because the run reviewed one shared draft rather than producing independent CandidateArtifacts; council:L1 anonymity and council:L2 lineage are also absent."
+        conformance_scope: "Historical retired local binding: same-runtime, same-model-family role-diverse review maps to selected council:L0 mechanisms. Complete council:L0 is not claimed because the run reviewed one shared draft rather than producing independent CandidateArtifacts; council:L1 anonymity and council:L2 lineage are also absent."
         document: usecases/council/kiro-local-council.md
 
   - id: steward
     name: "Agent-first Steward"
     version: "0.1.0"
     maturity: practiced
-    evidence_scope: "One field-tested single-agent binding operates the 1:1:N topology at steward:S1 with substantial steward:S2 coverage (participant and managed-resource registries, result integration) and partial steward:S3/steward:S4 elements; the steward@0.1.0 artifact schema, a field-tested durable canonical task record in ordinary Steward work, per-order revocable grants, heterogeneous-participant operation within the binding, and formal takeover remain unvalidated."
+    evidence_scope: "One historical field-tested single-agent binding operated the 1:1:N topology at steward:S1 with substantial steward:S2 coverage and partial steward:S3/steward:S4 elements. Two ordinary-work durable workspace records were closed, but the steward@0.1.0 WorkOrder/ResultEnvelope artifacts and full steward:S2 checklist, per-order revocable grants, heterogeneous-participant operation within the binding, and formal takeover remain unvalidated."
     document: docs/agent-first-steward.md
     level_namespace: steward
     level_range: ["steward:S0", "steward:S5"]
@@ -258,7 +263,7 @@ protocols:
       - id: steward.kiro-local
         evidence: field-tested
         conformance: partially-verified
-        conformance_scope: "steward:S1 delegation, participant/managed-resource registries, and standing-authority gates operated and source-inspected; a field-tested steward:S2 durable canonical task record in ordinary Steward work, steward:S3 per-order revocable grants with audit, and steward:S4 heterogeneous-participant operation plus formal takeover remain declared gaps."
+        conformance_scope: "Historical retired local binding: steward:S1 delegation, participant/managed-resource registries, standing-authority gates, and two ordinary-work durable workspace records were observed; complete steward:S2 WorkOrder/result artifacts and checklist coverage, steward:S3 per-order revocable grants with audit, and steward:S4 heterogeneous-participant operation plus formal takeover remain declared gaps."
         document: usecases/steward/kiro-local-steward.md
 
 guides:

@@ -3,17 +3,18 @@
 - Use case ID: `auto-walk.kiro-local`
 - Protocol: `auto-walk@0.1.0`
 - Evidence: `field-tested`
-- Conformance: `partially-verified` — generation and semantic-trigger surfacing were observed; current status/discharge fields, natural calendar firing, and `auto-walk:L4` remain unverified
-- Validation scope: manual generation, launchd-environment runner execution, and semantic-trigger surfacing tests through parts of `auto-walk:L3` are documented; natural calendar firing and `auto-walk:L4` remain deferred
+- Conformance: `partially-verified` — generation, semantic-trigger surfacing, and one calendar-aligned scheduled firing were observed; current status/discharge fields, repeated calendar operation, and `auto-walk:L4` remain unverified
+- Validation scope: manual generation, launchd-environment runner execution, semantic-trigger surfacing through parts of `auto-walk:L3`, and one natural calendar-aligned firing on 2026-08-14 are documented; repeated schedule reliability and `auto-walk:L4` remain deferred
 - Reproducibility: `partial` — observed runs and procedures are documented; exact local scripts are not included here
 - Level namespace: `auto-walk`
-- Last reviewed: 2026-07-17
+- Deployment status: `retired` — the local Kiro binding was retired on 2026-08-25; this page preserves historical evidence only
+- Last reviewed: 2026-08-25
 
 ## 1. Context
 
-This use case describes a local `~/.kiro/walks` Auto-Walk system layered on top of the existing `~/.kiro/memories` setup on macOS.
+This use case describes a historical local `~/.kiro/walks` Auto-Walk system layered on top of a `~/.kiro/memories` setup on macOS.
 
-The goal is to give the Kiro agent a low-stakes background process that runs over already-distilled memory and produces candidate associations for future conversations, **without ever mutating the memory itself**.
+The goal was to give the Kiro agent a low-stakes background process that ran over already-distilled memory and produced candidate associations for future conversations, **without ever mutating the memory itself**.
 
 The design is a practical implementation of [Agent-first Auto-Walk Architecture](../../docs/agent-first-auto-walk.md). It also depends on the memory layer described in [Kiro Local Memory](../memory/kiro-local-memory.md), which is the canonical corpus this binding consumes.
 
@@ -82,7 +83,7 @@ There is **no** `walks/memory.md` inbox. Auto-Walk does not capture from session
 
 | Layer | File | Nature | Loading |
 | --- | --- | --- | --- |
-| Walk runner | `scripts/auto-walk.sh` | Scheduled shell, calls `kiro-wrap` | Invoked by launchd |
+| Walk runner | `scripts/auto-walk.sh` | Scheduled shell; early revisions called `kiro-wrap`, final revision called `kiro-cli` directly | Invoked by launchd |
 | Hypothesis pool (active) | `walks/active/*.yaml` | Warm, candidate insights | Loaded on demand by skill (§8) |
 | Hypothesis pool (cold) | `walks/discharged/` `walks/rejected/` `walks/archived/` | Cold | Audit only |
 | Noteworthy bucket | `walks/noteworthy/` | Cold, human-only | Never read by skill or runner; human review only |
@@ -129,7 +130,7 @@ A weekly script that mirrors the `auto-dream.sh` pattern.
 
 ### 6.2 Steps
 
-The runner mirrors `auto-dream.sh` exactly: **shell only assembles one prompt and makes one `kiro-wrap chat` call. Kiro itself reads the corpus, runs the three passes, and writes the output files** — the same way auto-dream lets the model write `index.md` rather than having the shell parse anything. The observed `auto-walk:L1` and `auto-walk:L3` tests showed that Kiro read and wrote `walks/` files reliably in those bounded runs, so there is no reason for the shell to touch YAML.
+The runner mirrors the AutoDream separation of responsibilities: **shell only assembles one prompt and makes one CLI call. Kiro itself reads the corpus, runs the three passes, and writes the output files** — the same way AutoDream lets the model write `index.md` rather than having the shell parse anything. Early observed runs used `kiro-wrap chat`; after the compatibility migration, the final pre-retirement runner called `kiro-cli` directly. The observed `auto-walk:L1` and `auto-walk:L3` tests showed that Kiro read and wrote `walks/` files reliably in those bounded runs, so there is no reason for the shell to touch YAML.
 
 ```text
 1. Skip if `topics/` has fewer than 3 files (logs a skip event).
@@ -151,17 +152,16 @@ The runner mirrors `auto-dream.sh` exactly: **shell only assembles one prompt an
      on 2026-05-29 round-2 only by luck (a seed-note hint); rule is
      now mandatory in the runner prompt.
    - APPEND a walk-auto entry to log.md containing all three required sections per §7 / protocol §18 item 5: `inventory:` (1-2 lines of key facts per corpus item, proving INVENTORY ran), `candidates:` (per-candidate `SURVIVED → hyp-id` or `REJECTED: reason`), and any `noteworthy:` routing.
-3. Call `kiro-wrap chat --no-interactive --trust-all-tools "$PROMPT"`
-   once, with HOME pinned to REAL_HOME (kiro-local-memory §8.4).
+3. Call the selected Kiro CLI entry point once with non-interactive and tool-trust flags, with HOME pinned to REAL_HOME (kiro-local-memory §8.4). Early revisions selected `kiro-wrap`; the final pre-retirement revision selected direct `kiro-cli`.
 ```
 
 Decay / expiration / discharge are **not** in the `auto-walk:L2` script — that is `auto-walk:L4`. The runner only *generates*. While the corpus is small, monotonic growth of `active/` is harmless; a human `review walks` (§12) handles pruning until `auto-walk:L4` automates it.
 
-The three passes (INVENTORY / ROAM / CRITIQUE) are labeled phases **inside the single prompt**, executed by Kiro in one session — not three shell calls. The single-pass-shortcut failure (§11.4 / §15 of protocol) is skipping straight to conclusions without the INVENTORY warm-up and CRITIQUE gate; it has nothing to do with how many times the shell invokes the wrapper.
+The three passes (INVENTORY / ROAM / CRITIQUE) are labeled phases **inside the single prompt**, executed by Kiro in one session — not three shell calls. The single-pass-shortcut failure (§11.4 / §15 of protocol) is skipping straight to conclusions without the INVENTORY warm-up and CRITIQUE gate; it has nothing to do with how many times the shell invokes the CLI entry point.
 
 ### 6.3 Skeleton
 
-The deployed shape (canonical source in the private automation repository):
+The final pre-retirement shape (the canonical source lived in the private automation repository):
 
 > Parameterized skeleton. The deployed file uses literal absolute paths; replace `<USER_HOME>` / `<USER>` with your own when adapting.
 
@@ -174,7 +174,7 @@ export PATH="<USER_HOME>/.local/bin:<USER_HOME>/.cargo/bin:/opt/homebrew/bin:/us
 REAL_HOME="<USER_HOME>"
 MEM_DIR="$REAL_HOME/.kiro/memories"
 WALKS_DIR="$REAL_HOME/.kiro/walks"
-KIRO_WRAP="$REAL_HOME/.cargo/bin/kiro-wrap"
+KIRO_CLI="$REAL_HOME/.local/bin/kiro-cli"
 LOG_FILE="$WALKS_DIR/log.md"
 TODAY=$(date +%Y-%m-%d)
 
@@ -198,16 +198,16 @@ PROMPT_EOF
 PROMPT=$(cat "$PROMPT_FILE"); rm -f "$PROMPT_FILE"
 
 # One call. Kiro does the passes and writes the files itself.
-HOME="$REAL_HOME" "$KIRO_WRAP" chat --no-interactive --trust-all-tools "$PROMPT"
+HOME="$REAL_HOME" "$KIRO_CLI" chat --no-interactive --trust-all-tools "$PROMPT"
 ```
 
-The full prompt body is intentionally not duplicated here — the canonical source lives next to its siblings (`auto-archive.sh`, `auto-dream.sh`). Note `<< PROMPT_EOF` is **unquoted** so the shell expands `$MEM_DIR` / `$WALKS_DIR` / `$TODAY` into absolute paths inside the prompt; this mirrors `auto-dream.sh` and avoids `~` expansion surprises in Kiro.
+The full prompt body is intentionally not duplicated here. Before retirement, the canonical source lived next to its siblings (`auto-archive.sh`, `auto-dream.sh`). Note `<< PROMPT_EOF` is **unquoted** so the shell expands `$MEM_DIR` / `$WALKS_DIR` / `$TODAY` into absolute paths inside the prompt; this mirrors `auto-dream.sh` and avoids `~` expansion surprises in Kiro.
 
 ## 7. Walk procedure (what the prompt enforces)
 
-The protocol's §11.4 phase separation MUST be honored. The single prompt to `kiro-wrap` (see §6.2) instructs Kiro to execute three labeled phases sequentially in one session, emitting each phase's output visibly so the trace can be audited after the fact. The walk-auto log entry must contain three sections: an `inventory:` summary (1–2 lines of key facts per corpus item — proof INVENTORY ran and was not skipped), a `candidates:` list with per-candidate verdicts (proof ROAM + CRITIQUE ran), and any `noteworthy:` routing decisions. A pure final-answer dump with no inventory trace fails §11.4 / §18 item 5.
+The protocol's §11.4 phase separation MUST be honored. The single prompt to the selected CLI entry point (see §6.2) instructs Kiro to execute three labeled phases sequentially in one session, emitting each phase's output visibly so the trace can be audited after the fact. The walk-auto log entry must contain three sections: an `inventory:` summary (1–2 lines of key facts per corpus item — proof INVENTORY ran and was not skipped), a `candidates:` list with per-candidate verdicts (proof ROAM + CRITIQUE ran), and any `noteworthy:` routing decisions. A pure final-answer dump with no inventory trace fails §11.4 / §18 item 5.
 
-The phase roles are summarized below. The exact prompt and runner remain in the private automation repository, consistent with this page's `partial` reproducibility label:
+The phase roles are summarized below. The exact prompt and runner were kept in the private automation repository during deployment and are not published here, consistent with this page's `partial` reproducibility label:
 
 ```text
 INVENTORY phase:
@@ -327,9 +327,9 @@ Lateral, not vertical. A hypothesis is not a junior memory waiting to grow up (p
 
 A Hot-loaded pool would force every conversation to start with the active pool in context. This re-introduces the "convergent surfacing" failure mode (protocol §15): even when the user is debugging, the agent has been pre-primed with side-notes. Gating must happen at the turn level, not at the load level.
 
-### 10.5 Why `kiro-wrap chat` and not a direct LLM call
+### 10.5 Why a Kiro CLI entry point and not a direct LLM call
 
-Consistent with `auto-dream.sh`. The wrapper handles HOME normalization, trust-all-tools, and non-interactive mode. The walk runner SHOULD use the same wrapper to inherit the same environmental fixes (kiro-local-memory §8.4).
+Consistent with `auto-dream.sh`, the runner kept agent runtime behavior, tool access, and non-interactive operation behind the Kiro CLI boundary instead of calling a model endpoint directly. Early revisions used `kiro-wrap` to normalize HOME and environment behavior. The final pre-retirement revision invoked `kiro-cli` directly after those compatibility needs moved into the installed runtime and script environment. Future bindings should select and validate their actual CLI entry point rather than treating the historical wrapper name as normative.
 
 ## 11. Testable rollout
 
@@ -349,14 +349,14 @@ Steps:
 
 Historical pass criterion: at least one hypothesis with all fields required by the then-current schema, surfaced cleanly. Achieved: 5 hypotheses + 1 noteworthy (R7 self-lock), and the critic gate rejected a deliberately planted sensitive-attribute inference (R11). The later `status` field remains a declared migration gap.
 
-### 11.2 `auto-walk:L2` — Scheduled profile (runner kickstarted 2026-05-29; Friday calendar trigger pending)
+### 11.2 `auto-walk:L2` — Scheduled profile (runner kickstarted 2026-05-29; one calendar-aligned firing observed 2026-08-14)
 
 Goal: weekly auto-walk runs unattended, produces hypotheses without manual prompting.
 
 Steps:
 
-1. ✓ Wrote `scripts/auto-walk.sh` per §6.3 — single prompt to `kiro-wrap chat`, three labeled phases inside it, Kiro writes the files itself.
-2. ✓ Added a de-identified launchd job running **Friday 07:50** (`Weekday 5`); its plist lives in the private automation repository and is symlinked into `~/Library/LaunchAgents/`.
+1. ✓ Wrote `scripts/auto-walk.sh` per §6.3 — the initial 2026-05-29 revision sent one prompt through `kiro-wrap chat`; the final pre-retirement revision invoked `kiro-cli` directly. Both kept the three labeled phases inside one run and let Kiro write the files itself.
+2. ✓ Added a de-identified launchd job running **Friday 07:50** (`Weekday 5`); while deployed, its plist lived in the private automation repository and was symlinked into `~/Library/LaunchAgents/`.
 3. ✓ Loaded with `launchctl bootstrap "gui/$(id -u)" <plist>` — **not** `launchctl load`, and **not** under `sudo` (LaunchAgent owner must equal the loader).
 4. ✓ **kickstart run 2026-05-29 succeeded under round-1 prompt** (exit 0, ~5m48s, 4 hypotheses + 1 noteworthy, ~44% critic pass rate matching the `auto-walk:L1` manual rate). First run exposed and fixed a real bug: launchd does not load `.zshrc`, so `kiro-wrap` lacked the required proxy environment and reached the wrong upstream endpoint. The fix (explicit proxy environment in the scheduled script) was applied to `auto-walk.sh` and back-ported to `auto-dream.sh`. The runner also gained a 3× retry + `walk-error` log line so future failures are visible, not silent.
 5. ✓ **Second kickstart 2026-05-29 21:46 validated round-2 prompt** (exit 0, ~4m25s). All round-2 invariants verified by the produced artifact:
@@ -365,11 +365,13 @@ Steps:
    - hyp-005's claim cites facts retrievable from the named refs — §11.5 corpus-coverage rule honored after two rounds of review-caught cleanup. Round-3 fix added a missing AutoDream-section ref to cover "index 控 200 行內" and corrected a heading-space typo on a sibling ref. A subsequent round-4 review caught a cascading issue: the topic heading itself had been updated in the same change (adding "2026-05-29 排程修正" to the section title), which broke text-anchor matching for the just-added ref; that ref was then converted to a line-range form (`#L40-L43`) which is robust to heading edits. A sibling typo on hyp-007 (same missing space pattern as hyp-005's) was also fixed in the same pass. Lesson recorded: when refs use heading text as anchor, simultaneously editing the heading breaks the ref — prefer line ranges or copy the post-edit heading verbatim.
    - critic pass rate 3/8 ≈ 38%, in the same band as prior runs (45% / 44%) — gate neither over-loose nor self-locking.
    - Runner's own `notes:` flagged a meta-observation: noteworthy-routed candidates have recurred across three walks under the same single-source-cross-domain pattern (28 R7, 29-early R5, 29-late R6) — useful for future protocol review, not actioned this run.
-6. ○ **Friday calendar trigger pending** — `StartCalendarInterval` itself has not yet fired naturally. The same mechanism had operated auto-archive and auto-dream, but that does not validate this job's calendar firing. `launchctl print` showed `runs = 0 / last exit code = (never exited)` after a `bootout / bootstrap` reset; separate walk and runner logs record the two kickstart runs. The remaining claim is therefore narrow: runner execution was observed, natural scheduled firing was not.
+6. ◐ **One Friday calendar-aligned firing observed 2026-08-14** — the walk artifacts and operation log were updated immediately after the declared Friday schedule without a contemporaneous manual kickstart. This supports `observed-once`, not repeated reliability: the evidence was not independently corroborated across multiple natural firings, and supervisor state alone is not semantic completion evidence.
 
 Pass criterion under round-1 prompt: met by the 2026-05-29 first kickstart.
 
 Pass criterion under round-2 prompt: met by the 2026-05-29 21:46 second kickstart — `inventory:` artifact present, sub-file refs used, claim stayed within corpus.
+
+Calendar evidence: one natural calendar-aligned run was observed on 2026-08-14. This closes the earlier absolute "never observed" gap but does not establish reliable cadence operation or any higher conformance level.
 
 ### 11.3 `auto-walk:L3` — Surfacing mode (tested 2026-05-29)
 
@@ -426,7 +428,7 @@ Rows marked **[observed]** were confirmed during the 2026-05-28 `auto-walk:L1` a
 | Side-notes during debugging | Surfacing misjudged the turn | **[observed not to occur]** under C-meta in the tested executive turn (`auto-walk:L3` stage 3), which lacked divergence-request language. If true A mode is ever added, this risk returns |
 | Hypothesis count grows monotonically | Expiration not running | Verify maintenance pass in §6.2 step 7 actually executes |
 | Discharged but no new memory item | Discharge step skipped or failed | Inspect `discharge` log entry against `memory.md` diff |
-| `kiro-wrap chat` hangs | HOME or PATH wrong | Mirror the §8.3/§8.4 fixes from `kiro-local-memory.md` |
+| Kiro CLI invocation hangs | HOME, PATH, or selected entry point wrong | Mirror the §8.3/§8.4 fixes from `kiro-local-memory.md`; validate whether the deployed runner uses the early wrapper or direct CLI |
 | High-value cross-domain bridge discarded | Critic gate rejects single-source generalization (protocol §11.5) | **[observed]** Route to `walks/noteworthy/` (protocol §11.6); R7 self-lock insight preserved this way |
 | Surface selects only "interesting" hypotheses, skips others | Agent applies relevance filtering on top of `applies_when` | **[observed, benign]** The tested agent surfaced 3/5 by relevance and stated the rest "stayed in the pool" — this matches §12.2 match-first intent |
 
@@ -435,15 +437,16 @@ Rows marked **[observed]** were confirmed during the 2026-05-28 `auto-walk:L1` a
 ### What this use case supports
 
 - Manual and kickstarted runner executions produced structured hypotheses and visible phase traces in a real Kiro environment.
+- One calendar-aligned scheduled firing was observed on 2026-08-14.
 - Semantic-trigger C and C-meta surfacing worked in the tested runtime while an executive task stayed silent.
 - Launchd environment differences, id allocation, and source-anchor drift produced concrete operational lessons.
 
 ### What it does not support
 
-- Natural `StartCalendarInterval` firing for the walk job; that remained pending.
+- Repeated or independently corroborated `StartCalendarInterval` reliability; only one calendar-aligned firing was observed.
 - True per-turn A-mode hooks in Kiro.
 - Automated `auto-walk:L4` feedback, discharge, muting, or expiration.
-- Current runtime behavior after model, wrapper, or Kiro changes.
+- Current runtime behavior or continued deployment; the local Kiro binding is retired.
 
 ## 15. Essence
 

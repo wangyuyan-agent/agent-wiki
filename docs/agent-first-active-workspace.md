@@ -2,10 +2,10 @@
 
 - Protocol ID: `active-workspace`
 - Version: `0.2.0`
-- Maturity: `design-only`
-- Evidence scope: No documented binding yet. One public study provides run-reported design evidence for the optional audited-completion profile; no `active-workspace@0.2.0` conformance or profile behavior has been validated.
+- Maturity: `practiced`
+- Evidence scope: one historical local binding used durable revisioned workspace records in two ordinary multi-step tasks and an earlier bounded lifecycle canary. The records exposed schema-vocabulary and audited-completion gaps; no `active-workspace:L1` or higher conformance and no complete audited-completion profile behavior are claimed. One public study separately provides run-reported design evidence for the optional profile.
 - Level namespace: `active-workspace:L0`–`active-workspace:L4`
-- Last updated: 2026-08-13
+- Last updated: 2026-08-25
 
 ## 1. Purpose
 
@@ -577,7 +577,11 @@ Verify the items applicable at the claimed level and under the conditions the bi
 15. (when the §15.1 profile is enabled) A verification that mutated task-relevant state is recorded as a `violation` and does not support `completed`.
 16. (when the §15.1 profile is enabled at `active-workspace:L1+`) Verification records the workspace id, base revision, observation time, and declared mode; stale findings are re-observed when task-relevant state may have changed.
 
-## 20. Final rule
+## 20. Practical use cases
+
+- [Kiro Local Active Workspace](../usecases/active-workspace/kiro-local-active-workspace.md) — `Evidence: field-tested`; `Conformance: mapped`. Two ordinary-work durable closed records and an earlier lifecycle canary support `practiced` maturity while also exposing closed-vocabulary and audited-completion gaps. The historical binding does not claim `active-workspace:L1`.
+
+## 21. Final rule
 
 Active Workspace is not another memory store. It is a bounded answer to a momentary question:
 
