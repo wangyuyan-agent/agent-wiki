@@ -38,8 +38,6 @@ Advanced:
 - [Governed Artifact Portability and Recovery Guide](governed-artifact-portability-recovery.md) — `design-only`; backup, restore, and cross-binding migration semantics without copying authority or runtime state.
 - [Governed Artifact Replication and Exchange Guide](governed-artifact-replication-exchange.md) — `design-only`; ongoing one-way replication and producer-attributed append-only exchange without creating another writer.
 
-Research record: [External resource review — 2026-09-28](research-review-2026-09-28.md) — Dated source decisions and evidence limits behind explanatory protocol updates.
-
 ## Related use cases
 
 - [Memory use cases](../usecases/memory/README.md) — Practical implementations of the memory architecture.

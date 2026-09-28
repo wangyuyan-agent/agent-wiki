@@ -20,6 +20,8 @@ Documents are added when real practice or a clearly bounded design discussion pr
 
 The structure should grow organically from practice and clearly bounded design work.
 
+Publish reusable guidance and the primary-source references needed to understand it. Task-specific reading inventories, research logs, deliberation records, and upstream-status snapshots stay in private task records outside this repository unless their publication is explicitly authorized. Exclude unrelated material rather than publishing a disposition for every input.
+
 Design work MUST declare `design-only` maturity and MUST NOT present proposed behavior as observed behavior. A protocol becomes `practiced` or `field-tested` only when its header names the supporting evidence scope.
 
 ## If you are an Agent, start here
@@ -52,7 +54,6 @@ agent-wiki/
 ├── protocols.yaml
 ├── docs/
 │   ├── README.md
-│   ├── research-review-2026-09-28.md
 │   ├── agent-adoption-guide.md
 │   ├── agent-first-memory.md
 │   ├── agent-first-auto-walk.md
