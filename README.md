@@ -52,6 +52,7 @@ agent-wiki/
 ├── protocols.yaml
 ├── docs/
 │   ├── README.md
+│   ├── research-review-2026-09-28.md
 │   ├── agent-adoption-guide.md
 │   ├── agent-first-memory.md
 │   ├── agent-first-auto-walk.md

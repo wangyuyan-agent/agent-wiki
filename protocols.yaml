@@ -1,5 +1,5 @@
 manifest_version: 1
-updated: "2026-08-26"
+updated: "2026-09-28"
 purpose: "Machine-readable routing index for agent-wiki protocols and guides."
 level_policy: "Ranges are protocol-local cumulative conformance ladders; isolated higher-level capability tests do not establish that level without lower requirements."
 
@@ -53,9 +53,9 @@ evaluation_schemes:
 protocols:
   - id: memory
     name: "Agent-first Memory"
-    version: "0.2.0"
+    version: "0.2.1"
     maturity: practiced
-    evidence_scope: "Real-environment evidence informs the lifecycle through memory:L4. One private run report exposed a failed-exploration withdrawal boundary and informed memory@0.2.0, but no WithdrawalRecord, erasure path, current item schema, or memory:L5 path has been end-to-end validated."
+    evidence_scope: "Real-environment evidence informs the lifecycle through memory:L4. One private run report exposed a failed-exploration withdrawal boundary and informed memory@0.2.0, but no WithdrawalRecord, erasure path, current item schema, or memory:L5 path has been end-to-end validated. The 0.2.1 comparison guidance draws on external research, without local benefit or conformance validation."
     document: docs/agent-first-memory.md
     level_namespace: memory
     level_range: ["memory:L0", "memory:L5"]
@@ -129,9 +129,9 @@ protocols:
 
   - id: skill
     name: "Agent-first Skill Lifecycle"
-    version: "0.2.0"
+    version: "0.2.1"
     maturity: practiced
-    evidence_scope: "One field-tested imported-skill binding contributes repeated real-environment activation evidence, a runtime-fallback lesson, and unrecorded version drift mapped to skill@0.1.0; no CandidateRecord, EvidenceRecord, AdoptionDecision, rollback record, or skill:L0+ conformance was validated. No run informs the formation-input eligibility contract added in skill@0.2.0."
+    evidence_scope: "One field-tested imported-skill binding contributes repeated real-environment activation evidence, a runtime-fallback lesson, and unrecorded version drift mapped to skill@0.1.0; no CandidateRecord, EvidenceRecord, AdoptionDecision, rollback record, or skill:L0+ conformance was validated. No run informs the formation-input eligibility contract added in skill@0.2.0. The 0.2.1 explanations draw on external research and source observations, without local benefit or conformance validation."
     document: docs/agent-first-skill-lifecycle.md
     level_namespace: skill
     level_range: ["skill:L0", "skill:L4"]
@@ -157,9 +157,9 @@ protocols:
 
   - id: active-workspace
     name: "Agent-first Active Workspace"
-    version: "0.2.0"
+    version: "0.2.1"
     maturity: practiced
-    evidence_scope: "One historical local binding used durable revisioned workspace records in two ordinary multi-step tasks and an earlier bounded lifecycle canary. The records exposed schema-vocabulary and audited-completion gaps; no active-workspace:L1 or higher conformance and no complete audited-completion profile behavior are claimed. One public study separately provides run-reported design evidence for the optional profile."
+    evidence_scope: "One historical local binding used durable revisioned workspace records in two ordinary multi-step tasks and an earlier bounded lifecycle canary. The records exposed schema-vocabulary and audited-completion gaps; no active-workspace:L1 or higher conformance and no complete audited-completion profile behavior are claimed. One public study separately provides run-reported design evidence for the optional profile. The 0.2.1 verification examples draw on separate external research and source observations, without local benefit or conformance validation."
     document: docs/agent-first-active-workspace.md
     level_namespace: active-workspace
     level_range: ["active-workspace:L0", "active-workspace:L4"]

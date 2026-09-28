@@ -1,11 +1,11 @@
 # Agent-first LLM Memory Architecture
 
 - Protocol ID: `memory`
-- Version: `0.2.0`
+- Version: `0.2.1`
 - Maturity: `practiced`
-- Evidence scope: Real-environment evidence informs the lifecycle through `memory:L4`. One private run report exposed a failed-exploration withdrawal boundary and informed `memory@0.2.0`, but no `WithdrawalRecord`, erasure path, current item schema, or `memory:L5` path has been end-to-end validated
+- Evidence scope: Real-environment evidence informs the lifecycle through `memory:L4`. One private run report exposed a failed-exploration withdrawal boundary and informed `memory@0.2.0`, but no `WithdrawalRecord`, erasure path, current item schema, or `memory:L5` path has been end-to-end validated. The 0.2.1 comparison guidance draws on external research, without local benefit or conformance validation.
 - Level namespace: `memory:L0`–`memory:L5`
-- Last updated: 2026-08-25
+- Last updated: 2026-09-28
 
 ## 1. Purpose
 
@@ -1081,6 +1081,8 @@ Outcome feedback is itself testimony and must be treated skeptically.
 3. **Failure is not item falsity.** Execution may fail for unrelated reasons.
 4. **Self-rating is weak evidence.** An agent saying that its memory helped is `inferred` until supported by an observable outcome or human confirmation.
 5. **One event is not a policy.** Individual feedback changes review priority at most; repeated patterns support proposals.
+
+A binding considering a policy change can optionally compare the candidate with its current policy under declared tasks, context, and conditions, including before a §23.5 proposal; this guidance is not exclusive to `memory:L5`. Useful observations can separate answer correctness and handling of unknown or conflicting information from retrieval tokens and response latency. If reporting a tail statistic such as p95, its sample and measurement scope make it interpretable. Extraction, indexing, and the time until a memory becomes readable can be distinguished from query cost rather than hidden in a single saving. Without an applicable local comparison, expected benefits remain candidate claims. The [Mem0 review](research-review-2026-09-28.md#memory-comparison) motivates this optional comparison, not a graph store, deletion policy, fixed metric checklist, or additional admission gate.
 
 ### 23.4 Allowed content effects
 

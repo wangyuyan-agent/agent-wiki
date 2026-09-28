@@ -1,11 +1,11 @@
 # Agent-first Skill Lifecycle Architecture
 
 - Protocol ID: `skill`
-- Version: `0.2.0`
+- Version: `0.2.1`
 - Maturity: `practiced`
-- Evidence scope: One field-tested imported-skill binding contributes repeated real-environment activation evidence, a runtime-fallback lesson, and unrecorded version drift mapped to `skill@0.1.0`; no `CandidateRecord`, `EvidenceRecord`, `AdoptionDecision`, rollback record, or `skill:L0+` conformance was validated. No run informs the formation-input eligibility contract added in `skill@0.2.0`.
+- Evidence scope: One field-tested imported-skill binding contributes repeated real-environment activation evidence, a runtime-fallback lesson, and unrecorded version drift mapped to `skill@0.1.0`; no `CandidateRecord`, `EvidenceRecord`, `AdoptionDecision`, rollback record, or `skill:L0+` conformance was validated. No run informs the formation-input eligibility contract added in `skill@0.2.0`. The 0.2.1 explanations draw on external research and source observations, without local benefit or conformance validation.
 - Level namespace: `skill:L0`–`skill:L4`
-- Last updated: 2026-08-26
+- Last updated: 2026-09-28
 
 ## 1. Purpose
 
@@ -411,6 +411,10 @@ Evidence used for automation or improvement claims MUST provide:
 
 Materials used to form a candidate MAY also appear in an evaluation only when that reuse is disclosed and the evidence is downgraded accordingly. A frozen held-out set is a strong form of independence, not the only valid form.
 
+A baseline comparison describes which execution conditions were held constant and which changed as the variable under evaluation. The relevant context is what actually took effect (§13), not only what the runner intended to load. A new process or chat alone does not establish isolation; unconfirmed isolation limits claims of an independent comparison or an artifact-free baseline. These distinctions are illustrated by the [external evaluation review](research-review-2026-09-28.md#skill-evaluation).
+
+Material disclosure includes whether evaluation targets were visible or practised beforehand, whether their materials informed candidate formation or selection, and how retries, checkpoint selection, scoring corrections, or reused historical baselines contributed to the result. A mixed aggregate distinguishes newly evaluated results from historical results and identifies its composition or denominator. Freezing learning state during evaluation does not establish that targets were unseen; freezing an evaluation set does not remove earlier material reuse. Development feedback used to select or revise candidates remains part of optimization, even when the final test set is separate.
+
 ### 12.2 Evaluation methods
 
 Common methods, roughly from stronger mechanical isolation to more contextual judgment, include:
@@ -426,6 +430,10 @@ deterministic verifier
 The method does not determine truth by itself. A deterministic verifier may cover only format; a human comparison may cover qualities the verifier cannot measure. The EvidenceRecord MUST state what the method establishes and what it leaves untested.
 
 A canary can support provisional, explicitly authorized adoption. It cannot by itself unlock standing automatic adoption because its evidence arrives after activation.
+
+A comparison can examine both repaired failures and regressions in previously correct behavior. Connecting an outcome change to a candidate diff and a relevant trace divergence helps diagnosis, but a pass/fail flip alone does not establish causation; noise and attribution limits remain visible. Reduced code, tokens, steps, or fees do not compensate for omitted task requirements, degraded behavior, or removed necessary checks and boundaries. The [reviewed examples](research-review-2026-09-28.md#skill-evaluation) also distinguish capability or interface failures from behavior-guidance failures, so a failed run need not become another prompt rule.
+
+Cost claims name their accounting scope: candidate formation or practice, evaluation, and execution may incur different costs, including work delegated to relevant descendants. A bounded query-only or main-agent-only figure can be useful when labeled as partial; it is not the total cost, and unmeasured components remain explicit. These are interpretations of the existing EvidenceRecord scope and method limits, not a new accounting structure or common budget.
 
 ### 12.3 Evaluation state
 
@@ -465,6 +473,8 @@ The reference resolves to an append-only snapshot or fingerprint sufficient to r
 - other binding-declared factors needed to interpret the result.
 
 The protocol requires recoverability, not an inline list. A content hash, immutable manifest, database snapshot, or append-only record is valid.
+
+Material context can include the global and project instructions, hooks, plugins, memory, catalog, tools, and environment that were actually active, as the [baseline-contamination example](research-review-2026-09-28.md#skill-evaluation) illustrates. Disclosing these factors does not bring them into the lifecycle governed by §§5–6; an artifact with a discrete activation boundary is still classified under the existing rules.
 
 Evidence scope MUST be derived honestly from observed contexts. Running in one context does not justify a universal claim.
 
@@ -712,7 +722,7 @@ Before claiming a Skill Lifecycle level, verify:
 
 - [Kiro Taobao Native](../usecases/skill/kiro-taobao-native.md) — Evidence: `field-tested`; Conformance: `mapped`. A historical retired pre-protocol imported-skill operation maps real activation observations, a runtime-fallback lesson, and unrecorded version drift to this protocol's concepts. No lifecycle governance record was operated, and no `skill:L0+` level is claimed.
 
-No conformance-validated binding is documented yet. The public systems in §2 motivate the problem and design, but they are not use cases of `skill@0.2.0`. Historical local evidence remains mapped to `skill@0.1.0`; it does not validate the formation-input eligibility contract added in `skill@0.2.0`. The first conformance-oriented use case should still manually walk one imported skill and one relationship-formed skill through the same lifecycle, then state exactly which checks were reproduced and which remain proposed.
+No conformance-validated binding is documented yet. The public systems in §2 motivate the problem and design, but they are not use cases of `skill@0.2.1`. Historical local evidence remains mapped to `skill@0.1.0`; it does not validate the formation-input eligibility contract added in `skill@0.2.0`. The first conformance-oriented use case should still manually walk one imported skill and one relationship-formed skill through the same lifecycle, then state exactly which checks were reproduced and which remain proposed.
 
 ## 26. Final rule
 

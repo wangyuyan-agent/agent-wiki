@@ -1,11 +1,11 @@
 # Agent-first Active Workspace Architecture
 
 - Protocol ID: `active-workspace`
-- Version: `0.2.0`
+- Version: `0.2.1`
 - Maturity: `practiced`
-- Evidence scope: one historical local binding used durable revisioned workspace records in two ordinary multi-step tasks and an earlier bounded lifecycle canary. The records exposed schema-vocabulary and audited-completion gaps; no `active-workspace:L1` or higher conformance and no complete audited-completion profile behavior are claimed. One public study separately provides run-reported design evidence for the optional profile.
+- Evidence scope: one historical local binding used durable revisioned workspace records in two ordinary multi-step tasks and an earlier bounded lifecycle canary. The records exposed schema-vocabulary and audited-completion gaps; no `active-workspace:L1` or higher conformance and no complete audited-completion profile behavior are claimed. One public study separately provides run-reported design evidence for the optional profile. The 0.2.1 verification examples draw on separate external research and source observations, without local benefit or conformance validation.
 - Level namespace: `active-workspace:L0`–`active-workspace:L4`
-- Last updated: 2026-08-25
+- Last updated: 2026-09-28
 
 ## 1. Purpose
 
@@ -452,6 +452,14 @@ Enablement is explicit and scoped. Before verification begins, the workspace rec
 2. It gathers fresh, source-referenced observations appropriate to each requirement: files, runtime state, logs, test output, external systems, or an attributable user or authority response when the criterion is an approval, choice, or permission.
 3. It records one finding per in-scope requirement, each with evidence references.
 4. It MUST NOT mutate task-relevant state. If an observation step changed the result under inspection or exceeded the declared constraints, `integrity_status` is `violation`, and that verification cannot support `completed`.
+
+For a migration or replacement, criterion-appropriate observations distinguish the requested mechanism or state change from the behavior the contract requires preserving. Passing the old tests alone may only show preserved behavior without the requested migration. Bounded differential checks can expose a counterexample within the original task contract; identifying the tested implementation merely to force a failure is not such a counterexample, and finding none does not prove equivalence. These are [completion-evidence examples](research-review-2026-09-28.md#completion-evidence), not a required benchmark or verifier topology.
+
+The same distinction applies to action receipts and artifact properties: accepting or queuing an action does not establish its final environmental result, and a plausible appearance or the presence of layers does not establish contracted editing, saving, or export behavior. Only properties actually included in the work contract are at issue; the examples add no device or visual checklist.
+
+Verification step 4 permits reading or observing the original deliverable without changing task-relevant state. A check that may write or change the inspected state instead uses an already-authorized isolated copy or test environment; a test environment that the contract itself treats as delivered state is not a freely mutable copy. Existing evidence `source_refs` can identify the check record, the copy and its content correspondence to the delivered version, and the limits of environmental applicability. A matching digest or version identity alone does not establish equivalent environments.
+
+If a dynamic check cannot safely run, other non-mutating evidence may still establish the same criterion. When it does, the unavailable check does not invalidate that evidence. If evidence remains insufficient, the finding is `undetermined` and the gap belongs in `remaining_gaps`: any `not-met` finding makes completion `incomplete`; with no `not-met`, a named gap preventing completion makes it `blocked`. Actual task-relevant mutation or a boundary breach remains an integrity `violation` that cannot support `completed`, even when some findings are also `undetermined`. These examples apply the existing registers below.
 
 **Independence.** Independence means the verification's evidence and verification steps are separate from the completion claim — not necessarily a distinct actor or model. Declared modes express increasing minimum isolation:
 
